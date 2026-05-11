@@ -178,8 +178,8 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
       <div class="drop-zone" id="dropZone">
         <div style="font-size:28px;margin-bottom:6px">📁</div>
         <p style="margin:4px 0;font-size:13px"><b>Glissez un fichier ici</b> ou cliquez</p>
-        <p style="margin:0;font-size:10px;color:#475569">PDF · JPG · PNG · DOCX — Max 5MB</p>
-        <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.docx">
+        <p style="margin:0;font-size:10px;color:#475569">PDF · Word · PowerPoint · Excel · JPG · PNG — Max 10MB</p>
+        <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.odt,.odp,.ods">
       </div>
       <div class="file-sel" id="fileSelected"></div>
       <div class="opt-row">
@@ -277,8 +277,8 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
         <div class="client-drop" id="clientDrop">
           <div class="icon">📎</div>
           <p style="margin:4px 0;font-size:14px;"><b>Appuyez ici pour choisir</b></p>
-          <p style="margin:0;font-size:11px;color:#64748b;">PDF, JPG, PNG — Max 5MB</p>
-          <input type="file" id="clientFile" accept=".pdf,.jpg,.jpeg,.png">
+          <p style="margin:0;font-size:11px;color:#64748b;">PDF · Word · PowerPoint · Excel · JPG · PNG — Max 10MB</p>
+          <input type="file" id="clientFile" accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.odt">
         </div>
         <div class="client-file-ok" id="clientFileOk">
           <div class="fn" id="clientFName"></div>
@@ -425,13 +425,25 @@ function setManagerFile(f) {
 }
 
 function checkFile(f) {
-  var allowed = ['application/pdf','image/jpeg','image/png','image/jpg',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-  var extOk = f.name.match(/\.(pdf|jpg|jpeg|png|docx)$/i);
+  var allowed = [
+    'application/pdf',
+    'image/jpeg','image/png','image/jpg',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'text/plain',
+    'application/vnd.oasis.opendocument.text',
+    'application/vnd.oasis.opendocument.presentation',
+    'application/vnd.oasis.opendocument.spreadsheet'
+  ];
+  var extOk = f.name.match(/\.(pdf|jpg|jpeg|png|docx|doc|pptx|ppt|xlsx|xls|txt|odt|odp|ods)$/i);
   if (allowed.indexOf(f.type) < 0 && !extOk) {
     alert('Type non autorisé\nSeuls PDF, JPG, PNG, DOCX acceptés'); return false;
   }
-  if (f.size > 5*1024*1024) { alert('Fichier trop grand (max 5MB)'); return false; }
+  if (f.size > 10*1024*1024) { alert('Fichier trop grand (max 10MB)'); return false; }
   return true;
 }
 

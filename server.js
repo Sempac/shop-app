@@ -21,7 +21,10 @@ const storage=multer.diskStorage({
   filename:(req,file,cb)=>cb(null,Date.now()+'-'+Math.round(Math.random()*1e6)+path.extname(file.originalname))
 });
 const upload=multer({storage,limits:{fileSize:20*1024*1024},
-  fileFilter:(req,file,cb)=>cb(null,['.pdf','.jpg','.jpeg','.png','.docx'].includes(path.extname(file.originalname).toLowerCase()))});
+  fileFilter:(req,file,cb)=>{
+    const allowed=['.pdf','.jpg','.jpeg','.png','.docx','.doc','.pptx','.ppt','.xlsx','.xls','.txt','.odt','.odp','.ods'];
+    cb(null,allowed.includes(path.extname(file.originalname).toLowerCase()));
+  }});
 
 /* =======================================================
    PRODUCTS — spécifiques AVANT /:id

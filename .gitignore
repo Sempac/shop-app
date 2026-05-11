@@ -4,3 +4,8 @@ dist/
 build/
 coverage/
 *.log
+files.zip
+*.zip
+ARCHIVE/voice-scan.js
+~
+*.zip

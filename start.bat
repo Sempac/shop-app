@@ -8,7 +8,7 @@ taskkill /F /IM node.exe > nul 2>&1
 timeout /t 2 > nul
 
 echo  Demarrage serveur...
-cd /d "C:\Users\sempa\OneDrive\Pro\IT TECH\shop-app"
+cd /d "C:\Dev\shop-app"
 
 REM Rendre l'appli accessible via smartphone.local sur le réseau local
 REM Ajouter dans C:\Windows\System32\drivers\etc\hosts :
