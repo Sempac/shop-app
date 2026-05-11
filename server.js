@@ -1,4 +1,5 @@
 const express=require('express');
+require('dotenv').config();
 const cors=require('cors');
 const {Pool}=require('pg');
 const multer=require('multer');
@@ -10,7 +11,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-const pool=new Pool({user:'postgres',host:'localhost',database:'shop_db',password:'Sempac',port:5432});
+/* Config base de données depuis .env */
+
+const pool=new Pool({
+  user:     process.env.DB_USER     || 'postgres',
+  host:     process.env.DB_HOST     || 'localhost',
+  database: process.env.DB_NAME     || 'shop_db',
+  password: process.env.DB_PASSWORD || 'Sempac',
+  port:     Number(process.env.DB_PORT) || 5432
+});
 
 const uploadDir=path.join(__dirname,'uploads');
 if(!fs.existsSync(uploadDir))fs.mkdirSync(uploadDir);
