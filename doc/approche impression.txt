@@ -1,0 +1,25 @@
+Bonne approche ! Donc votre appli est déjà accessible depuis l'extérieur via votre IP publique. Pour permettre aux clients d'envoyer un document à imprimer sans se connecter à votre réseau, voici les options :
+
+Option 1 — QR Code (le plus simple) ✅
+Le client scanne un QR code avec son téléphone, ça ouvre directement la page d'impression dans son navigateur, il upload son fichier et c'est tout.
+Ce qu'il faut faire :
+
+Générer un QR code pointant vers http://VOTRE_IP_PUBLIQUE:3000/print.html
+Afficher ce QR code sur le comptoir (imprimé ou sur un écran)
+
+Le client utilise sa propre connexion mobile (4G/5G), pas votre WiFi.
+
+Option 2 — Nom de domaine (plus propre)
+Au lieu d'une IP publique (qui peut changer), utiliser un domaine comme impression.votreboutique.fr via un service DNS dynamique gratuit comme DuckDNS ou No-IP.
+
+Ce que je vous recommande concrètement :
+
+Créer une page dédiée print-client.html — simple, épurée, juste pour l'upload du fichier par le client
+Générer un QR code vers cette page
+Afficher le QR code sur votre comptoir
+
+Voulez-vous que je crée :
+
+La page client simplifiée pour l'impression ?
+Le QR code à afficher ?
+Les deux ?

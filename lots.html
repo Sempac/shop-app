@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Lots — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;height:100vh;display:flex;flex-direction:column;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar h2{margin:0;font-size:17px;}
+button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
+.btn-home  {background:#1e40af;color:white;}
+.btn-green {background:#22c55e;color:white;}
+.btn-blue  {background:#3b82f6;color:white;}
+.btn-red   {background:#ef4444;color:white;}
+.btn-orange{background:#f59e0b;color:white;}
+.btn-sm    {padding:5px 11px;font-size:12px;}
+
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* LISTE LOTS */
+.lot-list{width:290px;background:#1e293b;overflow-y:auto;padding:10px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;}
+.lot-card{background:#0f172a;border-radius:10px;padding:12px;cursor:pointer;border-left:4px solid #334155;transition:0.15s;}
+.lot-card:hover{border-left-color:#3b82f6;}
+.lot-card.active{border-left-color:#22c55e;}
+.lc-name{font-size:13px;font-weight:bold;color:white;margin-bottom:3px;}
+.lc-sub{font-size:11px;color:#64748b;margin-bottom:5px;}
+.lc-stats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;}
+.lb{font-size:10px;padding:2px 6px;border-radius:8px;font-weight:bold;}
+.lb-test{background:#1e3a8a;color:#93c5fd;}
+.lb-rep{background:#78350f;color:#fcd34d;}
+.lb-stock{background:#166534;color:#86efac;}
+.lb-vendu{background:#374151;color:#9ca3af;}
+.lb-irrep{background:#7f1d1d;color:#fca5a5;}
+.lc-profit{font-size:12px;font-weight:bold;}
+.pp{color:#22c55e;}.pn{color:#ef4444;}.pz{color:#64748b;}
+
+/* DETAIL */
+.detail{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.empty-detail{text-align:center;color:#94a3b8;padding:60px 20px;font-size:14px;}
+.dcard{background:white;border-radius:12px;padding:16px;box-shadow:0 1px 4px #0001;}
+.dcard h4{margin:0 0 12px;font-size:14px;color:#0f172a;display:flex;justify-content:space-between;align-items:center;}
+
+/* Stats globales lot */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px;}
+.sbox{background:#f8fafc;border-radius:8px;padding:10px 12px;font-size:12px;}
+.sbox .sv{font-size:18px;font-weight:bold;margin-top:3px;}
+.sbox.red .sv{color:#ef4444;}.sbox.green .sv{color:#16a34a;}
+.sbox.blue .sv{color:#2563eb;}.sbox.orange .sv{color:#d97706;}
+.sbox.purple .sv{color:#7c3aed;}
+
+/* Barre rentabilité lot */
+.rent-bar{background:#0f172a;border-radius:10px;padding:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.ri{text-align:center;}
+.ri .rv{font-size:16px;font-weight:900;}
+.ri .rl{font-size:10px;color:#64748b;text-transform:uppercase;margin-top:2px;}
+.rsep{color:#334155;font-size:16px;padding:0 2px;}
+.rresult{background:#1e293b;border-radius:8px;padding:10px 14px;text-align:center;flex:1;}
+.rresult .rv{font-size:20px;font-weight:900;}
+
+/* TABLEAU APPAREILS avec rentabilité */
+.items-table{width:100%;border-collapse:collapse;font-size:12px;}
+.items-table th{background:#f1f5f9;color:#64748b;padding:8px 10px;text-align:left;font-size:11px;border-bottom:2px solid #e2e8f0;white-space:nowrap;}
+.items-table td{padding:8px 10px;border-bottom:1px solid #f8fafc;vertical-align:middle;}
+.items-table tr:hover td{background:#f8fafc;}
+
+.rent-pos{color:#16a34a;font-weight:bold;}
+.rent-neg{color:#ef4444;font-weight:bold;}
+.rent-neu{color:#94a3b8;}
+.rent-pending{color:#f59e0b;font-style:italic;font-size:11px;}
+
+/* Badge statut */
+.st-badge{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:bold;white-space:nowrap;}
+.st-EN_TEST      {background:#dbeafe;color:#1e40af;}
+.st-EN_REPARATION{background:#fef3c7;color:#92400e;}
+.st-EN_STOCK     {background:#dcfce7;color:#166534;}
+.st-VENDU        {background:#f1f5f9;color:#374151;}
+.st-IRREPARABLE  {background:#fee2e2;color:#991b1b;}
+
+/* Selector statut inline */
+.st-sel{padding:4px 7px;border:1.5px solid #e2e8f0;border-radius:5px;font-size:11px;font-family:Arial;background:white;}
+
+/* Coûts */
+.cost-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px;}
+.cost-row:last-child{border:none;}
+.ctag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold;}
+.ct-piece{background:#dbeafe;color:#1e40af;}
+.ct-mo{background:#d1fae5;color:#065f46;}
+.ct-ext{background:#fef3c7;color:#92400e;}
+.ct-autre{background:#f3f4f6;color:#374151;}
+
+/* Récap rentabilité par appareil */
+.rent-detail{background:#f8fafc;border-radius:6px;padding:6px 10px;font-size:11px;color:#374151;margin-top:4px;}
+.rent-detail-row{display:flex;justify-content:space-between;margin-bottom:2px;}
+.rent-detail-row.total{font-weight:bold;border-top:1px solid #e2e8f0;margin-top:4px;padding-top:4px;}
+
+/* MODAL */
+.moverlay{display:none;position:fixed;inset:0;background:#00000075;z-index:1000;align-items:center;justify-content:center;}
+.moverlay.show{display:flex;}
+.modal{background:white;border-radius:14px;padding:22px;width:540px;max-width:95vw;max-height:92vh;overflow-y:auto;}
+.modal h3{margin:0 0 14px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.mfg{display:flex;flex-direction:column;gap:3px;}
+.mfg.full{grid-column:1/span 2;}
+.mfg label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.mfg input,.mfg select,.mfg textarea{padding:9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;font-family:Arial;width:100%;}
+.mfg textarea{height:58px;resize:vertical;}
+.mfg input:focus,.mfg select:focus{outline:none;border-color:#3b82f6;}
+.pay-box{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px;margin:10px 0;}
+.pay-box-title{font-size:10px;font-weight:bold;text-transform:uppercase;color:#64748b;margin-bottom:8px;}
+.pay-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.pf label{font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;}
+.pf input{width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:Arial;}
+.pf.credit input{border-color:#f59e0b;background:#fffbeb;color:#92400e;font-weight:bold;}
+.pay-recap{font-size:11px;color:#64748b;margin-top:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+.pay-info{font-size:11px;color:#64748b;margin-top:6px;background:#eff6ff;padding:6px 8px;border-radius:6px;}
+.mbtns{display:flex;gap:8px;margin-top:14px;}
+.mbtn{flex:1;padding:11px;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.mbtn-save{background:#22c55e;color:white;}
+.mbtn-cancel{background:#f1f5f9;color:#374151;}
+.mode-row{display:flex;gap:8px;margin-bottom:14px;}
+.mode-btn{flex:1;padding:10px;border:2px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:#64748b;font-weight:bold;cursor:pointer;font-size:13px;font-family:Arial;}
+.mode-btn.m-exist{border-color:#3b82f6;background:#eff6ff;color:#1e40af;}
+.mode-btn.m-new{border-color:#7c3aed;background:#f5f3ff;color:#5b21b6;}
+.search-results{max-height:200px;overflow-y:auto;border:1.5px solid #e2e8f0;border-radius:6px;margin-top:4px;display:none;background:white;box-shadow:0 4px 12px #0002;}
+.search-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}
+.search-item:hover{background:#f8fafc;}
+.sel-prod{background:#f0fdf4;border:1.5px solid #22c55e;border-radius:6px;padding:8px 12px;margin-top:6px;font-size:12px;display:none;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h2>🗂️ Gestion des Lots</h2>
+  <div style="display:flex;gap:8px">
+    <button class="btn-green" id="btnNewLot">➕ Nouveau lot</button>
+    <button class="btn-home"  onclick="location.href='index.html'">🏠 Accueil</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="lot-list" id="lotList">
+    <div style="text-align:center;color:#475569;padding:20px;font-size:12px">Chargement...</div>
+  </div>
+  <div class="detail" id="detail">
+    <div class="empty-detail">← Sélectionnez un lot ou créez-en un nouveau</div>
+  </div>
+</div>
+
+<!-- MODAL LOT -->
+<div class="moverlay" id="mLot">
+  <div class="modal">
+    <h3 id="mLotTitle">➕ Nouveau lot</h3>
+    <div class="mgrid">
+      <div class="mfg full"><label>Nom du lot *</label><input id="l_name" placeholder="Ex: Lot iPhone occasion mai 2026"></div>
+      <div class="mfg"><label>Fournisseur / Vendeur</label><input id="l_supplier" placeholder="Ex: Mohamed"></div>
+      <div class="mfg"><label>📞 Tél. fournisseur</label><input id="l_supplier_phone" placeholder="Ex: 06 12 34 56 78"></div>
+      <div class="mfg"><label>Date d'achat</label><input type="date" id="l_date"></div>
+      <div class="mfg"><label>Prix global du lot (€)</label><input type="number" id="l_cost" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="mfg full"><label>Statut</label>
+        <select id="l_status">
+          <option value="EN_COURS">🔄 En cours</option>
+          <option value="TERMINE">✅ Terminé</option>
+          <option value="ARCHIVE">📁 Archivé</option>
+        </select>
+      </div>
+    </div>
+    <div class="pay-box">
+      <div class="pay-box-title">💰 Comment avez-vous payé ce lot ?</div>
+      <div class="pay-grid">
+        <div class="pf"><label>💳 CB (€)</label><input type="number" id="l_cb" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="pf"><label>💵 Espèces (€)</label><input type="number" id="l_cash" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="pf credit"><label>⏳ Reste à payer</label><input type="number" id="l_credit" placeholder="0.00" readonly></div>
+      </div>
+      <div class="pay-recap">
+        <span>Total : <b id="l_pay_total">0.00 €</b></span>
+        <span>Payé : <b id="l_pay_paid" style="color:#ef4444">0.00 €</b></span>
+        <span>Reste : <b id="l_pay_rest" style="color:#f59e0b">0.00 €</b></span>
+      </div>
+      <div class="pay-info">ℹ️ Le total sera ajouté automatiquement dans les <b>dépenses</b>. Le reste sera enregistré dans les <b>crédits fournisseur</b>.</div>
+    </div>
+    <div class="mfg full"><label>Notes</label><textarea id="l_notes" placeholder="Remarques..."></textarea></div>
+    <input type="hidden" id="l_id">
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="btnCancelLot">Annuler</button>
+      <button class="mbtn mbtn-save"   id="btnSaveLot">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL APPAREIL -->
+<div class="moverlay" id="mItem">
+  <div class="modal">
+    <h3>📱 Ajouter un appareil au lot</h3>
+    <div class="mode-row">
+      <button class="mode-btn m-exist" id="btnModeExist">📦 Choisir dans le stock</button>
+      <button class="mode-btn"         id="btnModeNew">➕ Créer nouveau produit</button>
+    </div>
+    <div id="paneExist">
+      <div class="mfg" style="margin-bottom:10px">
+        <label>Rechercher (tous produits)</label>
+        <input id="i_search" placeholder="iPhone, Samsung... (min 2 lettres)">
+        <div class="search-results" id="i_results"></div>
+        <div class="sel-prod" id="i_selected"></div>
+      </div>
+      <div class="mgrid">
+        <div class="mfg"><label>Prix achat (€)</label><input type="number" id="i_price_e" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg"><label>Prix vente prévu (€)</label><input type="number" id="i_sell_e" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg full"><label>Notes</label><textarea id="i_notes_e" placeholder="État initial..."></textarea></div>
+      </div>
+    </div>
+    <div id="paneNew" style="display:none">
+      <div class="mgrid">
+        <div class="mfg full"><label>Nom *</label><input id="i_name" placeholder="Ex: iPhone 12 64Go Noir"></div>
+        <div class="mfg"><label>Catégorie</label>
+          <select id="i_cat"><option>Smartphone</option><option>Tablette</option><option>PC Portable</option><option>Audio</option><option>Accessoire Info</option><option>Autre</option></select>
+        </div>
+        <div class="mfg"><label>Grade</label>
+          <select id="i_grade">
+            <option value="">—</option><option>NEUF</option><option>Grade A+</option>
+            <option>Grade A</option><option>Grade B</option><option>Grade C</option>
+            <option>Grade D</option><option>Pour pièces</option>
+          </select>
+        </div>
+        <div class="mfg"><label>Couleur</label>
+          <select id="i_color"><option value="">—</option><option>Noir</option><option>Blanc</option><option>Gris</option><option>Argent</option><option>Or</option><option>Rose</option><option>Rouge</option><option>Bleu</option><option>Vert</option><option>Violet</option><option>Transparent</option></select>
+        </div>
+        <div class="mfg"><label>Fournisseur</label><input id="i_supplier" placeholder="Ex: Lot Mohamed"></div>
+        <div class="mfg"><label>Prix achat (€)</label><input type="number" id="i_price_n" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg"><label>Prix vente prévu (€)</label><input type="number" id="i_sell_n" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg full"><label>Notes</label><textarea id="i_notes_n" placeholder="État initial..."></textarea></div>
+      </div>
+      <div style="font-size:11px;color:#64748b;background:#f8fafc;padding:8px;border-radius:6px;margin-top:4px">ℹ️ Créé dans le stock en Occasion — visible dans les ventes quand statut = "Prêt à vendre"</div>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="btnCancelItem">Annuler</button>
+      <button class="mbtn mbtn-save"   id="btnSaveItem">✅ Ajouter au lot</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COÛT -->
+<div class="moverlay" id="mCost">
+  <div class="modal">
+    <h3>💸 Ajouter un coût</h3>
+    <div class="mgrid">
+      <div class="mfg full"><label>Appareil concerné</label><select id="c_item"><option value="">— Lot entier —</option></select></div>
+      <div class="mfg full"><label>Type de coût</label>
+        <select id="c_type">
+          <option value="piece">🔧 Pièce détachée (du stock)</option>
+          <option value="main_oeuvre">👷 Main d'œuvre interne (0€)</option>
+          <option value="reparateur_externe">🏪 Réparateur externe (payé)</option>
+          <option value="transport">🚚 Transport</option>
+          <option value="autre">📦 Autre frais</option>
+        </select>
+      </div>
+      <div class="mfg full" id="rowStock" style="display:none"><label>Pièce du stock</label><select id="c_prod"><option value="">— Choisir —</option></select></div>
+      <div class="mfg full"><label>Description *</label><input id="c_desc" placeholder="Ex: Écran iPhone 12..."></div>
+      <div class="mfg"><label>Montant (€)</label><input type="number" id="c_amount" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="mfg"><label>Quantité</label><input type="number" id="c_qty" value="1" min="1"></div>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="btnCancelCost">Annuler</button>
+      <button class="mbtn mbtn-save"   id="btnSaveCost">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmt = n => Number(n||0).toFixed(2) + ' €';
+const fmtSign = n => (n>=0?'+':'')+Number(n||0).toFixed(2)+' €';
+let lots=[], allProducts=[], currentLot=null, currentItems=[], itemMode='exist', selProdId=null;
+
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+/* ══ INIT ══ */
+async function init(){
+  try{
+    const [rl,rp]=await Promise.all([fetch('/api/lots'),fetch('/api/products')]);
+    lots=await rl.json(); allProducts=await rp.json();
+    renderLotList(); fillPiecesSelect();
+  }catch(e){
+    document.getElementById('lotList').innerHTML=`<div style="color:#ef4444;padding:16px;font-size:12px">❌ ${e.message}</div>`;
+  }
+}
+
+/* ══ LISTE ══ */
+function renderLotList(){
+  const div=document.getElementById('lotList');
+  if(!lots.length){div.innerHTML='<div style="text-align:center;color:#475569;padding:20px;font-size:12px">Aucun lot — créez votre premier lot ➕</div>';return;}
+  div.innerHTML=lots.map(l=>{
+    const invest=Number(l.total_cost||0)+Number(l.total_couts_sup||0);
+    const vendu=Number(l.total_ventes||0);
+    const profit=vendu-invest;
+    const pCls=profit>0?'pp':profit<0?'pn':'pz';
+    const isAct=currentLot&&currentLot.id===l.id;
+    return `<div class="lot-card${isAct?' active':''}" data-id="${l.id}">
+      <div class="lc-name">${l.name}</div>
+      <div class="lc-sub">${l.supplier_name||'—'} · ${new Date(l.purchase_date+'T00:00:00').toLocaleDateString('fr-FR')}</div>
+      <div class="lc-stats">
+        ${Number(l.nb_test||0)>0       ?`<span class="lb lb-test">${l.nb_test} test</span>`:''}
+        ${Number(l.nb_reparation||0)>0 ?`<span class="lb lb-rep">${l.nb_reparation} répar.</span>`:''}
+        ${Number(l.nb_stock||0)>0      ?`<span class="lb lb-stock">${l.nb_stock} stock</span>`:''}
+        ${Number(l.nb_vendus||0)>0     ?`<span class="lb lb-vendu">${l.nb_vendus} vendu</span>`:''}
+        ${Number(l.nb_irreparable||0)>0?`<span class="lb lb-irrep">${l.nb_irreparable} irrépar.</span>`:''}
+      </div>
+      <div class="lc-profit ${pCls}">${vendu>0?'Résultat : '+(profit>=0?'+':'')+profit.toFixed(2)+' €':'Pas encore de vente'}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.lot-card').forEach(card=>{
+    card.addEventListener('click',()=>loadLot(Number(card.dataset.id)));
+  });
+}
+
+/* ══ DETAIL LOT ══ */
+async function loadLot(id){
+  try{
+    const res=await fetch('/api/lots/'+id);
+    if(!res.ok)throw new Error('Erreur '+res.status);
+    const data=await res.json();
+    currentLot=data.lot; currentItems=data.items||[];
+    renderDetail(data);
+    const rl=await fetch('/api/lots');lots=await rl.json();renderLotList();
+  }catch(e){alert('❌ '+e.message);}
+}
+
+function renderDetail(data){
+  const l=data.lot, items=data.items||[], costs=data.costs||[];
+  const achat=Number(l.total_cost||0);
+  const totalCouts=costs.reduce((s,c)=>s+Number(c.amount||0),0);
+  const invested=achat+totalCouts;
+  const vendus=items.filter(i=>i.status==='VENDU');
+  const totalVendu=vendus.reduce((s,i)=>s+Number(i.sale_price||0),0);
+  const profit=totalVendu-invested;
+  const pColor=profit>=0?'#22c55e':'#ef4444';
+  const pending=items.filter(i=>!['VENDU','IRREPARABLE'].includes(i.status));
+
+  /* Prix achat moyen par appareil si prix global */
+  const nbItems=items.length;
+  const prixAchatParAppareil=(nbItems>0&&achat>0)?achat/nbItems:0;
+
+  const lCB=Number(l.amount_cb||0),lCash=Number(l.amount_cash||0),lCredit=Number(l.amount_credit||0);
+
+  document.getElementById('detail').innerHTML=`
+    <!-- EN-TÊTE -->
+    <div class="dcard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div style="font-size:17px;font-weight:bold;color:#0f172a">${l.name}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px">${l.supplier_name||'—'} · ${new Date(l.purchase_date+'T00:00:00').toLocaleDateString('fr-FR')} · <b>${l.status}</b></div>
+          ${l.supplier_phone?`<div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:12px;color:#64748b">📞 ${l.supplier_phone}</span>
+            <a href="tel:${l.supplier_phone.replace(/\s/g,'')}" style="padding:3px 9px;background:#16a34a;color:white;border-radius:5px;text-decoration:none;font-size:11px;font-weight:bold">📞 Appeler</a>
+            <a href="https://wa.me/${l.supplier_phone.replace(/[\s\.\-]/g,'').replace(/^0/,'33')}" target="_blank" style="padding:3px 9px;background:#25d366;color:white;border-radius:5px;text-decoration:none;font-size:11px;font-weight:bold">WhatsApp</a>
+          </div>`:''}
+          ${lCB>0||lCash>0||lCredit>0?`<div style="font-size:11px;color:#64748b;margin-top:4px">
+            Achat payé : ${lCB>0?`💳 ${fmt(lCB)} `:''}${lCash>0?`💵 ${fmt(lCash)} `:''}
+            ${lCredit>0?`<span style="color:#f59e0b">⏳ Reste ${fmt(lCredit)}</span>`:''}
+          </div>`:''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-blue btn-sm" onclick="openModalLot(${l.id})">✏️ Modifier</button>
+          <button class="btn-red  btn-sm" onclick="deleteLot(${l.id})">🗑</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="sbox blue"><div>Appareils</div><div class="sv">${items.length}</div></div>
+        <div class="sbox red"><div>Investi total</div><div class="sv">−${fmt(invested)}</div></div>
+        <div class="sbox green"><div>Encaissé</div><div class="sv">+${fmt(totalVendu)}</div></div>
+        <div class="sbox orange"><div>En attente</div><div class="sv">${pending.length}</div></div>
+        <div class="sbox purple"><div>Vendus</div><div class="sv">${vendus.length}/${items.length}</div></div>
+      </div>
+
+      <!-- RENTABILITÉ LOT -->
+      <div class="rent-bar">
+        <div class="ri"><div class="rv" style="color:#ef4444">−${fmt(achat)}</div><div class="rl">Achat lot</div></div>
+        <div class="rsep">+</div>
+        <div class="ri"><div class="rv" style="color:#ef4444">−${fmt(totalCouts)}</div><div class="rl">Frais répar.</div></div>
+        <div class="rsep">=</div>
+        <div class="ri"><div class="rv" style="color:#ef4444">−${fmt(invested)}</div><div class="rl">Investi</div></div>
+        <div class="rsep">vs</div>
+        <div class="ri"><div class="rv" style="color:#22c55e">+${fmt(totalVendu)}</div><div class="rl">Encaissé</div></div>
+        <div class="rsep">=</div>
+        <div class="rresult">
+          <div class="rv" style="color:${pColor}">${profit>=0?'+':''}${fmt(profit)}</div>
+          <div class="rl" style="color:#64748b">RÉSULTAT ${pending.length>0?'PARTIEL':'FINAL'}</div>
+        </div>
+      </div>
+      ${nbItems>0&&achat>0&&!items.some(i=>Number(i.purchase_price||0)>0)?`
+        <div style="font-size:11px;color:#64748b;margin-top:8px;background:#f8fafc;padding:6px 10px;border-radius:6px">
+          💡 Prix global réparti : environ <b>${fmt(prixAchatParAppareil)}</b> / appareil (${fmt(achat)} ÷ ${nbItems})
+        </div>`:''}
+      ${l.notes?`<div style="font-size:12px;color:#64748b;margin-top:10px;background:#f8fafc;padding:8px;border-radius:6px">💬 ${l.notes}</div>`:''}
+    </div>
+
+    <!-- APPAREILS AVEC RENTABILITÉ -->
+    <div class="dcard">
+      <h4>📱 Appareils &amp; Rentabilité par appareil
+        <button class="btn-green btn-sm" onclick="openModalItem()">➕ Ajouter</button>
+      </h4>
+      ${items.length===0
+        ?'<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Aucun appareil</div>'
+        :`<table class="items-table">
+          <thead>
+            <tr>
+              <th>Appareil</th>
+              <th>Statut</th>
+              <th>Achat</th>
+              <th>Frais répar.</th>
+              <th>Prix vendu</th>
+              <th>Rentabilité</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(it=>{
+              const itCosts=costs.filter(c=>c.lot_item_id===it.id);
+              const frais=itCosts.reduce((s,c)=>s+Number(c.amount||0),0);
+              /* Prix achat : individuel si renseigné, sinon part du lot */
+              const achatIndiv=Number(it.purchase_price||0);
+              const achatEffectif=achatIndiv>0?achatIndiv:prixAchatParAppareil;
+              const venduPrix=Number(it.sale_price||0);
+              const rentabilite=venduPrix-(achatEffectif+frais);
+              const estVendu=it.status==='VENDU';
+              const estIrrep=it.status==='IRREPARABLE';
+
+              let rentHtml='';
+              if(estVendu){
+                const rc=rentabilite>=0?'rent-pos':'rent-neg';
+                rentHtml=`<div class="${rc}">${fmtSign(rentabilite)}</div>
+                  <div class="rent-detail">
+                    <div class="rent-detail-row"><span>Vendu</span><span style="color:#22c55e">+${fmt(venduPrix)}</span></div>
+                    <div class="rent-detail-row"><span>Achat ${achatIndiv>0?'':'(réparti)'}</span><span style="color:#ef4444">−${fmt(achatEffectif)}</span></div>
+                    ${frais>0?`<div class="rent-detail-row"><span>Frais répar.</span><span style="color:#ef4444">−${fmt(frais)}</span></div>`:''}
+                    <div class="rent-detail-row total"><span>Résultat</span><span style="color:${rentabilite>=0?'#16a34a':'#ef4444'}">${fmtSign(rentabilite)}</span></div>
+                  </div>`;
+              }else if(estIrrep){
+                rentHtml=`<div class="rent-neg">−${fmt(achatEffectif+frais)}</div>
+                  <div class="rent-detail">
+                    <div class="rent-detail-row"><span>Achat ${achatIndiv>0?'':'(réparti)'}</span><span style="color:#ef4444">−${fmt(achatEffectif)}</span></div>
+                    ${frais>0?`<div class="rent-detail-row"><span>Frais</span><span style="color:#ef4444">−${fmt(frais)}</span></div>`:''}
+                    <div class="rent-detail-row total"><span>Perte</span><span style="color:#ef4444">−${fmt(achatEffectif+frais)}</span></div>
+                  </div>`;
+              }else{
+                rentHtml=`<div class="rent-pending">En cours…<br>Coûts actuels : −${fmt(achatEffectif+frais)}</div>`;
+              }
+
+              return `<tr>
+                <td>
+                  <div style="font-weight:bold;font-size:13px">${it.name}</div>
+                  ${it.notes?`<div style="font-size:11px;color:#64748b">💬 ${it.notes}</div>`:''}
+                </td>
+                <td><span class="st-badge st-${it.status}">${{EN_TEST:'🔍 Test',EN_REPARATION:'🔧 Répar.',EN_STOCK:'📦 Stock',VENDU:'✅ Vendu',IRREPARABLE:'❌ Irrépar.'}[it.status]||it.status}</span></td>
+                <td>${achatIndiv>0?fmt(achatIndiv):`<span style="color:#94a3b8;font-size:11px">~${fmt(prixAchatParAppareil)}</span>`}</td>
+                <td>${frais>0?`<span style="color:#ef4444">−${fmt(frais)}</span>`:'<span style="color:#94a3b8">—</span>'}</td>
+                <td>${estVendu?`<b style="color:#22c55e">+${fmt(venduPrix)}</b>`:'<span style="color:#94a3b8">—</span>'}</td>
+                <td>${rentHtml}</td>
+                <td>
+                  <select class="st-sel" onchange="changeStatus(${it.id},this.value)">
+                    <option value="EN_TEST"       ${it.status==='EN_TEST'       ?'selected':''}>🔍 Test</option>
+                    <option value="EN_REPARATION" ${it.status==='EN_REPARATION' ?'selected':''}>🔧 Répar.</option>
+                    <option value="EN_STOCK"      ${it.status==='EN_STOCK'      ?'selected':''}>📦 Stock</option>
+                    <option value="VENDU"         ${it.status==='VENDU'         ?'selected':''}>✅ Vendu</option>
+                    <option value="IRREPARABLE"   ${it.status==='IRREPARABLE'   ?'selected':''}>❌ Irrépar.</option>
+                  </select>
+                  <button class="btn-orange btn-sm" style="margin-top:4px" onclick="openModalCost(${it.id})">💸</button>
+                  <button onclick="editNote(${it.id})" style="margin-top:4px;padding:4px 8px;background:#f1f5f9;color:#374151;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:Arial">✏️</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`}
+    </div>
+
+    <!-- COÛTS -->
+    <div class="dcard">
+      <h4>💸 Coûts &amp; Frais
+        <button class="btn-orange btn-sm" onclick="openModalCost(null)">➕ Ajouter</button>
+      </h4>
+      ${costs.length===0
+        ?'<div style="text-align:center;color:#94a3b8;padding:12px;font-size:13px">Aucun coût</div>'
+        :costs.map(c=>{
+          const cls={piece:'ct-piece',main_oeuvre:'ct-mo',reparateur_externe:'ct-ext',autre:'ct-autre'}[c.cost_type]||'ct-autre';
+          const lbl={piece:'Pièce',main_oeuvre:'M.O.',reparateur_externe:'Ext.',transport:'Transport',autre:'Autre'}[c.cost_type]||'—';
+          const itName=c.lot_item_id?(currentItems.find(i=>i.id===c.lot_item_id)?.name||'—'):'Lot entier';
+          return `<div class="cost-row">
+            <div><span class="ctag ${cls}">${lbl}</span><b style="margin-left:6px">${c.description}</b><span style="font-size:10px;color:#94a3b8;margin-left:6px">${itName}</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <b style="color:#ef4444">−${fmt(c.amount)}</b>
+              <button onclick="deleteCost(${c.id})" style="background:#fee2e2;color:#ef4444;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;font-family:Arial">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      <div style="text-align:right;font-size:12px;font-weight:bold;margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
+        Achat lot : <span style="color:#ef4444">−${fmt(achat)}</span> + Frais : <span style="color:#ef4444">−${fmt(totalCouts)}</span> = <b>−${fmt(invested)}</b>
+      </div>
+    </div>
+  `;
+}
+
+/* ══ STATUT ══ */
+async function changeStatus(id,status){
+  const body={status};
+  if(status==='VENDU'){const p=prompt('Prix de vente (€) ?');if(p===null){loadLot(currentLot.id);return;}body.sale_price=Number(p);}
+  await fetch('/api/lots/items/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  loadLot(currentLot.id);
+}
+
+async function editNote(id){
+  const it=currentItems.find(i=>i.id===id);
+  const n=prompt('Note sur cet appareil :',it?.notes||'');
+  if(n===null)return;
+  await fetch('/api/lots/items/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:it?.status||'EN_TEST',notes:n})});
+  loadLot(currentLot.id);
+}
+
+/* ══ MODAL LOT ══ */
+function calcLotPay(){
+  const total=Number(document.getElementById('l_cost').value||0);
+  const cb=Number(document.getElementById('l_cb').value||0);
+  const cash=Number(document.getElementById('l_cash').value||0);
+  const rest=Math.max(0,total-cb-cash);
+  document.getElementById('l_credit').value=rest.toFixed(2);
+  document.getElementById('l_pay_total').textContent=total.toFixed(2)+' €';
+  document.getElementById('l_pay_paid').textContent=(cb+cash).toFixed(2)+' €';
+  document.getElementById('l_pay_rest').textContent=rest.toFixed(2)+' €';
+}
+
+function openModalLot(id){
+  document.getElementById('l_id').value=id||'';
+  document.getElementById('l_date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('l_status').value='EN_COURS';
+  ['l_name','l_supplier','l_supplier_phone','l_cost','l_notes','l_cb','l_cash'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('l_credit').value='0.00';
+  calcLotPay();
+  document.getElementById('mLotTitle').textContent=id?'✏️ Modifier le lot':'➕ Nouveau lot';
+  if(id){
+    const lot=lots.find(l=>l.id===id)||currentLot;
+    if(lot){
+      document.getElementById('l_name').value          =lot.name||'';
+      document.getElementById('l_supplier').value      =lot.supplier_name||'';
+      document.getElementById('l_supplier_phone').value=lot.supplier_phone||'';
+      document.getElementById('l_date').value          =(lot.purchase_date||'').slice(0,10);
+      document.getElementById('l_cost').value          =lot.total_cost||'';
+      document.getElementById('l_status').value        =lot.status||'EN_COURS';
+      document.getElementById('l_notes').value         =lot.notes||'';
+      document.getElementById('l_cb').value            =lot.amount_cb||'';
+      document.getElementById('l_cash').value          =lot.amount_cash||'';
+      document.getElementById('l_credit').value        =lot.amount_credit||'0.00';
+      calcLotPay();
+    }
+  }
+  document.getElementById('mLot').classList.add('show');
+  setTimeout(()=>document.getElementById('l_name').focus(),100);
+}
+
+async function saveLot(){
+  const id=document.getElementById('l_id').value;
+  const name=document.getElementById('l_name').value.trim();
+  if(!name){alert('⚠️ Nom du lot obligatoire');return;}
+  const body={name,
+    supplier_name:  document.getElementById('l_supplier').value,
+    supplier_phone: document.getElementById('l_supplier_phone').value||null,
+    purchase_date:  document.getElementById('l_date').value||new Date().toISOString().split('T')[0],
+    total_cost:     Number(document.getElementById('l_cost').value||0),
+    amount_cb:      Number(document.getElementById('l_cb').value||0),
+    amount_cash:    Number(document.getElementById('l_cash').value||0),
+    amount_credit:  Number(document.getElementById('l_credit').value||0),
+    notes:          document.getElementById('l_notes').value,
+    status:         document.getElementById('l_status').value,
+  };
+  try{
+    const res=await fetch(id?'/api/lots/'+id:'/api/lots',{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const ct=res.headers.get('content-type')||'';
+    if(!ct.includes('json')){const t=await res.text();throw new Error(t.slice(0,150));}
+    const d=await res.json();if(d.error)throw new Error(d.error);
+    closeModal('mLot');await init();
+    if(d.id)loadLot(d.id);else if(id)loadLot(Number(id));
+  }catch(e){alert('❌ '+e.message);}
+}
+
+/* ══ MODAL APPAREIL ══ */
+function setItemMode(mode){
+  itemMode=mode;
+  document.getElementById('paneExist').style.display=mode==='exist'?'block':'none';
+  document.getElementById('paneNew').style.display  =mode==='new'  ?'block':'none';
+  document.getElementById('btnModeExist').className='mode-btn'+(mode==='exist'?' m-exist':'');
+  document.getElementById('btnModeNew').className  ='mode-btn'+(mode==='new'  ?' m-new':'');
+}
+
+function searchProd(){
+  const q=document.getElementById('i_search').value.toLowerCase().trim();
+  const resDiv=document.getElementById('i_results');
+  selProdId=null;document.getElementById('i_selected').style.display='none';
+  if(q.length<2){resDiv.style.display='none';return;}
+  const CAT=['Smartphone','Tablette','PC Portable'];
+  const hits=allProducts.filter(p=>
+    p.name.toLowerCase().includes(q)||(p.color||'').toLowerCase().includes(q)||
+    (p.category||'').toLowerCase().includes(q)||(p.supplier_name||'').toLowerCase().includes(q)
+  ).sort((a,b)=>{const ap=CAT.includes(a.category)?0:1,bp=CAT.includes(b.category)?0:1;return ap-bp||a.name.localeCompare(b.name);}).slice(0,20);
+  resDiv.style.display='block';
+  resDiv.innerHTML=hits.length===0?'<div style="padding:10px;color:#94a3b8;font-size:12px">Aucun résultat</div>'
+    :hits.map(p=>{const qty=parseInt(p.stock_quantity||0);return `<div class="search-item" onclick="pickProd(${p.id})">
+      <div><b>${p.name}</b><br><span style="font-size:10px;color:#64748b">${p.category||''}${p.color?' · '+p.color:''}${p.grade?' · '+p.grade:''}</span></div>
+      <span style="font-size:11px;color:${qty===0?'#f59e0b':'#16a34a'};font-weight:bold">${qty===0?'⚠️ 0':'✅ '+qty}</span>
+    </div>`;}).join('');
+}
+
+function pickProd(id){
+  const p=allProducts.find(x=>x.id===id);if(!p)return;
+  selProdId=id;
+  document.getElementById('i_search').value=p.name;
+  document.getElementById('i_results').style.display='none';
+  document.getElementById('i_sell_e').value=p.sale_price||'';
+  const sel=document.getElementById('i_selected');
+  sel.style.display='block';
+  sel.innerHTML=`✅ <b>${p.name}</b> ${p.color?'· '+p.color:''} ${p.grade?'· '+p.grade:''}<br><span style="font-size:11px;color:#64748b">Stock : ${p.stock_quantity||0} · Prix vente : ${Number(p.sale_price||0).toFixed(2)} €</span>`;
+}
+
+async function openModalItem(){
+  selProdId=null;
+  try{allProducts=await fetch('/api/products').then(r=>r.json());}catch(e){}
+  ['i_search','i_price_e','i_sell_e','i_notes_e','i_name','i_price_n','i_sell_n','i_notes_n','i_supplier']
+    .forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  document.getElementById('i_results').style.display='none';
+  document.getElementById('i_selected').style.display='none';
+  document.getElementById('i_cat').value='Smartphone';
+  document.getElementById('i_color').value='';
+  document.getElementById('i_grade').value='';
+  if(currentLot)document.getElementById('i_supplier').value='Lot: '+currentLot.name;
+  setItemMode('exist');
+  document.getElementById('mItem').classList.add('show');
+  setTimeout(()=>document.getElementById('i_search').focus(),100);
+}
+
+async function saveItem(){
+  if(!currentLot)return;
+  try{
+    let body;
+    if(itemMode==='exist'){
+      if(!selProdId){alert('⚠️ Sélectionnez un produit');return;}
+      body={product_id:selProdId,purchase_price:Number(document.getElementById('i_price_e').value||0),sale_price:Number(document.getElementById('i_sell_e').value||0),notes:document.getElementById('i_notes_e').value};
+    }else{
+      const name=document.getElementById('i_name').value.trim();
+      if(!name){alert('⚠️ Nom obligatoire');return;}
+      body={name,category:document.getElementById('i_cat').value,color:document.getElementById('i_color').value,grade:document.getElementById('i_grade').value||null,supplier_name:document.getElementById('i_supplier').value,purchase_price:Number(document.getElementById('i_price_n').value||0),sale_price:Number(document.getElementById('i_sell_n').value||0),notes:document.getElementById('i_notes_n').value};
+    }
+    const res=await fetch('/api/lots/'+currentLot.id+'/items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await res.json();if(d.error)throw new Error(d.error);
+    closeModal('mItem');allProducts=await fetch('/api/products').then(r=>r.json());
+    loadLot(currentLot.id);
+  }catch(e){alert('❌ '+e.message);}
+}
+
+/* ══ MODAL COÛT ══ */
+function fillPiecesSelect(){
+  const sel=document.getElementById('c_prod');
+  const pieces=allProducts.filter(p=>p.category==='Pièce détachée'&&parseInt(p.stock_quantity||0)>0);
+  sel.innerHTML='<option value="">— Choisir —</option>'+pieces.map(p=>`<option value="${p.id}" data-price="${p.purchase_price||0}">${p.name} (${p.stock_quantity})</option>`).join('');
+}
+
+function openModalCost(itemId){
+  const sel=document.getElementById('c_item');
+  sel.innerHTML='<option value="">— Lot entier —</option>'+currentItems.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
+  if(itemId)sel.value=itemId;
+  ['c_desc','c_amount'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('c_qty').value='1';document.getElementById('c_type').value='piece';
+  document.getElementById('rowStock').style.display='block';
+  document.getElementById('mCost').classList.add('show');
+}
+
+async function saveCost(){
+  const desc=document.getElementById('c_desc').value.trim();
+  if(!desc){alert('⚠️ Description obligatoire');return;}
+  const type=document.getElementById('c_type').value;
+  const pid=type==='piece'?document.getElementById('c_prod').value:null;
+  try{
+    const res=await fetch('/api/lots/'+currentLot.id+'/costs',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lot_item_id:document.getElementById('c_item').value||null,description:desc,amount:Number(document.getElementById('c_amount').value||0),cost_type:type,repair_type:type==='reparateur_externe'?'externe':'interne',product_id:pid||null,quantity:Number(document.getElementById('c_qty').value||1)})});
+    const d=await res.json();if(d.error)throw new Error(d.error);
+    closeModal('mCost');allProducts=await fetch('/api/products').then(r=>r.json());fillPiecesSelect();loadLot(currentLot.id);
+  }catch(e){alert('❌ '+e.message);}
+}
+
+async function deleteCost(id){
+  if(!confirm('Supprimer ce coût ?'))return;
+  await fetch('/api/lots/costs/'+id,{method:'DELETE'});loadLot(currentLot.id);
+}
+
+async function deleteLot(id){
+  if(!confirm('Supprimer ce lot ?'))return;
+  await fetch('/api/lots/'+id,{method:'DELETE'});
+  currentLot=null;document.getElementById('detail').innerHTML='<div class="empty-detail">← Sélectionnez un lot</div>';init();
+}
+
+/* ══ EVENTS ══ */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('btnNewLot').addEventListener('click',()=>openModalLot(null));
+  document.getElementById('btnSaveLot').addEventListener('click',saveLot);
+  document.getElementById('btnCancelLot').addEventListener('click',()=>closeModal('mLot'));
+  document.getElementById('l_cost').addEventListener('input',calcLotPay);
+  document.getElementById('l_cb').addEventListener('input',calcLotPay);
+  document.getElementById('l_cash').addEventListener('input',calcLotPay);
+  document.getElementById('btnModeExist').addEventListener('click',()=>setItemMode('exist'));
+  document.getElementById('btnModeNew').addEventListener('click',()=>setItemMode('new'));
+  document.getElementById('i_search').addEventListener('input',searchProd);
+  document.getElementById('btnSaveItem').addEventListener('click',saveItem);
+  document.getElementById('btnCancelItem').addEventListener('click',()=>closeModal('mItem'));
+  document.getElementById('c_type').addEventListener('change',()=>{
+    const t=document.getElementById('c_type').value;
+    document.getElementById('rowStock').style.display=t==='piece'?'block':'none';
+    if(t==='main_oeuvre')document.getElementById('c_amount').value='0';
+  });
+  document.getElementById('c_prod').addEventListener('change',()=>{
+    const opt=document.getElementById('c_prod').selectedOptions[0];
+    if(opt&&opt.value){document.getElementById('c_desc').value=opt.text.split('(')[0].trim();document.getElementById('c_amount').value=opt.dataset.price||'0';}
+  });
+  document.getElementById('btnSaveCost').addEventListener('click',saveCost);
+  document.getElementById('btnCancelCost').addEventListener('click',()=>closeModal('mCost'));
+  init();
+});
+</script>
+</body>
+</html>

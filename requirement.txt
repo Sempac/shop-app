@@ -1,0 +1,54 @@
+
+
+http://192.168.30.186:3000
+
+
+
+ajout produit carte sim: lica, free, lebara...
+alerte diminution stock
+
+module impression, je n ai as encore de qr code, juste ça qui s affiche: 
+Le client scanne ce QR code pour envoyer son document
+http://localhost:3000/printshop.html
+👉 Affichez ce QR code à la caisse. Le client scanne, sélectionne son fichier, et il apparaît directement dans la file d'attente ci-contre.
+
+et j ai ce message quand j envoie l impression: ❌ Erreur : Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+
+
+module vente: mettre laffichage des  catégories un peu plus gros
+module vente/ si produit vendu non déclaré, proposes moi l inetrface d'ajout rapide
+module vente: Dans lz page vente si je trouve pas un produit au stock, yu me le cherche directement chez 2 fournisseurs, nous avons un accès pro à la plate-forme de ces 2 fournisseurs, il faut un compte que nous avons déjà pour accéder, comme ça le produit est affiché avdc comparaison entre ces 2 fournisseur
+module vente: pour les paiement mixte: mettre combien espece et combien en cb, et s il y a un reste à payer aussi
+ par exemple client achete un telephone à 120 €: paie 60 par CB, 40 especes et 20 reste à payer prochainement
+
+Appeler les clients ou fournisseur depuis l appli, voir si l offre freebox pro propose ce service voip ou autre
+
+
+- gestion users,user admin , accès aux modules  mettre en place un système de rôles et permissions dans ton application de caisse :
+Responsable / Admin
+(accès aux bénéfices marge chiffre d’affaires détaillé frais fixes (loyer, assurance, banque, internet, salaires…) statistiques avancées export comptable modification des prix d’achat suppression d’opérations Vendeur / Employé uniquement : vente recherche produit scan code-barres impression ticket consultation stock limitée
+
+Comme ça :
+
+un vendeur ne voit jamais :
+les bénéfices la marge réelle les coûts fournisseurs les charges les statistiques sensibles.
+je veux pas non plus que cet ajout me bloque et me demande à chaque fois un mot de passe pour continuer le developpement qui est en cours
+
+
+verrouillage de la base postgre
+
+
+*************************************************************
+************************************************************
+************************************************************
+ajouter la date et l heure sur la page d'accueil avec un format grand et joli
+ajouter numéro de rayon et l emplacement des produit par exemple de armoire 1 tirroir 2 GAUCHE? ou presentoir 1, colonne 1 ligne ou rangée 3;
+ajouter couleur du produit pour pouvoir suivre par exemple lesquels des couleurs des coques partent en premier, du coup  il y aura la couleur dans le stock et dans la vente aussi. pour la couleur je prefere le choix dans une liste quand je saisi un produit au lieu d un saisie libre
+manque module stocks 
+
+*****************************
+*****************************
+pour test, ajoute moi des couleurs sur le stock existant pour tester al recherche avec couleur
+ajouter la recherche et les appels clients depuis le numéro stocké dans l appli , cliquer de numéro dans l appli quand réparation est faite depuis l interface directement, en cliquant el numéro ou un bouton appeler client,mets moi le plus siple  
+
+

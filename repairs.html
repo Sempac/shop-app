@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SAV - Réparations</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;}
+.container{display:flex;height:100vh;}
+
+/* LEFT */
+.left{width:52%;border-right:1px solid #334155;padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px;}
+.home-btn{width:100%;padding:14px;background:#1e40af;color:white;border:none;font-size:15px;font-weight:bold;border-radius:8px;cursor:pointer;font-family:Arial;}
+.search-row{display:flex;gap:6px;}
+.search-row input{flex:1;padding:9px 12px;border-radius:6px;border:none;font-size:13px;background:#1e293b;color:white;}
+.search-row input::placeholder{color:#475569;}
+.search-btn{padding:9px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-family:Arial;}
+
+table.rl{width:100%;border-collapse:collapse;font-size:12px;}
+table.rl th{background:#1e293b;color:#94a3b8;padding:8px 10px;text-align:left;border-bottom:2px solid #334155;white-space:nowrap;}
+table.rl td{padding:8px 10px;border-bottom:1px solid #1e293b;color:#e2e8f0;cursor:pointer;}
+table.rl tr:hover td{background:#1e293b;}
+table.rl tr.selected td{background:#1e3a8a44;}
+.sbadge{font-size:10px;padding:3px 8px;border-radius:5px;font-weight:bold;display:inline-block;}
+.EN_ATTENTE{background:#3b82f6;color:white;}
+.EN_COURS  {background:#f59e0b;color:white;}
+.TERMINE   {background:#16a34a;color:white;}
+.LIVRE     {background:#7c3aed;color:white;}
+
+/* RIGHT */
+.right{flex:1;padding:16px 20px;overflow:auto;}
+.tabs{display:flex;gap:6px;margin-bottom:14px;}
+.tab-btn{padding:9px 18px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;background:#1e293b;color:#94a3b8;font-family:Arial;}
+.tab-btn.active{background:#3b82f6;color:white;}
+.form-section{display:none;}
+.form-section.active{display:block;}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg.full{grid-column:1/span 2;}
+.fg label{font-size:11px;color:#94a3b8;font-weight:bold;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:white;font-size:13px;font-family:Arial;}
+.fg textarea{height:65px;resize:vertical;}
+
+button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
+.btn-green {background:#22c55e;color:white;}
+.btn-blue  {background:#3b82f6;color:white;}
+.btn-red   {background:#ef4444;color:white;}
+.btn-orange{background:#f59e0b;color:white;}
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+hr{border:1px solid #334155;margin:12px 0;}
+
+.dbox{background:#1e293b;padding:10px 12px;border-radius:6px;font-size:13px;margin-bottom:6px;}
+.dbox .lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:bold;margin-bottom:3px;}
+
+/* Barre contact */
+.contact-bar{background:#1e293b;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.contact-bar .cname{font-size:14px;font-weight:bold;color:white;}
+.contact-bar .cphone{font-size:12px;color:#94a3b8;}
+.ready-badge{background:#16a34a;color:white;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:bold;}
+
+/* Paiement */
+.pay-section{background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:14px;margin-bottom:12px;}
+.pay-section h4{margin:0 0 10px;font-size:12px;color:#94a3b8;text-transform:uppercase;}
+.pay-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.pf label{font-size:10px;color:#94a3b8;font-weight:bold;display:block;margin-bottom:3px;}
+.pf input{width:100%;padding:9px;border:1.5px solid #334155;border-radius:6px;font-size:13px;background:#1e293b;color:white;font-family:Arial;}
+.pf.credit input{border-color:#f59e0b;background:#1c1407;color:#fcd34d;font-weight:bold;}
+.pay-recap{margin-top:8px;font-size:11px;color:#64748b;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+.pay-err{font-size:11px;color:#ef4444;margin-top:5px;display:none;}
+
+/* Boutons contact inline */
+.cb-btn{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;font-family:Arial;}
+.cb-call{background:#16a34a;color:white;}
+.cb-sms {background:#2563eb;color:white;}
+.cb-wa  {background:#25d366;color:white;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- LEFT -->
+<div class="left">
+  <button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+  <div class="search-row">
+    <input id="searchInput" placeholder="Client, tél, ID, marque, modèle...">
+    <button class="search-btn" onclick="doSearch()">🔎</button>
+  </div>
+  <table class="rl">
+    <thead><tr><th>#</th><th>Client</th><th>Tél</th><th>Marque</th><th>Modèle</th><th>Statut</th></tr></thead>
+    <tbody id="repairList"></tbody>
+  </table>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="tabs">
+    <button class="tab-btn active" id="tabNew"    onclick="showTab('new')">➕ Nouvelle réparation</button>
+    <button class="tab-btn"        id="tabDetail" onclick="showTab('detail')" style="display:none">📋 Détail / Modifier</button>
+  </div>
+
+  <!-- NOUVELLE RÉPA -->
+  <div class="form-section active" id="secNew">
+    <div class="form-grid">
+      <div class="fg"><label>Nom client</label><input id="n_customer" placeholder="Ex: Jean Dupont"></div>
+      <div class="fg"><label>Téléphone</label><input id="n_phone" placeholder="06 XX XX XX XX"></div>
+      <div class="fg"><label>Type d'appareil</label><input id="n_device" placeholder="Smartphone, Tablette, PC..."></div>
+      <div class="fg"><label>Marque</label><input id="n_brand" placeholder="Apple, Samsung..."></div>
+      <div class="fg"><label>Modèle</label><input id="n_model" placeholder="iPhone 14, S23..."></div>
+      <div class="fg"><label>N° de série</label><input id="n_serial" placeholder="IMEI / S/N"></div>
+      <div class="fg full"><label>Panne / Problème</label><input id="n_issue" placeholder="Ex: Écran cassé, batterie HS..."></div>
+      <div class="fg"><label>Prix estimé (€)</label><input id="n_price" type="number" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg full"><label>Commentaire interne</label><textarea id="n_comment" placeholder="Notes..."></textarea></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-green" onclick="createRepair()">✅ Créer réparation</button>
+      <button class="btn-red"   onclick="resetForm()">🔄 Réinitialiser</button>
+    </div>
+  </div>
+
+  <!-- DÉTAIL -->
+  <div class="form-section" id="secDetail">
+    <div id="detailView"></div>
+  </div>
+</div>
+
+</div>
+<script>
+let currentId=null, selRow=null;
+
+function showTab(tab){
+  document.getElementById('secNew').classList.toggle('active', tab==='new');
+  document.getElementById('secDetail').classList.toggle('active', tab==='detail');
+  document.getElementById('tabNew').classList.toggle('active', tab==='new');
+  document.getElementById('tabDetail').classList.toggle('active', tab==='detail');
+}
+
+/* ── LISTE ── */
+async function loadRepairs(){
+  const res=await fetch('/api/repairs');
+  renderList(await res.json());
+}
+
+async function doSearch(){
+  const q=document.getElementById('searchInput').value;
+  const res=await fetch('/api/repairs/search?q='+encodeURIComponent(q));
+  renderList(await res.json());
+}
+
+/* Recherche sur Enter */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('searchInput').addEventListener('keydown', e=>{if(e.key==='Enter')doSearch();});
+});
+
+function renderList(data){
+  const tbody=document.getElementById('repairList');
+  if(!data.length){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px">Aucune réparation</td></tr>';
+    return;
+  }
+  tbody.innerHTML=data.map(r=>`
+    <tr data-id="${r.id}" class="${r.id===currentId?'selected':''}">
+      <td><b>#${r.id}</b></td>
+      <td>${r.customer_name||'—'}</td>
+      <td>${r.phone||'—'}</td>
+      <td>${r.brand||'—'}</td>
+      <td>${r.model||'—'}</td>
+      <td><span class="sbadge ${r.status||''}">${r.status||'—'}</span></td>
+    </tr>`).join('');
+
+  /* Attacher les clics */
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      if(selRow) selRow.classList.remove('selected');
+      tr.classList.add('selected');
+      selRow=tr;
+      showRepair(Number(tr.dataset.id));
+    });
+  });
+}
+
+/* ── DÉTAIL ── */
+async function showRepair(id){
+  currentId=id;
+  const r=await fetch('/api/repairs/'+id).then(x=>x.json());
+  document.getElementById('tabDetail').style.display='inline-block';
+  showTab('detail');
+
+  const fp  =Number(r.final_price||r.estimated_price||0);
+  const cb  =Number(r.amount_cb||0);
+  const cash=Number(r.amount_cash||0);
+  const cred=Number(r.amount_credit||0);
+
+  /* Boutons contact */
+  const phone=r.phone||'';
+  let contactHtml='';
+  if(phone){
+    const intl=phone.replace(/[\s\.\-]/g,'').replace(/^0/,'33');
+    const msg=encodeURIComponent(`Bonjour ${r.customer_name||''}, c'est The SMARTPHONE. `);
+    contactHtml=`
+      <a class="cb-btn cb-call" href="tel:${phone.replace(/\s/g,'')}">📞 Appeler</a>
+      <a class="cb-btn cb-sms"  href="sms:${phone.replace(/\s/g,'')}&body=${msg}">💬 SMS</a>
+      <a class="cb-btn cb-wa"   href="https://wa.me/${intl}?text=${msg}" target="_blank">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>`;
+  }
+
+  document.getElementById('detailView').innerHTML=`
+    <h3 style="margin-top:0;margin-bottom:10px;color:white">
+      🔧 Réparation #${r.id}
+      <span class="sbadge ${r.status}" style="margin-left:8px">${r.status}</span>
+    </h3>
+
+    <!-- CONTACT CLIENT -->
+    <div class="contact-bar">
+      <div>
+        <div class="cname">👤 ${r.customer_name||'—'}</div>
+        <div class="cphone">${phone||'Pas de numéro'}</div>
+      </div>
+      ${contactHtml}
+      ${r.status==='TERMINE'?'<span class="ready-badge">✅ Prêt — Prévenez le client !</span>':''}
+    </div>
+
+    <!-- INFOS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div class="dbox"><div class="lbl">Marque / Modèle</div>${r.brand||'—'} ${r.model||''}</div>
+      <div class="dbox"><div class="lbl">Type</div>${r.device_type||'—'}</div>
+      <div class="dbox"><div class="lbl">N° série</div>${r.serial_number||'—'}</div>
+      <div class="dbox"><div class="lbl">Prix estimé</div>${Number(r.estimated_price||0).toFixed(2)} €</div>
+      <div class="dbox" style="grid-column:1/span 2"><div class="lbl">Panne</div>${r.issue||'—'}</div>
+      ${r.comment?`<div class="dbox" style="grid-column:1/span 2"><div class="lbl">Commentaire</div>${r.comment}</div>`:''}
+    </div>
+
+    <hr>
+    <h4 style="margin:0 0 12px;color:white">✏️ Modifier</h4>
+
+    <div class="form-grid">
+      <div class="fg"><label>Nom client</label>
+        <input id="e_customer" value="${r.customer_name||''}">
+      </div>
+      <div class="fg"><label>Téléphone</label>
+        <input id="e_phone" value="${r.phone||''}">
+      </div>
+      <div class="fg"><label>Type d'appareil</label>
+        <input id="e_device" value="${r.device_type||''}">
+      </div>
+      <div class="fg"><label>Marque</label>
+        <input id="e_brand" value="${r.brand||''}">
+      </div>
+      <div class="fg"><label>Modèle</label>
+        <input id="e_model" value="${r.model||''}">
+      </div>
+      <div class="fg"><label>N° de série</label>
+        <input id="e_serial" value="${r.serial_number||''}">
+      </div>
+      <div class="fg full"><label>Panne / Problème</label>
+        <input id="e_issue" value="${r.issue||''}">
+      </div>
+      <div class="fg full"><label>Commentaire interne</label>
+        <textarea id="e_comment">${r.comment||''}</textarea>
+      </div>
+      <div class="fg">
+        <label>Statut</label>
+        <select id="e_status">
+          <option value="EN_ATTENTE" ${r.status==='EN_ATTENTE'?'selected':''}>EN_ATTENTE</option>
+          <option value="EN_COURS"   ${r.status==='EN_COURS'  ?'selected':''}>EN_COURS</option>
+          <option value="TERMINE"    ${r.status==='TERMINE'   ?'selected':''}>TERMINE</option>
+          <option value="LIVRE"      ${r.status==='LIVRE'     ?'selected':''}>LIVRE</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Prix estimé (€)</label>
+        <input id="e_estimated" type="number" value="${Number(r.estimated_price||0)}" min="0" step="0.01">
+      </div>
+      <div class="fg">
+        <label>Prix final (€)</label>
+        <input id="e_final" type="number" value="${fp}" min="0" step="0.01" oninput="calcRepPay()">
+      </div>
+    </div>
+
+    <div class="pay-section">
+      <h4>💰 Règlement client</h4>
+      <div class="pay-grid">
+        <div class="pf"><label>💳 CB (€)</label>
+          <input type="number" id="e_cb"   value="${cb}"   min="0" step="0.01" oninput="calcRepPay()">
+        </div>
+        <div class="pf"><label>💵 Espèces (€)</label>
+          <input type="number" id="e_cash" value="${cash}" min="0" step="0.01" oninput="calcRepPay()">
+        </div>
+        <div class="pf credit"><label>⏳ Crédit (reste)</label>
+          <input type="number" id="e_credit" value="${cred}" min="0" readonly>
+        </div>
+      </div>
+      <div class="pay-recap">
+        <span>Prix : <b id="rp_tot">${fp.toFixed(2)} €</b></span>
+        <span>Encaissé : <b id="rp_paid" style="color:#22c55e">${(cb+cash).toFixed(2)} €</b></span>
+        <span>Crédit : <b id="rp_cred" style="color:#f59e0b">${cred.toFixed(2)} €</b></span>
+      </div>
+      <div class="pay-err" id="rp_err">⚠️ CB + Espèces dépasse le prix !</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-blue"   id="btnSaveRepair">💾 Enregistrer</button>
+      <button class="btn-orange" id="btnPrintSAV">🧾 Ticket SAV</button>
+      <button class="btn-red"    id="btnDeleteRepair">🗑 Supprimer</button>
+    </div>
+  `;
+
+  /* Attacher les événements après injection HTML */
+  setTimeout(() => {
+    const btnSave   = document.getElementById('btnSaveRepair');
+    const btnPrint  = document.getElementById('btnPrintSAV');
+    const btnDelete = document.getElementById('btnDeleteRepair');
+    if (btnSave)   btnSave.addEventListener('click',   () => updateRepair(id));
+    if (btnPrint)  btnPrint.addEventListener('click',  () => printSAV(r));
+    if (btnDelete) btnDelete.addEventListener('click', () => deleteRepair(id));
+  }, 0);
+}
+
+function calcRepPay(){
+  const total=Number(document.getElementById('e_final')?.value||0);
+  const cb   =Number(document.getElementById('e_cb')?.value||0);
+  const cash =Number(document.getElementById('e_cash')?.value||0);
+  const paid=cb+cash, rest=Math.max(0,total-paid);
+  if(document.getElementById('e_credit')) document.getElementById('e_credit').value=rest.toFixed(2);
+  if(document.getElementById('rp_tot'))   document.getElementById('rp_tot').textContent=total.toFixed(2)+' €';
+  if(document.getElementById('rp_paid'))  document.getElementById('rp_paid').textContent=paid.toFixed(2)+' €';
+  if(document.getElementById('rp_cred'))  document.getElementById('rp_cred').textContent=rest.toFixed(2)+' €';
+  const errEl=document.getElementById('rp_err');
+  if(errEl) errEl.style.display=paid>total+0.01?'block':'none';
+}
+
+async function updateRepair(id){
+  const fp  =Number(document.getElementById('e_final').value||0);
+  const cb  =Number(document.getElementById('e_cb').value||0);
+  const cash=Number(document.getElementById('e_cash').value||0);
+  if(cb+cash>fp+0.01){alert('⚠️ CB + Espèces dépasse le prix !');return;}
+  const credit=Math.max(0,fp-cb-cash);
+  const status=document.getElementById('e_status').value;
+  const res=await fetch('/api/repairs/'+id,{
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      status,
+      final_price:     fp,
+      estimated_price: Number(document.getElementById('e_estimated')?.value||0),
+      customer_name:   document.getElementById('e_customer')?.value||'',
+      phone:           document.getElementById('e_phone')?.value||'',
+      device_type:     document.getElementById('e_device')?.value||'',
+      brand:           document.getElementById('e_brand')?.value||'',
+      model:           document.getElementById('e_model')?.value||'',
+      serial_number:   document.getElementById('e_serial')?.value||'',
+      issue:           document.getElementById('e_issue')?.value||'',
+      comment:         document.getElementById('e_comment')?.value||'',
+      amount_cb:cb, amount_cash:cash, amount_credit:credit
+    })
+  });
+  const d=await res.json();
+  if(d.error){alert('❌ '+d.error);return;}
+  alert('✅ Réparation #'+id+' mise à jour !');
+  loadRepairs();
+  showRepair(id);
+}
+
+async function deleteRepair(id){
+  if(!confirm('Supprimer la réparation #'+id+' ?'))return;
+  await fetch('/api/repairs/'+id,{method:'DELETE'});
+  currentId=null;
+  document.getElementById('detailView').innerHTML='';
+  document.getElementById('tabDetail').style.display='none';
+  showTab('new');
+  loadRepairs();
+}
+
+/* ── CRÉER RÉPARATION ── */
+async function createRepair(){
+  const customer=document.getElementById('n_customer').value.trim();
+  if(!customer){alert('⚠️ Nom du client obligatoire');return;}
+  const res=await fetch('/api/repairs',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      customer_name:  customer,
+      phone:          document.getElementById('n_phone').value,
+      device_type:    document.getElementById('n_device').value,
+      brand:          document.getElementById('n_brand').value,
+      model:          document.getElementById('n_model').value,
+      serial_number:  document.getElementById('n_serial').value,
+      issue:          document.getElementById('n_issue').value,
+      estimated_price:document.getElementById('n_price').value||0,
+      comment:        document.getElementById('n_comment').value,
+    })
+  });
+  const d=await res.json();
+  if(d.error){alert('❌ '+d.error);return;}
+  alert('✅ Réparation #'+d.id+' créée !');
+  resetForm();loadRepairs();
+  showRepair(d.id);
+}
+
+function resetForm(){
+  ['n_customer','n_phone','n_device','n_brand','n_model','n_serial','n_issue','n_price','n_comment']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+
+/* ── TICKET SAV ── */
+function printSAV(r){
+  const cb  =Number(r.amount_cb||0);
+  const cash=Number(r.amount_cash||0);
+  const cred=Number(r.amount_credit||0);
+  const fp  =Number(r.final_price||r.estimated_price||0);
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><meta charset="UTF-8"><style>
+    @page{size:80mm auto;margin:5mm;}
+    body{font-family:Arial;width:72mm;font-size:12px;}
+    .c{text-align:center;}.b{font-weight:bold;}
+    hr{border:none;border-top:1px dashed #999;margin:5px 0;}
+    .row{display:flex;justify-content:space-between;margin:3px 0;font-size:11px;}
+    .credit{font-weight:bold;text-align:center;border:2px solid #000;padding:4px;margin:6px 0;}
+    </style></head><body>
+    <div class="c b" style="font-size:15px">The SMARTPHONE</div>
+    <div class="c" style="font-size:10px">1 Avenue d'Italie, 75013 Paris</div>
+    <div class="c" style="font-size:10px">📞 01 47 07 18 66</div><hr>
+    <div class="c b">BON DE RÉPARATION N° ${r.id}</div>
+    <div class="c">${new Date().toLocaleString('fr-FR')}</div><hr>
+    <div class="row"><span>Client :</span><b>${r.customer_name||'—'}</b></div>
+    <div class="row"><span>Tél :</span><b>${r.phone||'—'}</b></div><hr>
+    <div class="row"><span>Appareil :</span><b>${r.brand||''} ${r.model||''}</b></div>
+    <div class="row"><span>Type :</span><b>${r.device_type||'—'}</b></div>
+    <div class="row"><span>N° série :</span><b>${r.serial_number||'—'}</b></div>
+    <div class="row"><span>Panne :</span><b>${r.issue||'—'}</b></div>
+    <div class="row"><span>Prix estimé :</span><b>${Number(r.estimated_price||0).toFixed(2)} €</b></div>
+    ${fp>0?`<div class="row"><span>Prix final :</span><b>${fp.toFixed(2)} €</b></div>`:''}
+    <hr>
+    ${cb>0  ?`<div class="row"><span>💳 CB :</span><b>${cb.toFixed(2)} €</b></div>`:''}
+    ${cash>0?`<div class="row"><span>💵 Espèces :</span><b>${cash.toFixed(2)} €</b></div>`:''}
+    ${cred>0?`<div class="credit">⚠️ RESTE À PAYER : ${cred.toFixed(2)} €</div>`:''}
+    <hr>
+    <div class="c" style="font-size:10px">Merci de votre confiance !</div>
+    <script>window.onload=()=>window.print();<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+loadRepairs();
+</script>
+</body>
+</html>

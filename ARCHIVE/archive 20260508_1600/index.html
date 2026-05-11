@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>The SMARTPHONE - Accueil</title>
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;display:flex;flex-direction:column;}
+.header{padding:20px 30px;background:#111827;border-bottom:3px solid #1f2937;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.header-left h1{margin:0;font-size:28px;}.header-left p{margin:4px 0 0;color:#94a3b8;font-size:13px;}
+.header-right{text-align:right;font-size:12px;color:#94a3b8;line-height:1.9;}
+.main{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;padding:22px;overflow:auto;}
+.card{border-radius:16px;padding:24px;text-decoration:none;color:white;transition:0.2s;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:170px;box-shadow:0 8px 20px rgba(0,0,0,0.35);}
+.card:hover{transform:scale(1.04);}
+.icon{font-size:48px;margin-bottom:10px;}.title{font-size:20px;font-weight:bold;margin-bottom:6px;text-align:center;}
+.desc{text-align:center;font-size:13px;line-height:1.5;color:rgba(255,255,255,0.85);}
+.sales{background:linear-gradient(135deg,#16a34a,#22c55e);}.repairs{background:linear-gradient(135deg,#0f766e,#14b8a6);}
+.history{background:linear-gradient(135deg,#2563eb,#3b82f6);}.stock{background:linear-gradient(135deg,#d97706,#f59e0b);}
+.expenses{background:linear-gradient(135deg,#dc2626,#ef4444);}.returns{background:linear-gradient(135deg,#7c3aed,#8b5cf6);}
+.credits{background:linear-gradient(135deg,#0e7490,#06b6d4);}.print{background:linear-gradient(135deg,#475569,#64748b);}
+.caisse{background:linear-gradient(135deg,#b45309,#f59e0b);}
+.footer{background:#111827;padding:10px;text-align:center;color:#94a3b8;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left"><h1>📱 The SMARTPHONE</h1><p>Vente &amp; Réparation de smartphones</p></div>
+  <div class="header-right">
+    <span>📍 1 Avenue d'Italie, 75013 Paris</span><br>
+    <span>📞 01 47 07 18 66 &nbsp;|&nbsp; 06 86 84 82 79</span><br>
+    <span>✉️ smartphonesatelier4@gmail.com</span>
+  </div>
+</div>
+<div class="main">
+  <a href="sales.html"       class="card sales">   <div class="icon">⚡</div><div class="title">VENTES</div><div class="desc">Caisse rapide<br>Scan code barre<br>Ticket / Facture</div></a>
+  <a href="repairs.html"     class="card repairs"> <div class="icon">🔧</div><div class="title">RÉPARATIONS</div><div class="desc">Gestion SAV<br>Téléphones &amp; PC<br>Suivi atelier</div></a>
+  <a href="history.html"     class="card history"> <div class="icon">🧾</div><div class="title">HISTORIQUE</div><div class="desc">Recherche ventes<br>Réimpression<br>Filtres avancés</div></a>
+  <a href="stock.html"       class="card stock">   <div class="icon">📦</div><div class="title">STOCK</div><div class="desc">Gestion produits<br>Inventaire<br>Alertes rupture</div></a>
+  <a href="expenses.html"    class="card expenses"><div class="icon">📉</div><div class="title">DÉPENSES</div><div class="desc">Sorties caisse<br>Fournisseurs<br>Suivi des coûts</div></a>
+  <a href="returns.html"     class="card returns"> <div class="icon">↩️</div><div class="title">RETOURS</div><div class="desc">Retours clients<br>Retours fournisseur<br>Stock inutilisable</div></a>
+  <a href="credits.html"     class="card credits"> <div class="icon">💳</div><div class="title">CRÉDITS</div><div class="desc">Dettes clients<br>Paiements partiels<br>Suivi des restes</div></a>
+  <a href="printshop.html"   class="card print">   <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">Documents clients<br>QR Code Wi-Fi<br>Couleur / N&amp;B</div></a>
+  <a href="dailyreport.html" class="card caisse">  <div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Bénéfice net</div></a>
+</div>
+<div class="footer">The SMARTPHONE © 2026 &nbsp;|&nbsp; 1 Avenue d'Italie, 75013 Paris</div>
+</body>
+</html>

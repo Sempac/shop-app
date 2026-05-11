@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Caisse journalière — IT TECH</title>
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 20px;
+  background: #f3f4f6;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+input, button {
+  padding: 10px;
+  margin-right: 10px;
+}
+button {
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 4px;
+}
+.load-btn  { background: #3b82f6; color: white; }
+.print-btn { background: #22c55e; color: white; }
+.back-btn  { background: #111827; color: white; }
+
+/* ── Entête impression ── */
+.print-header {
+  display: none;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #000;
+  padding-bottom: 12px;
+}
+.print-header .shop { font-size: 20px; font-weight: 900; }
+.print-header .address { font-size: 12px; color: #555; margin-top: 2px; }
+.print-header .right { text-align: right; }
+.print-header .report-title { font-size: 15px; font-weight: 900; text-transform: uppercase; }
+.print-header .report-date  { font-size: 13px; font-weight: 700; margin-top: 4px; }
+.print-header .report-printed { font-size: 10px; color: #777; margin-top: 3px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  margin-top: 10px;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+th {
+  background: #111827;
+  color: white;
+  font-size: 12px;
+}
+td { font-size: 13px; }
+td.center { text-align: center; }
+td.right  { text-align: right; font-weight: bold; }
+
+/* Badge type */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+.badge-vente { background: #dbeafe; color: #1e40af; }
+.badge-rep   { background: #ffedd5; color: #9a3412; }
+
+/* Paiement mixte */
+.mixte { font-size: 11px; font-weight: bold; }
+.mixte span { display: block; font-size: 10px; color: #555; font-weight: normal; }
+
+/* Total ligne */
+.total-bar {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: right;
+  color: #111827;
+}
+
+/* Ligne total tableau */
+tfoot td {
+  background: #111827;
+  color: white;
+  font-weight: bold;
+  font-size: 13px;
+  border: 1px solid #333;
+}
+tfoot td.right { text-align: right; font-size: 15px; }
+
+/* ── Summary ── */
+.summary {
+  margin-top: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+}
+.summary h3 { margin-top: 0; margin-bottom: 12px; }
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.card {
+  background: #f9fafb;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.card b { font-size: 16px; display: block; margin-top: 4px; }
+
+/* ── Signatures (impression) ── */
+.signatures {
+  display: none;
+  margin-top: 48px;
+  display: none;
+}
+.sig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  margin-top: 8px;
+}
+.sig-box { text-align: center; }
+.sig-line {
+  border-top: 1.5px solid #000;
+  padding-top: 6px;
+  font-size: 11px;
+  color: #555;
+  margin-top: 52px;
+}
+
+/* ── IMPRESSION ── */
+@media print {
+  button, input { display: none !important; }
+  body { background: white; padding: 12px; }
+  .print-header { display: flex; justify-content: space-between; }
+  h2#title { display: none; }
+
+  /* masquer les badges couleur, remplacer par texte simple */
+  .badge-vente, .badge-rep {
+    background: none !important;
+    color: #000 !important;
+    padding: 0;
+    font-size: 11px;
+  }
+  .mixte span { color: #444 !important; }
+
+  tfoot td { background: none !important; color: #000 !important; border: 1.5px solid #000 !important; }
+
+  .card { border: 1px solid #999 !important; background: none !important; }
+  .summary { border: 1px solid #ccc; border-radius: 0; }
+
+  .signatures { display: block !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ENTÊTE IMPRESSION UNIQUEMENT -->
+<div class="print-header" id="printHeader">
+  <div>
+    <div class="shop">IT TECH</div>
+    <div class="address">01 Avenue d'Italie, 75013 Paris</div>
+    <div class="address">Tél : 01 XX XX XX XX</div>
+  </div>
+  <div class="right">
+    <div class="report-title">Rapport de clôture journalière</div>
+    <div class="report-date" id="printDate"></div>
+    <div class="report-printed" id="printedAt"></div>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="header">
+  <div>
+    <input type="date" id="date">
+    <button class="load-btn" onclick="loadReport()">🔎 Charger</button>
+  </div>
+  <div>
+    <button class="back-btn" onclick="location.href='history.html'">← Retour</button>
+    <button class="print-btn" onclick="window.print()">🖨 Imprimer</button>
+  </div>
+</div>
+
+<h2 id="title"></h2>
+
+<!-- TABLEAU PRINCIPAL -->
+<table id="mainTable" style="display:none">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Désignation / Appareil</th>
+      <th>Fournisseur</th>
+      <th>Type</th>
+      <th>Paiement</th>
+      <th>Total ligne</th>
+    </tr>
+  </thead>
+  <tbody id="body"></tbody>
+  <tfoot id="tableFooter"></tfoot>
+</table>
+
+<!-- RÉSUMÉ CAISSE -->
+<div class="summary" id="summaryBox" style="display:none"></div>
+
+<!-- SIGNATURES (impression) -->
+<div class="signatures" id="signatures">
+  <div class="sig-grid">
+    <div class="sig-box"><div class="sig-line">Responsable caisse · Signature &amp; cachet</div></div>
+    <div class="sig-box"><div class="sig-line">Gérant / Directeur · Signature &amp; cachet</div></div>
+  </div>
+</div>
+
+<script>
+/* ── Helpers ── */
+const fmtEur = n => Number(n || 0).toFixed(2) + ' €';
+
+function paiementHtml(method) {
+  const m = (method || '').toLowerCase();
+  const isCB  = m.includes('cb') || m.includes('card') || m === 'carte';
+  const isEsp = m.includes('esp') || m.includes('cash');
+  if (isCB && isEsp)
+    return `<div class="mixte">MIXTE<span>CB + Espèces</span></div>`;
+  if (isCB)  return 'CB';
+  if (isEsp) return 'Espèces';
+  return method || '—';
+}
+
+function dateLabel(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+}
+
+/* ── Init date ── */
+document.getElementById('date').value = new Date().toISOString().slice(0, 10);
+
+/* ── Chargement ── */
+async function loadReport() {
+  const date = document.getElementById('date').value;
+
+  document.getElementById('title').innerText = 'Chargement...';
+  document.getElementById('mainTable').style.display = 'none';
+  document.getElementById('summaryBox').style.display = 'none';
+
+  try {
+    const res  = await fetch('/api/daily-report?date=' + date);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderReport(date, data);
+  } catch(e) {
+    document.getElementById('title').innerText = '❌ Erreur : ' + e.message;
+  }
+}
+
+/* ── Rendu ── */
+function renderReport(date, data) {
+  const tv = data.totaux_ventes      || {};
+  const tr = data.totaux_reparations || {};
+
+  const totalVentes = parseFloat(tv.grand_total || 0);
+  const totalRep    = parseFloat(tr.grand_total || 0);
+  const grandTotal  = totalVentes + totalRep;
+
+  const vCB  = parseFloat(tv.total_cb  || 0);
+  const vEsp = parseFloat(tv.total_esp || 0);
+  const rCB  = parseFloat(tr.total_cb  || 0);
+  const rEsp = parseFloat(tr.total_esp || 0);
+  const totalCB  = vCB + rCB;
+  const totalEsp = vEsp + rEsp;
+
+  const nbV        = parseInt(tv.nb_ventes || 0);
+  const nbR        = parseInt(tr.nb_reps   || 0);
+  const totalDep   = parseFloat(data.total_depenses || 0);
+  const netCaisse  = grandTotal - totalDep;
+
+  /* Toutes les lignes fusionnées */
+  const lignes = [
+    ...(data.ventes || []).map(v => ({
+      id:          'V-' + v.id,
+      designation: v.designation || '—',
+      fournisseur: v.fournisseur || '—',
+      type:        'Vente',
+      method:      v.payment_method,
+      total:       parseFloat(v.total || 0),
+    })),
+    ...(data.reparations || []).map(r => ({
+      id:          'R-' + r.id,
+      designation: (r.designation || '').trim() || '—',
+      fournisseur: 'SAV',
+      type:        'Réparation',
+      method:      r.payment_method,
+      total:       parseFloat(r.total || 0),
+    })),
+  ];
+
+  /* Titre page */
+  document.getElementById('title').innerText = 'Caisse du : ' + date;
+
+  /* Entête impression */
+  document.getElementById('printDate').innerText   = dateLabel(date);
+  document.getElementById('printedAt').innerText   = 'Imprimé le ' + new Date().toLocaleString('fr-FR');
+
+  /* Tbody */
+  const body = document.getElementById('body');
+  if (lignes.length === 0) {
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">Aucune opération ce jour</td></tr>`;
+  } else {
+    body.innerHTML = lignes.map(l => `
+      <tr>
+        <td style="font-size:11px;color:#888">${l.id}</td>
+        <td><b>${l.designation}</b></td>
+        <td style="color:#555">${l.fournisseur}</td>
+        <td class="center">
+          <span class="badge ${l.type === 'Vente' ? 'badge-vente' : 'badge-rep'}">${l.type}</span>
+        </td>
+        <td class="center">${paiementHtml(l.method)}</td>
+        <td class="right">${fmtEur(l.total)}</td>
+      </tr>`).join('');
+  }
+
+  /* Tfoot */
+  document.getElementById('tableFooter').innerHTML = `
+    <tr>
+      <td colspan="4"><b>TOTAL GÉNÉRAL — ${lignes.length} opération(s)</b></td>
+      <td style="font-size:11px;text-align:center">CB: ${fmtEur(totalCB)}<br>Esp: ${fmtEur(totalEsp)}</td>
+      <td class="right" style="font-size:16px">${fmtEur(grandTotal)}</td>
+    </tr>`;
+
+  /* Summary */
+  document.getElementById('summaryBox').innerHTML = `
+    <h3>📊 Résumé caisse — ${dateLabel(date)}</h3>
+    <div class="summary-grid">
+      <div class="card">🛒 Ventes<br><b>${fmtEur(totalVentes)}</b><span style="font-size:11px;color:#888">${nbV} transaction(s)</span></div>
+      <div class="card">🔧 Réparations<br><b>${fmtEur(totalRep)}</b><span style="font-size:11px;color:#888">${nbR} réparation(s)</span></div>
+      <div class="card">💳 Total CB<br><b>${fmtEur(totalCB)}</b></div>
+      <div class="card">💵 Total Espèces<br><b>${fmtEur(totalEsp)}</b></div>
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="background:#f9fafb;border:1px solid #ddd;border-radius:6px;padding:10px 18px;font-size:13px">
+        📉 Dépenses du jour&nbsp;&nbsp;<b style="font-size:16px;color:#dc2626">− ${fmtEur(totalDep)}</b>
+      </div>
+      <div style="background:#111827;color:white;border-radius:6px;padding:10px 18px;font-size:22px;font-weight:bold">
+        NET CAISSE : ${fmtEur(netCaisse)}
+      </div>
+    </div>
+    <div style="text-align:right;font-size:16px;color:#555;margin-top:6px">
+      CA brut : ${fmtEur(grandTotal)}
+    </div>`;
+
+  document.getElementById('mainTable').style.display = 'table';
+  document.getElementById('summaryBox').style.display = 'block';
+}
+
+loadReport();
+</script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SAV - Réparations</title>
+<style>
+* { box-sizing: border-box; }
+body { margin:0; font-family:Arial; background:#0f172a; color:white; }
+.container { display:flex; height:100vh; }
+
+/* ── LEFT ── */
+.left {
+  width:55%;
+  border-right:1px solid #334155;
+  padding:10px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.home-btn {
+  width:100%; padding:14px;
+  background:#1e40af; color:white;
+  border:none; font-size:15px; font-weight:bold;
+  border-radius:8px; cursor:pointer;
+}
+.home-btn:hover { background:#1d4ed8; }
+.search-row { display:flex; gap:6px; }
+.search-row input {
+  flex:1; padding:9px; border-radius:6px;
+  border:none; font-size:13px;
+}
+.search-btn {
+  padding:9px 16px; background:#3b82f6;
+  color:white; border:none; border-radius:6px;
+  cursor:pointer; font-weight:bold;
+}
+
+/* Tableau liste */
+.repair-table-wrap { overflow-x:auto; flex:1; }
+table.repair-list { width:100%; border-collapse:collapse; font-size:12px; }
+table.repair-list th {
+  background:#1e293b; color:#94a3b8;
+  padding:8px; text-align:left;
+  border-bottom:2px solid #334155;
+  white-space:nowrap;
+}
+table.repair-list td {
+  padding:8px; border-bottom:1px solid #1e293b;
+  color:#e2e8f0; cursor:pointer; white-space:nowrap;
+}
+table.repair-list tr:hover td { background:#1e293b; }
+table.repair-list tr.selected td { background:#1e3a8a55; }
+
+.sbadge {
+  font-size:10px; padding:3px 8px;
+  border-radius:5px; font-weight:bold;
+  display:inline-block;
+}
+.EN_ATTENTE { background:#3b82f6; color:white; }
+.EN_COURS   { background:#f59e0b; color:white; }
+.TERMINE    { background:#16a34a; color:white; }
+.LIVRE      { background:#7c3aed; color:white; }
+
+/* ── RIGHT ── */
+.right { flex:1; padding:16px 20px; overflow:auto; }
+
+.tabs { display:flex; gap:6px; margin-bottom:14px; }
+.tab-btn {
+  padding:9px 18px; border:none; border-radius:6px;
+  cursor:pointer; font-weight:bold; font-size:13px;
+  background:#1e293b; color:#94a3b8;
+}
+.tab-btn.active { background:#3b82f6; color:white; }
+
+.form-section { display:none; }
+.form-section.active { display:block; }
+
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.fg { display:flex; flex-direction:column; gap:4px; }
+.fg.full { grid-column:1/span 2; }
+.fg label {
+  font-size:11px; color:#94a3b8;
+  font-weight:bold; text-transform:uppercase; letter-spacing:0.3px;
+}
+.fg input, .fg select, .fg textarea {
+  width:100%; padding:9px; border-radius:6px;
+  border:1px solid #334155; background:#1e293b;
+  color:white; font-size:13px; font-family:Arial;
+}
+.fg textarea { height:68px; resize:vertical; }
+
+.btn-row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.btn-green  { background:#22c55e; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:bold; }
+.btn-blue   { background:#3b82f6; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:bold; }
+.btn-red    { background:#ef4444; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:bold; }
+.btn-orange { background:#f59e0b; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:bold; }
+
+hr { border:1px solid #334155; margin:12px 0; }
+
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.dbox { background:#1e293b; padding:10px; border-radius:6px; font-size:13px; }
+.dbox .lbl { font-size:10px; color:#94a3b8; text-transform:uppercase; font-weight:bold; margin-bottom:3px; }
+.dbox.full { grid-column:1/span 2; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ══ LEFT ══ -->
+<div class="left">
+  <button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+  <div class="search-row">
+    <input id="search" placeholder="Recherche : client, tél, ID, marque...">
+    <button class="search-btn" onclick="searchRepair()">🔎</button>
+  </div>
+  <div class="repair-table-wrap">
+    <table class="repair-list">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Client</th>
+          <th>Téléphone</th>
+          <th>Marque</th>
+          <th>Modèle</th>
+          <th>Type</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody id="repairList"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ RIGHT ══ -->
+<div class="right">
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-new"    onclick="showTab('new')">➕ Nouvelle réparation</button>
+    <button class="tab-btn"        id="tab-detail" onclick="showTab('detail')" style="display:none">📋 Détail / Modifier</button>
+  </div>
+
+  <!-- NOUVELLE RÉPARATION -->
+  <div class="form-section active" id="section-new">
+    <div class="form-grid">
+      <div class="fg"><label>Nom client</label><input id="customer_name" placeholder="Ex: Jean Dupont"></div>
+      <div class="fg"><label>Téléphone</label><input id="phone" placeholder="Ex: 06 12 34 56 78"></div>
+      <div class="fg"><label>Type d'appareil</label><input id="device_type" placeholder="Smartphone, Tablette, PC..."></div>
+      <div class="fg"><label>Marque</label><input id="brand" placeholder="Ex: Apple, Samsung, Dell"></div>
+      <div class="fg"><label>Modèle</label><input id="model" placeholder="Ex: iPhone 14, Galaxy S22"></div>
+      <div class="fg"><label>Numéro de série</label><input id="serial_number" placeholder="Ex: DNPXC123456"></div>
+      <div class="fg full"><label>Panne / Problème</label><input id="issue" placeholder="Ex: Écran cassé, batterie HS, charge..."></div>
+      <div class="fg"><label>Prix estimé (€)</label><input id="estimated_price" type="number" placeholder="Ex: 90"></div>
+      <div class="fg full"><label>Commentaire interne</label><textarea id="comment" placeholder="Notes, état de l'appareil..."></textarea></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-green" onclick="createRepair()">✅ Créer réparation</button>
+      <button class="btn-red"   onclick="resetForm()">🔄 Réinitialiser</button>
+    </div>
+  </div>
+
+  <!-- DÉTAIL / MODIFIER -->
+  <div class="form-section" id="section-detail">
+    <div id="detail-view"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+let currentId   = null;
+let selectedRow = null;
+
+function showTab(tab) {
+  document.getElementById('section-new').classList.toggle('active', tab === 'new');
+  document.getElementById('section-detail').classList.toggle('active', tab === 'detail');
+  document.getElementById('tab-new').classList.toggle('active', tab === 'new');
+  document.getElementById('tab-detail').classList.toggle('active', tab === 'detail');
+}
+
+async function loadRepairs() {
+  const res  = await fetch('/api/repairs');
+  const data = await res.json();
+  renderList(data);
+}
+
+async function searchRepair() {
+  const q    = document.getElementById('search').value;
+  const res  = await fetch('/api/repairs/search?q=' + encodeURIComponent(q));
+  const data = await res.json();
+  renderList(data);
+}
+
+function renderList(data) {
+  const tbody = document.getElementById('repairList');
+  tbody.innerHTML = '';
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:20px">Aucune réparation trouvée</td></tr>';
+    return;
+  }
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    if (r.id === currentId) { tr.classList.add('selected'); selectedRow = tr; }
+    tr.innerHTML = `
+      <td><b>#${r.id}</b></td>
+      <td>${r.customer_name || '—'}</td>
+      <td>${r.phone         || '—'}</td>
+      <td>${r.brand         || '—'}</td>
+      <td>${r.model         || '—'}</td>
+      <td>${r.device_type   || '—'}</td>
+      <td><span class="sbadge ${r.status||''}">${r.status||'—'}</span></td>`;
+    tr.onclick = () => showRepair(r.id, tr);
+    tbody.appendChild(tr);
+  });
+}
+
+async function showRepair(id, trEl) {
+  if (selectedRow) selectedRow.classList.remove('selected');
+  if (trEl) { trEl.classList.add('selected'); selectedRow = trEl; }
+  currentId = id;
+
+  const r = await fetch('/api/repairs/' + id).then(x => x.json());
+
+  document.getElementById('tab-detail').style.display = 'inline-block';
+  showTab('detail');
+
+  document.getElementById('detail-view').innerHTML = `
+    <h3 style="margin-top:0">🔧 Réparation #${r.id}
+      <span class="sbadge ${r.status}" style="margin-left:10px">${r.status}</span>
+    </h3>
+
+    <!-- Vue lecture -->
+    <div class="detail-grid">
+      <div class="dbox"><div class="lbl">Client</div>${r.customer_name||'—'}</div>
+      <div class="dbox"><div class="lbl">Téléphone</div>${r.phone||'—'}</div>
+      <div class="dbox"><div class="lbl">Marque / Modèle</div>${r.brand||'—'} ${r.model||''}</div>
+      <div class="dbox"><div class="lbl">Type d'appareil</div>${r.device_type||'—'}</div>
+      <div class="dbox"><div class="lbl">N° de série</div>${r.serial_number||'—'}</div>
+      <div class="dbox"><div class="lbl">Prix estimé</div>${r.estimated_price||0} €</div>
+      <div class="dbox full"><div class="lbl">Panne / Problème</div>${r.issue||'—'}</div>
+      <div class="dbox full"><div class="lbl">Commentaire</div>${r.comment||'—'}</div>
+    </div>
+
+    <hr>
+    <h4 style="margin:0 0 12px">✏️ Modifier</h4>
+
+    <div class="form-grid">
+      <div class="fg"><label>Nom client</label><input id="e_customer_name" value="${r.customer_name||''}"></div>
+      <div class="fg"><label>Téléphone</label><input id="e_phone" value="${r.phone||''}"></div>
+      <div class="fg"><label>Type d'appareil</label><input id="e_device_type" value="${r.device_type||''}"></div>
+      <div class="fg"><label>Marque</label><input id="e_brand" value="${r.brand||''}"></div>
+      <div class="fg"><label>Modèle</label><input id="e_model" value="${r.model||''}"></div>
+      <div class="fg"><label>N° de série</label><input id="e_serial_number" value="${r.serial_number||''}"></div>
+      <div class="fg full"><label>Panne / Problème</label><input id="e_issue" value="${r.issue||''}"></div>
+      <div class="fg"><label>Prix estimé (€)</label><input id="e_estimated_price" type="number" value="${r.estimated_price||0}"></div>
+      <div class="fg"><label>Prix final (€)</label><input id="e_final_price" type="number" value="${r.final_price||0}"></div>
+      <div class="fg"><label>Statut</label>
+        <select id="e_status">
+          <option value="EN_ATTENTE" ${r.status==='EN_ATTENTE'?'selected':''}>EN_ATTENTE</option>
+          <option value="EN_COURS"   ${r.status==='EN_COURS'  ?'selected':''}>EN_COURS</option>
+          <option value="TERMINE"    ${r.status==='TERMINE'   ?'selected':''}>TERMINE</option>
+          <option value="LIVRE"      ${r.status==='LIVRE'     ?'selected':''}>LIVRE</option>
+        </select>
+      </div>
+      <div class="fg full"><label>Commentaire interne</label><textarea id="e_comment">${r.comment||''}</textarea></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-blue"   onclick="updateRepair(${r.id})">💾 Enregistrer</button>
+      <button class="btn-orange" onclick="printTicket(${r.id})">🧾 Ticket SAV</button>
+    </div>`;
+}
+
+async function updateRepair(id) {
+  await fetch('/api/repairs/' + id, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      status:          document.getElementById('e_status').value,
+      final_price:     Number(document.getElementById('e_final_price').value),
+    })
+  });
+  alert('✅ Réparation #' + id + ' mise à jour !');
+  loadRepairs();
+  showRepair(id, null);
+}
+
+async function createRepair() {
+  await fetch('/api/repairs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_name:   document.getElementById('customer_name').value,
+      phone:           document.getElementById('phone').value,
+      device_type:     document.getElementById('device_type').value,
+      brand:           document.getElementById('brand').value,
+      model:           document.getElementById('model').value,
+      serial_number:   document.getElementById('serial_number').value,
+      issue:           document.getElementById('issue').value,
+      estimated_price: document.getElementById('estimated_price').value,
+      comment:         document.getElementById('comment').value,
+    })
+  });
+  alert('✅ Réparation créée !');
+  resetForm();
+  loadRepairs();
+}
+
+async function printTicket(id) {
+  const r = await fetch('/api/repairs/' + id).then(x => x.json());
+  const w = window.open();
+  w.document.write(`
+    <html><head><meta charset="UTF-8">
+    <style>
+    @page { size:80mm auto; margin:5mm; }
+    body  { font-family:Arial; width:72mm; font-size:12px; }
+    .center { text-align:center; }
+    .bold   { font-weight:bold; }
+    hr { border:none; border-top:1px dashed #999; margin:6px 0; }
+    .row { display:flex; justify-content:space-between; margin:4px 0; font-size:11px; }
+    .lbl { color:#555; }
+    .val { font-weight:bold; text-align:right; }
+    .sbox { text-align:center; font-size:13px; font-weight:bold; margin:8px 0; padding:5px; border:2px solid #000; }
+    </style></head><body>
+
+    <div class="center bold" style="font-size:15px">The SMARTPHONE</div>
+    <div class="center" style="font-size:10px">Vente &amp; Réparation de smartphones</div>
+    <div class="center" style="font-size:10px">1 Avenue d'Italie, 75013 Paris</div>
+    <div class="center" style="font-size:10px">📞 01 47 07 18 66 / 06 86 84 82 79</div>
+    <hr>
+    <div class="center bold" style="font-size:13px">🧾 BON DE RÉPARATION</div>
+    <div class="center" style="font-size:11px">N° ${r.id} — ${new Date().toLocaleString('fr-FR')}</div>
+    <hr>
+    <div class="row"><span class="lbl">Client :</span>      <span class="val">${r.customer_name||'—'}</span></div>
+    <div class="row"><span class="lbl">Téléphone :</span>   <span class="val">${r.phone||'—'}</span></div>
+    <hr>
+    <div class="row"><span class="lbl">Type :</span>        <span class="val">${r.device_type||'—'}</span></div>
+    <div class="row"><span class="lbl">Marque :</span>      <span class="val">${r.brand||'—'}</span></div>
+    <div class="row"><span class="lbl">Modèle :</span>      <span class="val">${r.model||'—'}</span></div>
+    <div class="row"><span class="lbl">N° série :</span>    <span class="val">${r.serial_number||'—'}</span></div>
+    <hr>
+    <div class="row"><span class="lbl">Panne :</span>       <span class="val">${r.issue||'—'}</span></div>
+    <div class="row"><span class="lbl">Commentaire :</span> <span class="val">${r.comment||'—'}</span></div>
+    <hr>
+    <div class="row"><span class="lbl">Prix estimé :</span> <span class="val">${r.estimated_price||0} €</span></div>
+    <div class="row"><span class="lbl">Prix final :</span>  <span class="val">${r.final_price||'—'} €</span></div>
+    <hr>
+    <div class="sbox">Statut : ${r.status||'—'}</div>
+    <hr>
+    <div class="center" style="font-size:10px">Merci de votre confiance !</div>
+    <div class="center" style="font-size:10px">smartphonesatelier4@gmail.com</div>
+
+    <script>window.onload=()=>window.print();<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+function resetForm() {
+  ['customer_name','phone','device_type','brand','model',
+   'serial_number','issue','estimated_price','comment']
+  .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+}
+
+loadRepairs();
+</script>
+</body>
+</html>

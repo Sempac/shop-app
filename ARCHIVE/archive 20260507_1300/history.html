@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Historique ventes</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  display:flex;
+  height:100vh;
+  overflow:hidden;
+}
+
+.left{
+  width:40%;
+  background:#0f172a;
+  color:white;
+  padding:15px;
+  overflow-y:auto;
+}
+
+.right{
+  flex:1;
+  padding:20px;
+  background:white;
+  overflow-y:auto;
+}
+
+input, select{
+  width:100%;
+  padding:10px;
+  margin-bottom:8px;
+  box-sizing:border-box;
+}
+
+button{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  background:#3b82f6;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+
+.item{
+  background:#111827;
+  padding:10px;
+  margin-bottom:5px;
+  cursor:pointer;
+}
+
+.item:hover{
+  background:#1f2937;
+}
+
+.total{
+  margin-top:10px;
+  font-size:20px;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LEFT -->
+<div class="left">
+
+<h3>Recherche ventes</h3>
+
+<input id="id" placeholder="ID vente">
+
+<input id="dateMin" type="date">
+<input id="dateMax" type="date">
+
+<input id="min" placeholder="Min total">
+<input id="max" placeholder="Max total">
+
+<select id="payment">
+  <option value="">-- Paiement --</option>
+  <option value="card">CB / Carte</option>
+  <option value="cash">Espèces</option>
+</select>
+
+<button onclick="search()">Rechercher</button>
+<button onclick="resetFilters()" style="background:#ef4444">Réinitialiser</button>
+
+<div id="list"></div>
+
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+
+<h2>Détail vente</h2>
+
+<div id="info"></div>
+
+<table width="100%" border="0" cellspacing="0">
+<thead>
+<tr>
+<th>Produit</th>
+<th>Qté</th>
+<th>Prix</th>
+<th>Remise</th>
+<th>Total</th>
+</tr>
+</thead>
+
+<tbody id="items"></tbody>
+</table>
+
+<div class="total" id="total"></div>
+
+<button onclick="printCurrent()" style="background:#111827">
+🖨 Imprimer vente sélectionnée
+</button>
+
+</div>
+
+<script>
+
+let current = null;
+
+// ================= RESET =================
+function resetFilters(){
+ document.getElementById("id").value = "";
+ document.getElementById("dateMin").value = "";
+ document.getElementById("dateMax").value = "";
+ document.getElementById("min").value = "";
+ document.getElementById("max").value = "";
+ document.getElementById("payment").value = "";
+ document.getElementById("list").innerHTML = "";
+ document.getElementById("info").innerHTML = "";
+ document.getElementById("items").innerHTML = "";
+ document.getElementById("total").innerHTML = "";
+ current = null;
+}
+
+// ================= SEARCH =================
+async function search(){
+
+ const params = new URLSearchParams();
+
+ const id = document.getElementById("id").value;
+ const dateMin = document.getElementById("dateMin").value;
+ const dateMax = document.getElementById("dateMax").value;
+ const min = document.getElementById("min").value;
+ const max = document.getElementById("max").value;
+ const payment = document.getElementById("payment").value;
+
+ if(id) params.append("id", id);
+ if(dateMin) params.append("dateMin", dateMin);
+ if(dateMax) params.append("dateMax", dateMax);
+ if(min) params.append("min", min);
+ if(max) params.append("max", max);
+ if(payment) params.append("payment", payment);
+
+ const res = await fetch("/api/orders/search?" + params.toString());
+ const data = await res.json();
+
+ const list = document.getElementById("list");
+ list.innerHTML = "";
+
+ if(!data.length){
+   list.innerHTML = "<p>Aucune vente</p>";
+   return;
+ }
+
+ data.forEach(o => {
+
+   const div = document.createElement("div");
+   div.className = "item";
+
+   div.innerHTML = `
+     <b>#${o.id}</b><br>
+     ${o.total} €<br>
+     ${o.payment_method || 'N/A'}<br>
+     ${new Date(o.created_at).toLocaleString()}
+   `;
+
+   div.onclick = () => load(o.id);
+
+   list.appendChild(div);
+ });
+}
+
+// ================= LOAD =================
+async function load(id){
+
+ const res = await fetch("/api/orders/" + id);
+ const data = await res.json();
+
+ current = data;
+
+ document.getElementById("info").innerHTML = `
+   <h3>Vente #${data.order.id}</h3>
+   <p>${data.order.payment_method} | ${new Date(data.order.created_at).toLocaleString()}</p>
+ `;
+
+ render(data.items);
+}
+
+// ================= RENDER =================
+function render(items){
+
+ let total = 0;
+
+ const tb = document.getElementById("items");
+ tb.innerHTML = "";
+
+ items.forEach(i => {
+
+   const line =
+     (Number(i.price) * Number(i.quantity)) -
+     (Number(i.discount) * Number(i.quantity));
+
+   total += line;
+
+   tb.innerHTML += `
+   <tr>
+     <td>${i.name}</td>
+     <td>${i.quantity}</td>
+     <td>${i.price}</td>
+     <td>${i.discount}</td>
+     <td>${line.toFixed(2)}</td>
+   </tr>`;
+ });
+
+ document.getElementById("total").innerText =
+   "TOTAL : " + total.toFixed(2) + " €";
+}
+
+// ================= PRINT =================
+function printCurrent(){
+
+ if(!current){
+   alert("Aucune vente sélectionnée");
+   return;
+ }
+
+ const o = current.order;
+
+ let rows = "";
+
+ current.items.forEach(i => {
+
+   const line =
+     (Number(i.price) * Number(i.quantity)) -
+     (Number(i.discount) * Number(i.quantity));
+
+   rows += `
+   <tr>
+     <td>${i.name}</td>
+     <td>${i.quantity}</td>
+     <td>${i.price}</td>
+     <td>${i.discount}</td>
+     <td>${line.toFixed(2)}</td>
+   </tr>`;
+ });
+
+ const w = window.open("", "_blank");
+
+ w.document.write(`
+<html>
+<head>
+<style>
+body{font-family:Arial;padding:20px;}
+table{width:100%;border-collapse:collapse;}
+td,th{border:1px solid #000;padding:8px;}
+</style>
+</head>
+
+<body>
+
+<h2>FACTURE</h2>
+<p>Vente #${o.id}</p>
+<p>${o.payment_method}</p>
+<p>${new Date(o.created_at).toLocaleString()}</p>
+
+<table>
+<tr>
+<th>Produit</th><th>Qté</th><th>Prix</th><th>Remise</th><th>Total</th>
+</tr>
+${rows}
+</table>
+
+<h3>TOTAL : ${o.total} €</h3>
+
+<script>
+window.onload = () => window.print();
+<\/script>
+
+</body>
+</html>
+`);
+
+ w.document.close();
+}
+
+</script>
+
+</body>
+</html>

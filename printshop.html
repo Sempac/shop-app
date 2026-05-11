@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impression — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;}
+
+/* ── GÉRANT ── */
+.topbar{background:#111827;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1e293b;}
+.topbar h2{margin:0;font-size:17px;}
+.btn-home{background:#1e40af;color:white;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+
+.main{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px;max-width:1100px;margin:0 auto;}
+@media(max-width:750px){.main{grid-template-columns:1fr;}}
+
+.card{background:#1e293b;border-radius:14px;padding:20px;margin-bottom:0;}
+.card h3{margin:0 0 14px;font-size:14px;color:white;display:flex;justify-content:space-between;align-items:center;}
+
+/* QR + options accès */
+.access-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.access-item{background:#0f172a;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;}
+.access-icon{font-size:28px;flex-shrink:0;}
+.access-info{flex:1;}
+.access-title{font-size:13px;font-weight:bold;color:white;margin-bottom:3px;}
+.access-desc{font-size:11px;color:#64748b;}
+.access-btn{padding:7px 14px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;white-space:nowrap;}
+.ab-purple{background:#7c3aed;color:white;}
+.ab-green{background:#25d366;color:white;}
+.ab-blue{background:#2563eb;color:white;}
+
+/* QR Code */
+.qr-box{background:white;border-radius:10px;padding:12px;display:inline-block;}
+.qr-center{text-align:center;margin-bottom:12px;}
+
+/* Impression directe */
+.drop-zone{border:2px dashed #334155;border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:0.2s;margin-bottom:10px;}
+.drop-zone:hover,.drop-zone.drag{border-color:#3b82f6;background:#1e3a8a22;}
+.drop-zone input{display:none;}
+.file-sel{background:#0f172a;border-radius:6px;padding:8px 12px;font-size:12px;color:#94a3b8;margin-bottom:10px;display:none;}
+.opt-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.opt-box label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;display:block;margin-bottom:4px;}
+.opt-box select,.opt-box input{width:100%;padding:8px;border:1.5px solid #334155;border-radius:6px;font-size:12px;background:#0f172a;color:white;font-family:Arial;}
+.btn-print-now{width:100%;padding:12px;background:#22c55e;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Arial;}
+
+/* File attente */
+.queue-item{background:#0f172a;border-radius:8px;padding:12px;margin-bottom:8px;}
+.qi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.qi-name{font-size:13px;font-weight:bold;color:white;}
+.qi-meta{font-size:11px;color:#64748b;margin-top:2px;}
+.sbadge{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:bold;white-space:nowrap;}
+.EN_ATTENTE{background:#1e3a8a;color:#93c5fd;}
+.IMPRIME{background:#166534;color:#86efac;}
+.ANNULE{background:#7f1d1d;color:#fca5a5;}
+.qi-btns{display:flex;gap:5px;margin-top:8px;}
+.qi-btn{padding:5px 12px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
+.new-badge{background:#f59e0b;color:white;font-size:10px;padding:2px 8px;border-radius:10px;animation:pulse 1.5s infinite;display:none;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+/* ── CLIENT ── */
+.client-wrap{display:none;max-width:440px;margin:0 auto;padding:20px 16px;}
+.client-wrap.show{display:block;}
+.client-header{text-align:center;margin-bottom:20px;padding:20px;background:#1e293b;border-radius:14px;}
+.client-header .logo{font-size:44px;}
+.client-header h1{margin:8px 0 4px;font-size:20px;}
+.client-header p{margin:0;color:#64748b;font-size:12px;}
+
+/* Étapes client */
+.step-card{background:#1e293b;border-radius:12px;padding:16px;margin-bottom:12px;}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:#3b82f6;color:white;border-radius:50%;font-size:12px;font-weight:bold;margin-right:8px;}
+.step-title{font-size:13px;font-weight:bold;color:white;}
+
+/* Upload client */
+.client-drop{border:2px dashed #334155;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:0.2s;margin-top:10px;}
+.client-drop:hover,.client-drop.drag{border-color:#7c3aed;background:#4c1d9522;}
+.client-drop input{display:none;}
+.client-drop .icon{font-size:32px;margin-bottom:6px;}
+.client-file-ok{background:#0f172a;border-radius:8px;padding:10px 12px;margin-top:8px;display:none;}
+.client-file-ok .fn{font-size:13px;font-weight:bold;color:white;}
+.client-file-ok .fs{font-size:11px;color:#64748b;}
+
+/* Options client */
+.client-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.co-box label{font-size:11px;color:#64748b;font-weight:bold;display:block;margin-bottom:6px;text-transform:uppercase;}
+.co-box input,.co-box select{width:100%;padding:12px;border:1.5px solid #334155;border-radius:8px;font-size:15px;background:#0f172a;color:white;font-family:Arial;text-align:center;}
+
+/* Récap */
+.recap-box{background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:14px;margin:12px 0;color:#92400e;}
+.recap-box .rt{font-weight:bold;font-size:13px;margin-bottom:6px;}
+.recap-box .rd{font-size:15px;font-weight:bold;}
+.recap-box .rw{font-size:11px;margin-top:5px;opacity:0.8;}
+
+.btn-confirm{width:100%;padding:16px;background:#22c55e;color:white;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;font-family:Arial;margin-bottom:8px;}
+.btn-confirm:disabled{background:#334155;color:#64748b;cursor:not-allowed;}
+.btn-reset-client{width:100%;padding:12px;background:#334155;color:#94a3b8;border:none;border-radius:10px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+
+/* Succès client */
+.client-success{background:#dcfce7;border-radius:14px;padding:28px;text-align:center;color:#166534;display:none;margin-top:12px;}
+.client-success .big{font-size:52px;margin-bottom:10px;}
+.client-success h3{margin:0 0 8px;font-size:18px;}
+.client-success p{margin:4px 0;font-size:13px;}
+.client-error{background:#fee2e2;border-radius:10px;padding:14px;color:#991b1b;display:none;margin-top:10px;font-size:13px;}
+
+/* Instructions WhatsApp / Email */
+.method-card{background:#0f172a;border-radius:10px;padding:14px;margin-top:10px;}
+.method-card h4{margin:0 0 8px;font-size:12px;color:#64748b;text-transform:uppercase;font-weight:bold;}
+.method-step{font-size:12px;color:#94a3b8;margin-bottom:4px;display:flex;gap:6px;}
+.method-step span{color:#3b82f6;font-weight:bold;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     VUE GÉRANT
+════════════════════════════ -->
+<div id="managerView">
+<div class="topbar">
+  <h2>🖨️ Module Impression</h2>
+  <button class="btn-home" onclick="location.href='index.html'">🏠 Accueil</button>
+</div>
+
+<div class="main">
+
+  <!-- COLONNE GAUCHE : accès client + impression directe -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Accès client -->
+    <div class="card">
+      <h3>📲 Accès client <span style="font-size:11px;color:#22c55e;font-weight:normal">3 options disponibles</span></h3>
+
+      <!-- QR Code -->
+      <div class="access-item">
+        <div class="access-icon">📱</div>
+        <div class="access-info">
+          <div class="access-title">QR Code — Scanner avec le téléphone</div>
+          <div class="access-desc">Client scanne → choisit fichier + options → confirme</div>
+          <div class="qr-center" style="margin-top:10px;">
+            <div class="qr-box" style="display:inline-block;padding:10px;background:white;border-radius:8px;">
+              <div id="qrcode"></div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:#475569;margin-top:4px;text-align:center" id="qrUrl"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="access-btn ab-purple" onclick="printQR()">🖨️ Imprimer</button>
+          <button class="access-btn" style="background:#334155;color:#94a3b8;" onclick="copyLink()">📋 Copier</button>
+        </div>
+      </div>
+
+      <!-- WhatsApp -->
+      <div class="access-item" style="margin-top:8px;">
+        <div class="access-icon">💬</div>
+        <div class="access-info">
+          <div class="access-title">WhatsApp — Sans internet mobile</div>
+          <div class="access-desc">Client envoie le fichier sur WhatsApp → vous l'imprimez</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">📞 06 86 84 82 79</div>
+        </div>
+        <a href="https://wa.me/33686848279?text=Bonjour%20The%20SMARTPHONE%2C%20je%20voudrais%20faire%20imprimer%20un%20document." target="_blank" class="access-btn ab-green" style="text-decoration:none;display:inline-block;">WA</a>
+      </div>
+
+      <!-- Email -->
+      <div class="access-item" style="margin-top:8px;">
+        <div class="access-icon">✉️</div>
+        <div class="access-info">
+          <div class="access-title">Email — Envoi par mail</div>
+          <div class="access-desc">Client envoie le fichier par email → vous l'imprimez</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">📧 it75tech@gmail.com</div>
+        </div>
+        <a href="mailto:it75tech@gmail.com?subject=Demande%20impression%20The%20SMARTPHONE&body=Bonjour%2C%20je%20vous%20envoie%20mon%20fichier%20%C3%A0%20imprimer.%0A%0AMerci." class="access-btn ab-blue" style="text-decoration:none;display:inline-block;">Mail</a>
+      </div>
+    </div>
+
+    <!-- Impression directe -->
+    <div class="card">
+      <h3>🖥️ Impression directe (vous)</h3>
+      <div class="drop-zone" id="dropZone">
+        <div style="font-size:28px;margin-bottom:6px">📁</div>
+        <p style="margin:4px 0;font-size:13px"><b>Glissez un fichier ici</b> ou cliquez</p>
+        <p style="margin:0;font-size:10px;color:#475569">PDF · JPG · PNG · DOCX — Max 5MB</p>
+        <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.docx">
+      </div>
+      <div class="file-sel" id="fileSelected"></div>
+      <div class="opt-row">
+        <div class="opt-box"><label>Copies</label><input type="number" id="copies" value="1" min="1" max="50"></div>
+        <div class="opt-box"><label>Couleur</label>
+          <select id="colorMode">
+            <option value="bw">⬛ N&amp;B</option>
+            <option value="color">🌈 Couleur</option>
+          </select>
+        </div>
+        <div class="opt-box"><label>Format</label>
+          <select id="format">
+            <option>A4</option><option>A5</option><option>Ticket</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-print-now" onclick="uploadAndPrint()">🖨️ Ajouter à la file</button>
+    </div>
+  </div>
+
+  <!-- COLONNE DROITE : file d'attente -->
+  <div>
+    <div class="card">
+      <h3>
+        📋 File d'attente
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="new-badge" id="newBadge">🔔 Nouveau !</span>
+          <button onclick="loadQueue()" style="padding:5px 10px;background:#334155;color:#94a3b8;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">🔄</button>
+        </div>
+      </h3>
+      <div id="queueList">
+        <div style="text-align:center;color:#475569;padding:20px;font-size:13px">Chargement...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- fin managerView -->
+
+
+<!-- ════════════════════════════
+     VUE CLIENT (après scan QR)
+════════════════════════════ -->
+<div id="clientView" class="client-wrap">
+
+  <div class="client-header">
+    <div class="logo">🖨️</div>
+    <h1>The SMARTPHONE</h1>
+    <p>Service d'impression — 1 Avenue d'Italie, Paris 13e</p>
+  </div>
+
+  <div id="clientForm">
+
+    <!-- ÉTAPE 1 : Choisir méthode -->
+    <div class="step-card">
+      <div><span class="step-num">1</span><span class="step-title">Comment envoyez-vous votre fichier ?</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+
+        <button onclick="setMethod('upload')" id="methUpload"
+          style="padding:12px 16px;border:2px solid #334155;border-radius:8px;background:#0f172a;color:white;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;text-align:left;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">📱</span>
+          <div>
+            <div>Depuis ce téléphone</div>
+            <div style="font-size:11px;color:#64748b;font-weight:normal;">Choisissez un fichier sur votre téléphone</div>
+          </div>
+        </button>
+
+        <button onclick="setMethod('whatsapp')" id="methWA"
+          style="padding:12px 16px;border:2px solid #334155;border-radius:8px;background:#0f172a;color:white;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;text-align:left;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">💬</span>
+          <div>
+            <div>Envoyer par WhatsApp</div>
+            <div style="font-size:11px;color:#64748b;font-weight:normal;">Si vous n'avez pas de réseau mobile</div>
+          </div>
+        </button>
+
+        <button onclick="setMethod('email')" id="methEmail"
+          style="padding:12px 16px;border:2px solid #334155;border-radius:8px;background:#0f172a;color:white;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;text-align:left;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">✉️</span>
+          <div>
+            <div>Envoyer par Email</div>
+            <div style="font-size:11px;color:#64748b;font-weight:normal;">Joignez votre fichier en pièce jointe</div>
+          </div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- MÉTHODE : Upload direct -->
+    <div id="paneUpload" style="display:none;">
+
+      <!-- Étape 2 : fichier -->
+      <div class="step-card">
+        <div><span class="step-num">2</span><span class="step-title">Choisissez votre fichier</span></div>
+        <div class="client-drop" id="clientDrop">
+          <div class="icon">📎</div>
+          <p style="margin:4px 0;font-size:14px;"><b>Appuyez ici pour choisir</b></p>
+          <p style="margin:0;font-size:11px;color:#64748b;">PDF, JPG, PNG — Max 5MB</p>
+          <input type="file" id="clientFile" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+        <div class="client-file-ok" id="clientFileOk">
+          <div class="fn" id="clientFName"></div>
+          <div class="fs" id="clientFSize"></div>
+        </div>
+      </div>
+
+      <!-- Étape 3 : options -->
+      <div class="step-card">
+        <div><span class="step-num">3</span><span class="step-title">Options d'impression</span></div>
+        <div class="client-opts">
+          <div class="co-box">
+            <label>Copies</label>
+            <input type="number" id="clientCopies" value="1" min="1" max="10" oninput="updateRecap()">
+          </div>
+          <div class="co-box">
+            <label>Couleur</label>
+            <select id="clientColor" onchange="updateRecap()">
+              <option value="bw">⬛ N&amp;B</option>
+              <option value="color">🌈 Couleur</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Récap + confirmation -->
+      <div class="recap-box">
+        <div class="rt">⚠️ Vérifiez avant de confirmer</div>
+        <div class="rd" id="recapDetail">1 copie — Noir &amp; Blanc</div>
+        <div class="rw">Le vendeur imprimera votre document dès réception.</div>
+      </div>
+
+      <button class="btn-confirm" id="btnConfirm" onclick="clientSend()">✅ Envoyer ma demande</button>
+      <button class="btn-reset-client" onclick="clientReset()">↩️ Recommencer</button>
+      <div class="client-error" id="clientError"></div>
+    </div>
+
+    <!-- MÉTHODE : WhatsApp -->
+    <div id="paneWA" style="display:none;">
+      <div class="step-card">
+        <div><span class="step-num">2</span><span class="step-title">Envoyez par WhatsApp</span></div>
+        <div class="method-card">
+          <h4>Instructions</h4>
+          <div class="method-step"><span>1.</span> Appuyez sur le bouton ci-dessous</div>
+          <div class="method-step"><span>2.</span> Envoyez votre fichier en pièce jointe</div>
+          <div class="method-step"><span>3.</span> Indiquez le nombre de copies et N&B ou couleur</div>
+          <div class="method-step"><span>4.</span> Le vendeur s'occupe du reste</div>
+        </div>
+        <a href="https://wa.me/33686848279?text=Bonjour%20The%20SMARTPHONE%2C%20je%20voudrais%20imprimer%20un%20document.%20Je%20vous%20envoie%20le%20fichier%20en%20pi%C3%A8ce%20jointe."
+          target="_blank"
+          style="display:block;margin-top:14px;padding:16px;background:#25d366;color:white;border-radius:10px;text-decoration:none;text-align:center;font-size:16px;font-weight:bold;font-family:Arial;">
+          💬 Ouvrir WhatsApp
+        </a>
+        <div style="text-align:center;font-size:12px;color:#64748b;margin-top:8px;">06 86 84 82 79</div>
+        <button class="btn-reset-client" style="margin-top:10px;" onclick="clientReset()">↩️ Choisir autre méthode</button>
+      </div>
+    </div>
+
+    <!-- MÉTHODE : Email -->
+    <div id="paneEmail" style="display:none;">
+      <div class="step-card">
+        <div><span class="step-num">2</span><span class="step-title">Envoyez par Email</span></div>
+        <div class="method-card">
+          <h4>Instructions</h4>
+          <div class="method-step"><span>1.</span> Appuyez sur le bouton ci-dessous</div>
+          <div class="method-step"><span>2.</span> Joignez votre fichier à l'email</div>
+          <div class="method-step"><span>3.</span> Précisez dans le message le nombre de copies et N&B ou couleur</div>
+          <div class="method-step"><span>4.</span> Envoyez et montrez l'email envoyé au vendeur</div>
+        </div>
+        <a href="mailto:it75tech@gmail.com?subject=Demande%20impression%20The%20SMARTPHONE&body=Bonjour%2C%0A%0AJe%20souhaite%20imprimer%20le%20fichier%20ci-joint.%0A%0ANombre%20de%20copies%20%3A%20%0ACouleur%20%3A%20Noir%20%26%20Blanc%20%2F%20Couleur%0A%0AMerci%20!"
+          style="display:block;margin-top:14px;padding:16px;background:#2563eb;color:white;border-radius:10px;text-decoration:none;text-align:center;font-size:16px;font-weight:bold;font-family:Arial;">
+          ✉️ Ouvrir l'email
+        </a>
+        <div style="text-align:center;font-size:12px;color:#64748b;margin-top:8px;">it75tech@gmail.com</div>
+        <button class="btn-reset-client" style="margin-top:10px;" onclick="clientReset()">↩️ Choisir autre méthode</button>
+      </div>
+    </div>
+
+  </div><!-- fin clientForm -->
+
+  <!-- SUCCÈS -->
+  <div class="client-success" id="clientSuccess">
+    <div class="big">✅</div>
+    <h3>Demande envoyée !</h3>
+    <p>Votre fichier a bien été reçu.</p>
+    <p>Le vendeur va l'imprimer pour vous.</p>
+    <p style="font-weight:bold;margin-top:10px;" id="successDetail"></p>
+    <button onclick="clientReset()"
+      style="margin-top:16px;padding:12px 24px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">
+      📄 Nouvelle impression
+    </button>
+  </div>
+
+</div><!-- fin clientView -->
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ══ DÉTECTION MODE ══ */
+var isClient = window.location.search.indexOf('client=1') >= 0;
+if (isClient) {
+  document.getElementById('managerView').style.display = 'none';
+  document.getElementById('clientView').classList.add('show');
+  initClient();
+} else {
+  initManager();
+}
+
+/* ════════════════
+   MODE GÉRANT
+════════════════ */
+function initManager() {
+  var clientUrl = window.location.origin + '/printshop.html?client=1';
+  document.getElementById('qrUrl').textContent = clientUrl;
+  new QRCode(document.getElementById('qrcode'), {
+    text: clientUrl, width: 160, height: 160,
+    colorDark: '#000000', colorLight: '#ffffff'
+  });
+
+  var dz = document.getElementById('dropZone');
+  var fi = document.getElementById('fileInput');
+  dz.addEventListener('click', function(){ fi.click(); });
+  dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
+  dz.addEventListener('drop', function(e){
+    e.preventDefault(); dz.classList.remove('drag');
+    if (e.dataTransfer.files.length) setManagerFile(e.dataTransfer.files[0]);
+  });
+  fi.addEventListener('change', function(){
+    if (fi.files.length) setManagerFile(fi.files[0]);
+  });
+
+  loadQueue();
+  setInterval(loadQueue, 15000);
+}
+
+var managerFile = null;
+function setManagerFile(f) {
+  if (!checkFile(f)) return;
+  managerFile = f;
+  var el = document.getElementById('fileSelected');
+  el.style.display = 'block';
+  el.textContent = '📄 ' + f.name + ' — ' + (f.size/1024).toFixed(0) + ' KB';
+}
+
+function checkFile(f) {
+  var allowed = ['application/pdf','image/jpeg','image/png','image/jpg',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  var extOk = f.name.match(/\.(pdf|jpg|jpeg|png|docx)$/i);
+  if (allowed.indexOf(f.type) < 0 && !extOk) {
+    alert('Type non autorisé\nSeuls PDF, JPG, PNG, DOCX acceptés'); return false;
+  }
+  if (f.size > 5*1024*1024) { alert('Fichier trop grand (max 5MB)'); return false; }
+  return true;
+}
+
+async function uploadAndPrint() {
+  if (!managerFile) { alert('Sélectionnez un fichier'); return; }
+  var fd = new FormData();
+  fd.append('file', managerFile);
+  fd.append('copies', document.getElementById('copies').value);
+  fd.append('color_mode', document.getElementById('colorMode').value);
+  try {
+    var res = await fetch('/api/print/upload', {method:'POST', body:fd});
+    var d   = await res.json();
+    if (d.error) throw new Error(d.error);
+    alert('Travail #' + d.id + ' ajouté à la file !');
+    managerFile = null;
+    document.getElementById('fileSelected').style.display = 'none';
+    loadQueue();
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+function printQR() {
+  var url = window.location.origin + '/printshop.html?client=1';
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    + '<style>body{font-family:Arial;text-align:center;padding:30px;background:white;}'
+    + 'h2{font-size:20px;margin-bottom:4px;}p{color:#555;font-size:13px;margin:4px 0;}'
+    + '.methods{display:flex;justify-content:center;gap:20px;margin:12px 0;font-size:12px;color:#333;}'
+    + '</style></head><body>'
+    + '<h2>🖨️ The SMARTPHONE — Service Impression</h2>'
+    + '<p style="font-size:14px;font-weight:bold;">Scannez ce QR Code pour imprimer votre document</p>'
+    + '<div id="qr" style="display:inline-block;margin:14px 0;padding:12px;border:1px solid #ddd;border-radius:8px;"></div>'
+    + '<p style="font-size:10px;color:#888;">' + url + '</p>'
+    + '<div class="methods">'
+    + '<span>📱 QR Code</span>'
+    + '<span>💬 WhatsApp : 06 86 84 82 79</span>'
+    + '<span>✉️ it75tech@gmail.com</span>'
+    + '</div>'
+    + '<p style="font-size:11px;color:#666;">Choisissez votre fichier · Sélectionnez vos options · Confirmez</p>'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>'
+    + '<script>new QRCode(document.getElementById("qr"),{text:"' + url + '",width:200,height:200,colorDark:"#000",colorLight:"#fff"});<\/script>'
+    + '<script>setTimeout(function(){window.print();},800);<\/script>'
+    + '</body></html>');
+  w.document.close();
+}
+
+function copyLink() {
+  var url = window.location.origin + '/printshop.html?client=1';
+  navigator.clipboard.writeText(url).then(function(){
+    alert('Lien copié !\n' + url);
+  });
+}
+
+var lastCount = 0;
+async function loadQueue() {
+  try {
+    var res  = await fetch('/api/print/queue');
+    var data = await res.json();
+    var list = document.getElementById('queueList');
+    var waiting = data.filter(function(d){ return d.status === 'EN_ATTENTE'; });
+    if (waiting.length > lastCount) {
+      var nb = document.getElementById('newBadge');
+      nb.style.display = 'inline-block';
+      setTimeout(function(){ nb.style.display='none'; }, 6000);
+    }
+    lastCount = waiting.length;
+    if (!data.length) {
+      list.innerHTML = '<div style="text-align:center;color:#475569;padding:20px;font-size:13px">Aucun travail en attente</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < data.length; i++) {
+      var it = data[i];
+      var cl  = it.color_mode === 'bw' ? '⬛ N&B' : '🌈 Couleur';
+      var src = (it.filename||'').indexOf('[CLIENT]') >= 0 ? '📱 Client' : '🖥️ Vous';
+      var dt  = new Date(it.uploaded_at||Date.now()).toLocaleString('fr-FR');
+      html += '<div class="queue-item">';
+      html += '<div class="qi-top">';
+      html += '<div><div class="qi-name">' + (it.filename||'—').replace('[CLIENT] ','') + '</div>';
+      html += '<div class="qi-meta">' + src + ' · ' + it.copies + ' copie(s) · ' + cl + ' · ' + dt + '</div></div>';
+      html += '<span class="sbadge ' + it.status + '">' + it.status + '</span>';
+      html += '</div>';
+      if (it.status === 'EN_ATTENTE') {
+        html += '<div class="qi-btns">';
+        html += '<button class="qi-btn" style="background:#dcfce7;color:#166534" onclick="markDone(' + it.id + ')">✅ Imprimé</button>';
+        html += '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + it.id + ')">✕ Annuler</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    list.innerHTML = html;
+  } catch(e) {
+    document.getElementById('queueList').innerHTML = '<div style="color:#ef4444;padding:12px">Erreur chargement</div>';
+  }
+}
+
+async function markDone(id) {
+  await fetch('/api/print/' + id + '/done', {method:'PUT'}); loadQueue();
+}
+async function cancelJob(id) {
+  if (!confirm('Annuler ce travail ?')) return;
+  await fetch('/api/print/' + id + '/cancel', {method:'PUT'}); loadQueue();
+}
+
+/* ════════════════
+   MODE CLIENT
+════════════════ */
+var clientFile = null;
+var currentMethod = null;
+
+function initClient() {
+  var cd = document.getElementById('clientDrop');
+  var cf = document.getElementById('clientFile');
+  cd.addEventListener('click', function(){ cf.click(); });
+  cd.addEventListener('dragover', function(e){ e.preventDefault(); cd.classList.add('drag'); });
+  cd.addEventListener('dragleave', function(){ cd.classList.remove('drag'); });
+  cd.addEventListener('drop', function(e){
+    e.preventDefault(); cd.classList.remove('drag');
+    if (e.dataTransfer.files.length) setClientFile(e.dataTransfer.files[0]);
+  });
+  cf.addEventListener('change', function(){
+    if (cf.files.length) setClientFile(cf.files[0]);
+  });
+}
+
+function setMethod(method) {
+  currentMethod = method;
+  /* Mettre en valeur le bouton sélectionné */
+  var meths = ['upload','whatsapp','email'];
+  var ids   = ['methUpload','methWA','methEmail'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) el.style.borderColor = meths[i] === method ? '#7c3aed' : '#334155';
+  }
+  /* Afficher le bon panneau */
+  document.getElementById('paneUpload').style.display  = method === 'upload'    ? 'block' : 'none';
+  document.getElementById('paneWA').style.display      = method === 'whatsapp'  ? 'block' : 'none';
+  document.getElementById('paneEmail').style.display   = method === 'email'     ? 'block' : 'none';
+}
+
+function setClientFile(f) {
+  if (!checkFile(f)) return;
+  clientFile = f;
+  document.getElementById('clientFName').textContent = '📄 ' + f.name;
+  document.getElementById('clientFSize').textContent = (f.size/1024).toFixed(0) + ' KB';
+  document.getElementById('clientFileOk').style.display = 'block';
+  document.getElementById('clientDrop').style.display   = 'none';
+  updateRecap();
+}
+
+function updateRecap() {
+  var copies = document.getElementById('clientCopies').value;
+  var color  = document.getElementById('clientColor').value;
+  document.getElementById('recapDetail').textContent =
+    copies + ' copie(s) — ' + (color === 'bw' ? 'Noir & Blanc' : 'Couleur');
+}
+
+async function clientSend() {
+  if (!clientFile) { alert('Choisissez un fichier'); return; }
+  var btn = document.getElementById('btnConfirm');
+  btn.disabled = true;
+  btn.textContent = '⏳ Envoi en cours...';
+  var fd = new FormData();
+  fd.append('file', clientFile);
+  fd.append('copies', document.getElementById('clientCopies').value);
+  fd.append('color_mode', document.getElementById('clientColor').value);
+  fd.append('source', 'client');
+  try {
+    var res = await fetch('/api/print/upload', {method:'POST', body:fd});
+    var d   = await res.json();
+    if (d.error) throw new Error(d.error);
+    document.getElementById('clientForm').style.display = 'none';
+    document.getElementById('clientSuccess').style.display = 'block';
+    document.getElementById('successDetail').textContent =
+      document.getElementById('clientCopies').value + ' copie(s) — ' +
+      (document.getElementById('clientColor').value === 'bw' ? 'Noir & Blanc' : 'Couleur');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '✅ Envoyer ma demande';
+    var err = document.getElementById('clientError');
+    err.style.display = 'block';
+    err.textContent = 'Erreur : ' + e.message + '\nVeuillez demander au vendeur.';
+  }
+}
+
+function clientReset() {
+  clientFile = null;
+  currentMethod = null;
+  document.getElementById('clientForm').style.display = 'block';
+  document.getElementById('clientSuccess').style.display = 'none';
+  document.getElementById('clientError').style.display = 'none';
+  document.getElementById('clientFileOk').style.display = 'none';
+  document.getElementById('clientDrop').style.display = 'block';
+  document.getElementById('clientFile').value = '';
+  document.getElementById('clientCopies').value = '1';
+  document.getElementById('clientColor').value = 'bw';
+  document.getElementById('paneUpload').style.display  = 'none';
+  document.getElementById('paneWA').style.display      = 'none';
+  document.getElementById('paneEmail').style.display   = 'none';
+  var ids = ['methUpload','methWA','methEmail'];
+  ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.style.borderColor='#334155'; });
+  var btn = document.getElementById('btnConfirm');
+  if (btn) { btn.disabled = false; btn.textContent = '✅ Envoyer ma demande'; }
+  updateRecap();
+}
+</script>
+</body>
+</html>

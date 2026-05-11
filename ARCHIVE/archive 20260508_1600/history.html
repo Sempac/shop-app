@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Historique ventes</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  display:flex;
+  height:100vh;
+}
+.left{
+  width:40%;
+  background:#0f172a;
+  color:white;
+  padding:15px;
+  overflow-y:auto;
+}
+input,select{
+  width:100%;
+  padding:10px;
+  margin-bottom:8px;
+  box-sizing:border-box;
+}
+button{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+  border-radius:4px;
+}
+/* ── Bouton Accueil plus gros ── */
+.home-btn{
+  padding:16px !important;
+  background:#1e40af;
+  color:white;
+  font-size:16px;
+  border-radius:8px;
+  margin-bottom:14px;
+}
+.home-btn:hover{ background:#1d4ed8; }
+.search-btn{ background:#3b82f6; color:white; }
+.reset-btn { background:#ef4444; color:white; }
+.print-btn { background:#22c55e; color:white; }
+.daily-btn { background:#10b981; color:white; }
+
+.item{
+  background:#111827;
+  padding:10px;
+  margin-bottom:5px;
+  cursor:pointer;
+  border-radius:5px;
+  font-size:13px;
+}
+.item:hover{ background:#1f2937; }
+
+.right{
+  flex:1;
+  padding:20px;
+  overflow-y:auto;
+}
+table{ width:100%; border-collapse:collapse; }
+td,th{ border-bottom:1px solid #ddd; padding:8px; }
+.total{ margin-top:10px; font-size:20px; font-weight:bold; }
+.info{ margin-bottom:20px; background:#f3f4f6; padding:15px; }
+</style>
+</head>
+<body>
+
+<!-- LEFT -->
+<div class="left">
+<button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+<h3>Recherche ventes</h3>
+<input id="id" placeholder="ID vente">
+<label>Date min</label>
+<input id="date_min" type="date">
+<label>Date max</label>
+<input id="date_max" type="date">
+<input id="min" placeholder="Total min">
+<input id="max" placeholder="Total max">
+<select id="payment">
+  <option value="">Tous paiements</option>
+  <option value="card">Carte bancaire</option>
+  <option value="cash">Espèces</option>
+</select>
+<input id="customer" placeholder="Client">
+<button class="search-btn" onclick="searchOrders()">🔎 Rechercher</button>
+<button class="reset-btn"  onclick="resetFilters()">♻ Réinitialiser</button>
+<button class="daily-btn"  onclick="openDailyReport()">📊 Caisse du jour</button>
+<div id="list"></div>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+<h2>Détail vente</h2>
+<div class="info" id="info">Sélectionnez une vente</div>
+<button class="print-btn" onclick="printCurrent()">🖨 Imprimer facture</button>
+<table>
+<thead>
+<tr><th>Produit</th><th>Qté</th><th>Prix</th><th>Remise</th><th>Total</th></tr>
+</thead>
+<tbody id="items"></tbody>
+</table>
+<div class="total" id="total"></div>
+</div>
+
+<script>
+let current = null;
+
+function resetFilters(){
+  ['id','date_min','date_max','min','max','customer'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('payment').value='';
+  document.getElementById('list').innerHTML='';
+  document.getElementById('info').innerText='Sélectionnez une vente';
+  document.getElementById('items').innerHTML='';
+  document.getElementById('total').innerText='';
+}
+
+async function searchOrders(){
+  const params = new URLSearchParams();
+  const id       = document.getElementById('id').value.trim();
+  const dateMin  = document.getElementById('date_min').value;
+  const dateMax  = document.getElementById('date_max').value;
+  const min      = document.getElementById('min').value;
+  const max      = document.getElementById('max').value;
+  const payment  = document.getElementById('payment').value;
+  const customer = document.getElementById('customer').value;
+  if(id)       params.append('id',id);
+  if(dateMin)  params.append('date_min',dateMin);
+  if(dateMax)  params.append('date_max',dateMax);
+  if(min)      params.append('min',min);
+  if(max)      params.append('max',max);
+  if(payment)  params.append('payment',payment);
+  if(customer) params.append('customer',customer);
+  const res  = await fetch('/api/orders/search?' + params.toString());
+  const data = await res.json();
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  if(!data.length){ list.innerHTML='<p>Aucune vente</p>'; return; }
+  data.forEach(o=>{
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `<b>#${o.id}</b><br>💳 ${o.payment_method}<br>💰 ${o.total} €<br>📅 ${new Date(o.created_at).toLocaleString()}`;
+    div.onclick = () => loadOrder(o.id);
+    list.appendChild(div);
+  });
+}
+
+async function loadOrder(id){
+  const res  = await fetch('/api/orders/'+id);
+  const data = await res.json();
+  current = data;
+  document.getElementById('info').innerHTML = `
+    <h3>Vente #${data.order.id}</h3>
+    <p>💳 ${data.order.payment_method}</p>
+    <p>📅 ${new Date(data.order.created_at).toLocaleString()}</p>`;
+  let total = 0;
+  const tb = document.getElementById('items');
+  tb.innerHTML = '';
+  data.items.forEach(i=>{
+    const line = (i.price*i.quantity)-(i.discount*i.quantity);
+    total += line;
+    tb.innerHTML += `<tr><td>${i.name}</td><td>${i.quantity}</td><td>${i.price}</td><td>${i.discount}</td><td>${line.toFixed(2)}</td></tr>`;
+  });
+  document.getElementById('total').innerText = 'TOTAL : '+total.toFixed(2)+' €';
+}
+
+function printCurrent(){
+  if(!current){ alert('Aucune vente sélectionnée'); return; }
+  let rows = '';
+  current.items.forEach(i=>{
+    const line = (Number(i.price)*Number(i.quantity)) - (Number(i.discount)*Number(i.quantity));
+    rows += `
+    <tr>
+      <td style="border:1px solid black;padding:8px">${i.name}</td>
+      <td style="border:1px solid black;padding:8px;text-align:center">${i.quantity}</td>
+      <td style="border:1px solid black;padding:8px;text-align:right">${Number(i.price).toFixed(2)} €</td>
+      <td style="border:1px solid black;padding:8px;text-align:right">${Number(i.discount).toFixed(2)} €</td>
+      <td style="border:1px solid black;padding:8px;text-align:right">${line.toFixed(2)} €</td>
+    </tr>`;
+  });
+  const w = window.open('','_blank');
+  w.document.write(`
+  <html><head><meta charset="UTF-8">
+  <style>
+  body{ font-family:Arial; padding:30px; color:#000; }
+  .shop-header{ display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #000; padding-bottom:14px; margin-bottom:22px; }
+  .shop-name{ font-size:22px; font-weight:900; }
+  .shop-sub{ font-size:11px; color:#555; font-style:italic; margin-top:2px; }
+  .shop-info{ font-size:11px; color:#333; margin-top:3px; }
+  .invoice-title{ font-size:20px; font-weight:900; text-align:right; text-transform:uppercase; }
+  .invoice-meta{ font-size:12px; text-align:right; margin-top:4px; color:#555; }
+  table{ width:100%; border-collapse:collapse; margin-top:20px; }
+  th{ border:1px solid #000; padding:8px; background:#e5e7eb; text-align:left; }
+  td{ border:1px solid #000; padding:8px; }
+  .total-box{ margin-top:20px; text-align:right; font-size:20px; font-weight:bold; border-top:2px solid #000; padding-top:10px; }
+  .footer-print{ margin-top:40px; font-size:11px; color:#555; text-align:center; border-top:1px solid #ccc; padding-top:10px; }
+  </style></head><body>
+
+  <div class="shop-header">
+    <div>
+      <div class="shop-name">The SMARTPHONE</div>
+      <div class="shop-sub">Vente &amp; Réparation de smartphones</div>
+      <div class="shop-info">📍 1 Avenue d'Italie, 75013 Paris</div>
+      <div class="shop-info">📞 01 47 07 18 66 &nbsp;|&nbsp; 06 86 84 82 79</div>
+      <div class="shop-info">✉️ smartphonesatelier4@gmail.com</div>
+    </div>
+    <div>
+      <div class="invoice-title">FACTURE</div>
+      <div class="invoice-meta">N° ${current.order.id}</div>
+      <div class="invoice-meta">${new Date(current.order.created_at).toLocaleString('fr-FR')}</div>
+    </div>
+  </div>
+
+  <p><b>Client :</b> ${current.order.customer_name || 'CLIENT'}</p>
+  <p><b>Moyen de paiement :</b> ${current.order.payment_method}</p>
+
+  <table>
+    <tr><th>Produit</th><th>Qté</th><th>Prix</th><th>Remise</th><th>Total</th></tr>
+    ${rows}
+  </table>
+
+  <div class="total-box">TOTAL : ${Number(current.order.total).toFixed(2)} €</div>
+  <div class="footer-print">The SMARTPHONE — 1 Avenue d'Italie, 75013 Paris — 01 47 07 18 66 — smartphonesatelier4@gmail.com</div>
+
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+function openDailyReport(){
+  window.open('dailyreport.html','_blank');
+}
+</script>
+</body>
+</html>

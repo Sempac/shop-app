@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Caisse journalière</title>
+
+<style>
+
+body{
+  font-family:Arial;
+  margin:0;
+  padding:20px;
+  background:#f3f4f6;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+input,button{
+  padding:10px;
+  margin-right:10px;
+}
+
+button{
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.load-btn{background:#3b82f6;color:white;}
+.print-btn{background:#22c55e;color:white;}
+.back-btn{background:#111827;color:white;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+}
+
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+}
+
+th{
+  background:#111827;
+  color:white;
+}
+
+.total{
+  margin-top:20px;
+  font-size:22px;
+  font-weight:bold;
+  text-align:right;
+}
+
+/* ================= SUMMARY BOX ================= */
+.summary{
+  margin-top:20px;
+  background:white;
+  padding:15px;
+  border-radius:8px;
+}
+
+.summary h3{
+  margin-top:0;
+}
+
+.summary-grid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:10px;
+}
+
+.card{
+  background:#f9fafb;
+  padding:10px;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+
+/* ================= PRINT ================= */
+@media print{
+  button, input{
+    display:none;
+  }
+
+  body{
+    background:white;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+
+  <div>
+    <input type="date" id="date">
+
+    <button class="load-btn"
+    onclick="loadReport()">
+    🔎 Charger
+    </button>
+  </div>
+
+  <div>
+    <button class="back-btn"
+    onclick="location.href='history.html'">
+    ← Retour
+    </button>
+
+    <button class="print-btn"
+    onclick="window.print()">
+    🖨 Imprimer
+    </button>
+  </div>
+
+</div>
+
+<h2 id="title"></h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Produit</th>
+<th>Fournisseur</th>
+<th>Quantité</th>
+<th>Total ligne</th>
+</tr>
+</thead>
+
+<tbody id="body"></tbody>
+
+</table>
+
+<div class="total" id="total"></div>
+
+<!-- ================= SUMMARY FNAC STYLE ================= -->
+<div class="summary" id="summaryBox"></div>
+
+<script>
+
+document.getElementById("date").value =
+new Date().toISOString().slice(0,10);
+
+async function loadReport(){
+
+ const date =
+ document.getElementById("date").value;
+
+ const res =
+ await fetch("/api/orders/daily-report?date="+date);
+
+ const data =
+ await res.json();
+
+ if(!data || !data.items){
+   alert("Erreur chargement report");
+   return;
+ }
+
+ document.getElementById("title").innerText =
+ "Caisse du : " + date;
+
+ let total = 0;
+
+ const body =
+ document.getElementById("body");
+
+ body.innerHTML = "";
+
+ data.items.forEach(i=>{
+
+   total += Number(i.total || 0);
+
+   body.innerHTML += `
+   <tr>
+     <td>${i.product}</td>
+     <td>${i.supplier}</td>
+     <td>${i.quantity}</td>
+     <td>${Number(i.total || 0).toFixed(2)} €</td>
+   </tr>`;
+ });
+
+ document.getElementById("total").innerText =
+ "TOTAL JOUR : " + total.toFixed(2) + " €";
+
+ // ================= SUMMARY (CB / CASH / EXPENSES) =================
+ if(data.summary){
+
+   document.getElementById("summaryBox").innerHTML = `
+
+   <h3>📊 Résumé caisse</h3>
+
+   <div class="summary-line">
+
+     <div class="card">
+       💰 Ventes total<br>
+       <b>${data.summary.total_sales.toFixed(2)} €</b>
+     </div>
+
+     <div class="card">
+       💳 Carte bleue<br>
+       <b>${data.summary.cb.toFixed(2)} €</b>
+     </div>
+
+     <div class="card">
+       💵 Espèces<br>
+       <b>${data.summary.cash.toFixed(2)} €</b>
+     </div>
+
+     <div class="card">
+       📉 Dépenses<br>
+       <b>${data.summary.expenses.toFixed(2)} €</b>
+     </div>
+
+   </div>
+
+   `;
+
+ } else {
+
+   document.getElementById("summaryBox").innerHTML =
+   "<p>Aucun résumé disponible</p>";
+ }
+
+}
+
+loadReport();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dépenses — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h2{margin:0;font-size:18px;}
+.home-btn{padding:10px 20px;background:#1e40af;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;}
+.container{display:grid;grid-template-columns:1fr 1.6fr;gap:20px;padding:20px;max-width:1200px;margin:0 auto;}
+.card{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 4px #0001;}
+.card h3{margin:0 0 16px;font-size:16px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.fg label{font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:Arial;width:100%;}
+.btn-add{width:100%;padding:12px;background:#22c55e;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:4px;}
+.btn-add:hover{background:#16a34a;}
+.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.filters input,.filters select{padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Arial;}
+table{width:100%;border-collapse:collapse;}
+th{background:#0f172a;color:white;padding:10px 12px;text-align:left;font-size:12px;}
+td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
+tr:hover td{background:#f8fafc;}
+.cat-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;}
+.catFournisseur{background:#dbeafe;color:#1e40af;}.catLoyer{background:#fce7f3;color:#9d174d;}
+.catTransport{background:#d1fae5;color:#065f46;}.catMatriel{background:#ffedd5;color:#9a3412;}
+.catSalaire{background:#ede9fe;color:#5b21b6;}.catAutre{background:#f3f4f6;color:#374151;}
+.total-bar{background:#0f172a;color:white;border-radius:10px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+.total-bar span{font-size:20px;font-weight:bold;color:#f59e0b;}
+.del-btn{background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;}
+@media print{.home-btn,.btn-add,.fg,.del-btn,.filters,.no-print{display:none!important;}body{background:white;}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h2>📉 Dépenses</h2>
+  <div style="display:flex;gap:10px">
+    <button onclick="window.print()" style="padding:10px 18px;background:#475569;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold">🖨️ Imprimer</button>
+    <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
+  </div>
+</div>
+<div class="container">
+  <div>
+    <div class="card">
+      <h3>➕ Ajouter une dépense</h3>
+      <div class="fg"><label>Date</label><input type="date" id="dep_date"></div>
+      <div class="fg"><label>Description</label><input id="dep_desc" placeholder="Ex: Achat pièces Samsung"></div>
+      <div class="fg"><label>Montant (€)</label><input type="number" id="dep_amount" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg"><label>Catégorie</label>
+        <select id="dep_cat">
+          <option value="Fournisseur">Fournisseur</option>
+          <option value="Loyer">Loyer</option>
+          <option value="Transport">Transport</option>
+          <option value="Matériel">Matériel</option>
+          <option value="Salaire">Salaire</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <button class="btn-add" onclick="addExpense()">✅ Enregistrer la dépense</button>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <h3>📊 Résumé par catégorie</h3>
+      <div id="summaryByCat"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📋 Liste des dépenses</h3>
+    <div class="filters no-print">
+      <input type="date" id="f_from" onchange="loadExpenses()">
+      <input type="date" id="f_to"   onchange="loadExpenses()">
+      <select id="f_cat" onchange="loadExpenses()">
+        <option value="">Toutes catégories</option>
+        <option value="Fournisseur">Fournisseur</option>
+        <option value="Loyer">Loyer</option>
+        <option value="Transport">Transport</option>
+        <option value="Matériel">Matériel</option>
+        <option value="Salaire">Salaire</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </div>
+    <table>
+      <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th><th class="no-print"></th></tr></thead>
+      <tbody id="expBody"></tbody>
+    </table>
+    <div class="total-bar"><span>TOTAL PÉRIODE</span><span id="totalExp">0.00 €</span></div>
+  </div>
+</div>
+<script>
+const fmt = n => Number(n||0).toFixed(2) + ' €';
+const today    = new Date().toISOString().slice(0,10);
+const firstDay = today.slice(0,8) + '01';
+document.getElementById('dep_date').value = today;
+document.getElementById('f_from').value   = firstDay;
+document.getElementById('f_to').value     = today;
+
+async function addExpense(){
+  const desc=document.getElementById('dep_desc').value.trim();
+  const amount=Number(document.getElementById('dep_amount').value);
+  const cat=document.getElementById('dep_cat').value;
+  const date=document.getElementById('dep_date').value;
+  if(!desc||!amount){alert('⚠️ Description et montant obligatoires');return;}
+  const res=await fetch('/api/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc,amount,category:cat,date})});
+  const d=await res.json();
+  if(d.error){alert('❌ '+d.error);return;}
+  document.getElementById('dep_desc').value='';
+  document.getElementById('dep_amount').value='';
+  loadExpenses();
+}
+
+async function loadExpenses(){
+  const from=document.getElementById('f_from').value;
+  const to=document.getElementById('f_to').value;
+  const cat=document.getElementById('f_cat').value;
+  let url=`/api/expenses?from=${from}&to=${to}`;
+  if(cat) url+=`&category=${encodeURIComponent(cat)}`;
+  const res=await fetch(url);
+  const data=await res.json();
+  const tbody=document.getElementById('expBody');
+  let total=0; const byCat={};
+  tbody.innerHTML=data.length===0
+    ?'<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">Aucune dépense sur cette période</td></tr>'
+    :data.map(e=>{
+      total+=Number(e.amount||0);
+      byCat[e.category]=(byCat[e.category]||0)+Number(e.amount||0);
+      const cls='cat'+((e.category||'Autre').replace(/[^a-zA-Z]/g,''));
+      return `<tr>
+        <td>${new Date(e.date).toLocaleDateString('fr-FR')}</td>
+        <td><b>${e.description}</b></td>
+        <td><span class="cat-badge ${cls}">${e.category||'Autre'}</span></td>
+        <td style="font-weight:bold;color:#dc2626">${fmt(e.amount)}</td>
+        <td class="no-print"><button class="del-btn" onclick="deleteExpense(${e.id})">🗑</button></td>
+      </tr>`;
+    }).join('');
+  document.getElementById('totalExp').textContent=fmt(total);
+  const sumDiv=document.getElementById('summaryByCat');
+  sumDiv.innerHTML=Object.entries(byCat).length===0
+    ?'<p style="color:#94a3b8;font-size:13px">Aucune dépense</p>'
+    :Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{
+      const pct=total>0?Math.round(amt/total*100):0;
+      const cls='cat'+cat.replace(/[^a-zA-Z]/g,'');
+      return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="cat-badge ${cls}" style="min-width:90px">${cat}</span>
+        <div style="flex:1;margin:0 12px;height:8px;background:#f1f5f9;border-radius:4px">
+          <div style="width:${pct}%;height:100%;background:#ef4444;border-radius:4px"></div>
+        </div>
+        <span style="font-weight:bold;font-size:13px;min-width:80px;text-align:right">${fmt(amt)}</span>
+      </div>`;
+    }).join('');
+}
+
+async function deleteExpense(id){
+  if(!confirm('Supprimer cette dépense ?')) return;
+  await fetch('/api/expenses/'+id,{method:'DELETE'});
+  loadExpenses();
+}
+
+loadExpenses();
+</script>
+</body>
+</html>

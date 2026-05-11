@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rapport Journalier — PhoneShop</title>
+  <style>
+    /* ── BASE ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #fff;
+      color: #000;
+      font-size: 13px;
+    }
+
+    /* ── TOOLBAR (masquée à l'impression) ── */
+    #toolbar {
+      background: #333;
+      color: #fff;
+      padding: 11px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #toolbar span { font-weight: 700; font-size: 14px; }
+    #toolbar input[type=date] {
+      border: 1px solid #666;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      background: #444;
+      color: #fff;
+      font-family: inherit;
+    }
+    #toolbar button {
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 22px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #toolbar .controls { display: flex; gap: 12px; align-items: center; }
+
+    /* ── DOCUMENT ── */
+    #document {
+      max-width: 940px;
+      margin: 28px auto;
+      padding: 0 28px;
+    }
+
+    /* En-tête */
+    #entete {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid #000;
+      padding-bottom: 14px;
+      margin-bottom: 22px;
+    }
+    #entete .shop-name { font-size: 24px; font-weight: 900; }
+    #entete .shop-info { font-size: 11px; color: #555; margin-top: 3px; }
+    #entete .rapport-title { font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; text-align: right; }
+    #entete .rapport-date { font-size: 13px; font-weight: 700; margin-top: 5px; text-align: right; }
+    #entete .rapport-printed { font-size: 10px; color: #666; margin-top: 4px; text-align: right; }
+
+    /* Sections */
+    .section { margin-bottom: 22px; }
+    .section-title {
+      font-weight: 900;
+      font-size: 13px;
+      color: #000;
+      border-bottom: 2px solid #000;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .section-num { margin-right: 8px; }
+
+    /* Tableaux */
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      padding: 7px 12px;
+      font-weight: 800;
+      font-size: 11px;
+      background: #fff;
+      color: #000;
+      border: 1.5px solid #000;
+      letter-spacing: 0.3px;
+    }
+    th.right { text-align: right; }
+    th.center { text-align: center; }
+    td {
+      padding: 8px 12px;
+      font-size: 12px;
+      border: 1px solid #999;
+      background: #fff;
+      color: #000;
+    }
+    td.right { text-align: right; }
+    td.center { text-align: center; }
+    td.bold { font-weight: 800; }
+    td.total-row { font-weight: 900; border-top: 2px solid #000; }
+    td.grand-total { font-weight: 900; font-size: 15px; border-top: 3px solid #000; text-decoration: underline double; }
+    td.underline { text-decoration: underline; }
+
+    /* Mixte paiement */
+    .mixte-label { font-weight: 700; font-size: 11px; }
+    .mixte-detail { font-size: 10px; color: #444; }
+
+    /* Pied de page */
+    #footer {
+      border-top: 3px solid #000;
+      padding-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+    #footer .footer-info { font-size: 11px; color: #666; }
+    #footer table { width: auto; min-width: 300px; }
+    #footer td { padding: 6px 14px; }
+    #footer .total-label { font-size: 11px; color: #555; border: 1px solid #999; }
+    #footer .total-value { font-weight: 800; text-align: right; border: 1px solid #999; }
+    #footer .grand-label { font-weight: 900; font-size: 12px; border: 2px solid #000; }
+    #footer .grand-value { font-weight: 900; font-size: 15px; text-align: right; border: 2px solid #000; text-decoration: underline double; }
+
+    /* Signatures */
+    #signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      margin-top: 48px;
+    }
+    .signature { text-align: center; }
+    .signature-line {
+      border-top: 1.5px solid #000;
+      padding-top: 6px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 52px;
+    }
+
+    /* Loading / Error */
+    #loading, #error {
+      text-align: center;
+      padding: 40px;
+      font-size: 14px;
+      color: #666;
+    }
+    #error { color: #c00; }
+
+    /* ── IMPRESSION ── */
+    @media print {
+      #toolbar { display: none !important; }
+      body { background: white !important; margin: 0 !important; }
+      #document { max-width: 100% !important; margin: 0 !important; padding: 16px !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOOLBAR -->
+<div id="toolbar">
+  <span>📱 PhoneShop — Rapport journalier</span>
+  <div class="controls">
+    <input type="date" id="datePicker" />
+    <button onclick="window.print()">🖨️ Imprimer</button>
+  </div>
+</div>
+
+<!-- DOCUMENT -->
+<div id="document">
+  <div id="loading">⏳ Chargement du rapport...</div>
+  <div id="error" style="display:none"></div>
+  <div id="rapport" style="display:none"></div>
+</div>
+
+<script>
+  /* ── Helpers ── */
+  const fmt = n => Number(n || 0).toLocaleString('fr-FR') + ' DA';
+
+  function paiementHtml(method) {
+    const m = (method || '').toLowerCase();
+    const isCB  = m.includes('cb') || m.includes('card');
+    const isEsp = m.includes('esp') || m.includes('cash');
+    if (isCB && isEsp) {
+      return `<div class="mixte-label">MIXTE</div>`;
+    }
+    if (isCB)  return `<span style="font-weight:700;font-size:11px">CB</span>`;
+    return `<span style="font-weight:700;font-size:11px">Espèces</span>`;
+  }
+
+  function dateLabel(dateStr) {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', {
+      weekday:'long', year:'numeric', month:'long', day:'numeric'
+    });
+  }
+
+  /* ── Chargement des données ── */
+  async function loadReport(date) {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('error').style.display   = 'none';
+    document.getElementById('rapport').style.display = 'none';
+
+    try {
+      const res  = await fetch(`/api/daily-report?date=${date}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderReport(date, data);
+    } catch(e) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display   = 'block';
+      document.getElementById('error').textContent     = '❌ Erreur : ' + e.message;
+    }
+  }
+
+  /* ── Rendu HTML ── */
+  function renderReport(date, d) {
+    const tv = d.totaux_ventes;
+    const tr = d.totaux_reparations;
+
+    const totalVentes  = parseFloat(tv.grand_total || 0);
+    const totalRep     = parseFloat(tr.grand_total || 0);
+    const grandTotal   = totalVentes + totalRep;
+
+    const vCB  = parseFloat(tv.total_cb  || 0);
+    const vEsp = parseFloat(tv.total_esp || 0);
+    const rCB  = parseFloat(tr.total_cb  || 0);
+    const rEsp = parseFloat(tr.total_esp || 0);
+    const totalCB  = vCB  + rCB;
+    const totalEsp = vEsp + rEsp;
+
+    const nbVentes = parseInt(tv.nb_ventes || 0);
+    const nbRep    = parseInt(tr.nb_reps   || 0);
+
+    /* Toutes les lignes fusionnées */
+    const toutesLignes = [
+      ...d.ventes.map(v => ({
+        id:          'V-' + v.id,
+        designation: v.designation || '—',
+        fournisseur: v.fournisseur || '—',
+        type:        'Vente',
+        method:      v.payment_method,
+        total:       parseFloat(v.total || 0),
+      })),
+      ...d.reparations.map(r => ({
+        id:          'R-' + r.id,
+        designation: r.designation.trim() || '—',
+        fournisseur: 'SAV',
+        type:        'Réparation',
+        method:      r.payment_method,
+        total:       parseFloat(r.total || 0),
+      })),
+    ];
+
+    const lignesHtml = toutesLignes.length === 0
+      ? `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">Aucune opération ce jour</td></tr>`
+      : toutesLignes.map(l => `
+          <tr>
+            <td style="font-size:11px;color:#666">${l.id}</td>
+            <td class="bold">${l.designation}</td>
+            <td style="color:#444">${l.fournisseur}</td>
+            <td class="center" style="font-size:11px">${l.type}</td>
+            <td class="center">${paiementHtml(l.method)}</td>
+            <td class="right bold">${fmt(l.total)}</td>
+          </tr>`).join('');
+
+    document.getElementById('rapport').innerHTML = `
+
+      <!-- EN-TÊTE -->
+      <div id="entete">
+        <div>
+          <div class="shop-name">PHONESHOP</div>
+          <div class="shop-info">123 Rue Principale, Alger</div>
+          <div class="shop-info">Tél : 0661 000 000</div>
+        </div>
+        <div>
+          <div class="rapport-title">Rapport de clôture journalière</div>
+          <div class="rapport-date">${dateLabel(date)}</div>
+          <div class="rapport-printed">Imprimé le ${new Date().toLocaleString('fr-FR')}</div>
+        </div>
+      </div>
+
+      <!-- ① RÉSUMÉ -->
+      <div class="section">
+        <div class="section-title"><span class="section-num">①</span>Résumé global</div>
+        <table>
+          <thead>
+            <tr>
+              <th class="center">Total Ventes</th>
+              <th class="center">Total Réparations</th>
+              <th class="center">Chiffre du jour</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center bold" style="font-size:16px">${fmt(totalVentes)}</td>
+              <td class="center bold" style="font-size:16px">${fmt(totalRep)}</td>
+              <td class="center" style="font-weight:900;font-size:17px;text-decoration:underline">${fmt(grandTotal)}</td>
+            </tr>
+            <tr>
+              <td class="center" style="font-size:10px;color:#666">${nbVentes} transaction(s)</td>
+              <td class="center" style="font-size:10px;color:#666">${nbRep} réparation(s)</td>
+              <td class="center" style="font-size:10px;color:#666">Ventes + Réparations</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ② ENCAISSEMENTS -->
+      <div class="section">
+        <div class="section-title"><span class="section-num">②</span>Encaissements par mode</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Mode</th>
+              <th class="right">Ventes</th>
+              <th class="right">Réparations</th>
+              <th class="right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bold">Carte / CB</td>
+              <td class="right bold">${fmt(vCB)}</td>
+              <td class="right bold">${fmt(rCB)}</td>
+              <td class="right bold">${fmt(vCB + rCB)}</td>
+            </tr>
+            <tr>
+              <td class="bold">Espèces</td>
+              <td class="right bold">${fmt(vEsp)}</td>
+              <td class="right bold">${fmt(rEsp)}</td>
+              <td class="right bold">${fmt(vEsp + rEsp)}</td>
+            </tr>
+            <tr>
+              <td class="total-row">TOTAL</td>
+              <td class="right total-row">${fmt(totalVentes)}</td>
+              <td class="right total-row">${fmt(totalRep)}</td>
+              <td class="right total-row underline" style="font-size:14px">${fmt(grandTotal)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ③ DÉTAIL FUSIONNÉ -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-num">③</span>
+          Détail ventes &amp; réparations — ${toutesLignes.length} opérations · ${fmt(grandTotal)}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Désignation / Appareil</th>
+              <th>Fournisseur</th>
+              <th class="center">Type</th>
+              <th class="center">Paiement</th>
+              <th class="right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lignesHtml}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" class="bold" style="font-weight:900;font-size:13px;border-top:3px solid #000">TOTAL GÉNÉRAL</td>
+              <td class="center" style="font-size:10px;color:#555;border-top:3px solid #000">
+                CB:${fmt(totalCB)} · Esp:${fmt(totalEsp)}
+              </td>
+              <td class="right grand-total">${fmt(grandTotal)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- PIED DE PAGE -->
+      <div id="footer">
+        <div class="footer-info">PhoneShop POS v1.0 · Rapport généré automatiquement</div>
+        <table>
+          <tr>
+            <td class="total-label">Total CB</td>
+            <td class="total-value">${fmt(totalCB)}</td>
+          </tr>
+          <tr>
+            <td class="total-label">Total Espèces</td>
+            <td class="total-value">${fmt(totalEsp)}</td>
+          </tr>
+          <tr>
+            <td class="grand-label">CHIFFRE DU JOUR</td>
+            <td class="grand-value">${fmt(grandTotal)}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- SIGNATURES -->
+      <div id="signatures">
+        <div class="signature">
+          <div class="signature-line">Responsable caisse · Signature &amp; cachet</div>
+        </div>
+        <div class="signature">
+          <div class="signature-line">Gérant / Directeur · Signature &amp; cachet</div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('rapport').style.display = 'block';
+  }
+
+  /* ── Init ── */
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('datePicker').value = today;
+  document.getElementById('datePicker').addEventListener('change', e => loadReport(e.target.value));
+  loadReport(today);
+</script>
+</body>
+</html>

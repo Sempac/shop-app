@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The SMARTPHONE - Dashboard</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#020817;
+    color:white;
+    height:100vh;
+    overflow:hidden;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.topbar{
+    height:110px;
+    background:#030b1b;
+    border-bottom:1px solid #0f2747;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 25px;
+}
+
+.logo-section{
+    display:flex;
+    align-items:center;
+    gap:18px;
+}
+
+.logo{
+    width:58px;
+    height:58px;
+    border-radius:14px;
+    background:linear-gradient(135deg,#2563eb,#0ea5e9);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    box-shadow:0 0 20px rgba(59,130,246,.4);
+}
+
+.company h1{
+    font-size:30px;
+    font-weight:900;
+    letter-spacing:.5px;
+}
+
+.company p{
+    margin-top:6px;
+    color:#94a3b8;
+    font-size:15px;
+}
+
+/* =========================
+   CONTACT
+========================= */
+
+.contact{
+    line-height:2;
+    color:#dbeafe;
+    font-size:14px;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+.status-box{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.status{
+    background:#0f172a;
+    border:1px solid #1e293b;
+    padding:10px 18px;
+    border-radius:14px;
+    font-size:14px;
+    min-width:220px;
+}
+
+.green{
+    color:#22c55e;
+    margin-right:8px;
+}
+
+/* =========================
+   USER
+========================= */
+
+.user-box{
+    width:240px;
+    height:80px;
+    border:1px solid #1e3a5f;
+    border-radius:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    background:linear-gradient(135deg,#071426,#09182c);
+}
+
+.user-left{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.avatar{
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    background:#0f172a;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+}
+
+/* =========================
+   CLOCK SECTION
+========================= */
+
+.datetime{
+    height:220px;
+    background:radial-gradient(circle at center,#052255,#010b1f);
+    border-bottom:1px solid #10233d;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 70px;
+}
+
+.clock-section{
+    flex:1;
+}
+
+.clock{
+    font-size:110px;
+    font-weight:900;
+    letter-spacing:3px;
+    text-shadow:0 0 20px rgba(255,255,255,.12);
+}
+
+.date{
+    margin-top:10px;
+    color:#9fb7d9;
+    font-size:24px;
+}
+
+.separator{
+    width:1px;
+    height:140px;
+    background:#274160;
+    margin:0 60px;
+}
+
+.right-date{
+    width:300px;
+}
+
+.day{
+    font-size:58px;
+    color:#3b82f6;
+    font-weight:900;
+    margin-bottom:25px;
+}
+
+.week{
+    color:#cbd5e1;
+    font-size:28px;
+    margin-bottom:18px;
+}
+
+.sync{
+    color:#4ade80;
+    font-size:26px;
+}
+
+/* =========================
+   MAIN GRID
+========================= */
+
+.main{
+    padding:24px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:22px;
+    overflow:auto;
+    height:calc(100vh - 390px);
+}
+
+.card{
+    border-radius:20px;
+    min-height:200px;
+    padding:28px;
+    position:relative;
+    overflow:hidden;
+    text-decoration:none;
+    color:white;
+    transition:.18s;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:
+        0 10px 25px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 18px 35px rgba(0,0,0,.55);
+}
+
+.card::after{
+    content:"›";
+    position:absolute;
+    right:24px;
+    bottom:18px;
+    font-size:44px;
+    opacity:.8;
+}
+
+.card-top{
+    display:flex;
+    align-items:flex-start;
+    gap:20px;
+}
+
+.icon{
+    font-size:58px;
+    min-width:70px;
+}
+
+.title{
+    font-size:20px;
+    font-weight:900;
+    margin-bottom:18px;
+}
+
+.desc{
+    font-size:16px;
+    line-height:1.9;
+    color:rgba(255,255,255,.92);
+}
+
+/* =========================
+   COLORS
+========================= */
+
+.sales{
+    background:linear-gradient(135deg,#065f46,#16a34a);
+}
+
+.repairs{
+    background:linear-gradient(135deg,#0f766e,#0891b2);
+}
+
+.stock{
+    background:linear-gradient(135deg,#b45309,#d97706);
+}
+
+.expenses{
+    background:linear-gradient(135deg,#991b1b,#dc2626);
+}
+
+.print{
+    background:linear-gradient(135deg,#334155,#111827);
+}
+
+.history{
+    background:linear-gradient(135deg,#1d4ed8,#003ea8);
+}
+
+.lots{
+    background:linear-gradient(135deg,#4c1d95,#6d28d9);
+}
+
+.contacts{
+    background:linear-gradient(135deg,#0f766e,#0e7490);
+}
+
+.returns{
+    background:linear-gradient(135deg,#5b21b6,#7c3aed);
+}
+
+.credits{
+    background:linear-gradient(135deg,#0e7490,#0891b2);
+}
+
+.caisse{
+    background:linear-gradient(135deg,#b45309,#d97706);
+}
+
+.compta{
+    background:linear-gradient(135deg,#1d4ed8,#003ea8);
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+.footer{
+    height:55px;
+    background:#030b1b;
+    border-top:1px solid #10233d;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#94a3b8;
+    font-size:16px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:1400px){
+
+    .main{
+        grid-template-columns:repeat(3,1fr);
+    }
+
+}
+
+@media(max-width:1000px){
+
+    body{
+        overflow:auto;
+    }
+
+    .topbar{
+        height:auto;
+        flex-direction:column;
+        gap:20px;
+        padding:20px;
+    }
+
+    .datetime{
+        flex-direction:column;
+        height:auto;
+        padding:40px 20px;
+        text-align:center;
+    }
+
+    .separator{
+        width:80%;
+        height:1px;
+        margin:30px 0;
+    }
+
+    .main{
+        grid-template-columns:1fr;
+        height:auto;
+    }
+
+    .clock{
+        font-size:70px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- =========================
+     HEADER
+========================= -->
+
+<div class="topbar">
+
+    <div class="logo-section">
+
+        <div class="logo">
+            📱
+        </div>
+
+        <div class="company">
+            <h1>The SMARTPHONE</h1>
+            <p>Vente & Réparation de smartphones</p>
+        </div>
+
+    </div>
+
+    <div class="contact">
+        📍 1 Avenue d'Italie, 75013 Paris<br>
+        📞 01 47 07 18 66 &nbsp; | &nbsp; 06 86 84 82 79<br>
+        ✉️ smartphonesatelier4@gmail.com
+    </div>
+
+    <div class="status-box">
+
+        <div class="status">
+            <span class="green">●</span> PostgreSQL : OK
+        </div>
+
+        <div class="status">
+            <span class="green">●</span> Imprimante : OK
+        </div>
+
+        <div class="status">
+            <span class="green">●</span> Sauvegarde : OK
+        </div>
+
+    </div>
+
+    <div class="user-box">
+
+        <div class="user-left">
+
+            <div class="avatar">
+                👤
+            </div>
+
+            <div>
+                <div style="font-size:26px;font-weight:bold;">
+                    Admin
+                </div>
+
+                <div style="color:#cbd5e1;margin-top:4px;">
+                    Connecté
+                </div>
+            </div>
+
+        </div>
+
+        <div style="font-size:22px;">
+            ▼
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================
+     CLOCK
+========================= -->
+
+<div class="datetime">
+
+    <div class="clock-section">
+
+        <div class="clock">
+            <span id="hh">00</span>:<span id="mm">00</span>:<span id="ss">00</span>
+        </div>
+
+        <div class="date" id="date">
+            11 mai 2026
+        </div>
+
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="right-date">
+
+        <div class="day" id="day">
+            LUNDI
+        </div>
+
+        <div class="week" id="week">
+            📅 Semaine 20
+        </div>
+
+        <div class="sync">
+            🔄 Synchronisation active
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<div class="main">
+
+    <a href="#" class="card sales">
+        <div class="card-top">
+            <div class="icon">⚡</div>
+            <div>
+                <div class="title">VENTES</div>
+                <div class="desc">
+                    Caisse rapide<br>
+                    Paiement mixte<br>
+                    Ticket / Facture
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card repairs">
+        <div class="card-top">
+            <div class="icon">🔧</div>
+            <div>
+                <div class="title">RÉPARATIONS</div>
+                <div class="desc">
+                    Gestion SAV<br>
+                    📞 Contact client<br>
+                    Suivi atelier
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card stock">
+        <div class="card-top">
+            <div class="icon">📦</div>
+            <div>
+                <div class="title">STOCK</div>
+                <div class="desc">
+                    Grade · Couleur<br>
+                    Fournisseur<br>
+                    ⚡ Vendre direct
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card expenses">
+        <div class="card-top">
+            <div class="icon">📉</div>
+            <div>
+                <div class="title">DÉPENSES</div>
+                <div class="desc">
+                    Sorties caisse<br>
+                    Fournisseurs<br>
+                    Suivi des coûts
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card print">
+        <div class="card-top">
+            <div class="icon">🖨️</div>
+            <div>
+                <div class="title">IMPRESSION</div>
+                <div class="desc">
+                    Documents clients<br>
+                    QR Code Wi-Fi<br>
+                    Couleur / N&B
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card history">
+        <div class="card-top">
+            <div class="icon">🧾</div>
+            <div>
+                <div class="title">HISTORIQUE</div>
+                <div class="desc">
+                    Recherche ventes<br>
+                    Réimpression<br>
+                    Filtres avancés
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card lots">
+        <div class="card-top">
+            <div class="icon">🗂️</div>
+            <div>
+                <div class="title">LOTS</div>
+                <div class="desc">
+                    Achat de lots<br>
+                    Rentabilité<br>
+                    Suivi appareils
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card contacts">
+        <div class="card-top">
+            <div class="icon">📒</div>
+            <div>
+                <div class="title">CONTACTS</div>
+                <div class="desc">
+                    Fournisseurs · Équipe<br>
+                    Réparateurs · Banque<br>
+                    📞 💬 WA · ✉️
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card returns">
+        <div class="card-top">
+            <div class="icon">↩️</div>
+            <div>
+                <div class="title">RETOURS</div>
+                <div class="desc">
+                    Retours clients<br>
+                    Retours fournisseur<br>
+                    Stock inutilisable
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card credits">
+        <div class="card-top">
+            <div class="icon">💳</div>
+            <div>
+                <div class="title">CRÉDITS</div>
+                <div class="desc">
+                    Dettes clients<br>
+                    Paiements partiels<br>
+                    Suivi des restes
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card caisse">
+        <div class="card-top">
+            <div class="icon">📊</div>
+            <div>
+                <div class="title">CAISSE DU JOUR</div>
+                <div class="desc">
+                    Rapport journalier<br>
+                    CB / Espèces<br>
+                    Net caisse
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <a href="#" class="card compta">
+        <div class="card-top">
+            <div class="icon">📋</div>
+            <div>
+                <div class="title">RAPPORT COMPTABLE</div>
+                <div class="desc">
+                    Détails CA<br>
+                    CB / Espèces / DP<br>
+                    Pour le comptable
+                </div>
+            </div>
+        </div>
+    </a>
+
+</div>
+
+<!-- =========================
+     FOOTER
+========================= -->
+
+<div class="footer">
+    The SMARTPHONE © 2026 &nbsp; | &nbsp; 1 Avenue d'Italie, 75013 Paris
+</div>
+
+<!-- =========================
+     SCRIPT
+========================= -->
+
+<script>
+
+const jours = [
+    "DIMANCHE",
+    "LUNDI",
+    "MARDI",
+    "MERCREDI",
+    "JEUDI",
+    "VENDREDI",
+    "SAMEDI"
+];
+
+const mois = [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre"
+];
+
+function pad(n){
+    return String(n).padStart(2,"0");
+}
+
+function weekNumber(d){
+
+    d = new Date(Date.UTC(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate()
+    ));
+
+    let dayNum = d.getUTCDay() || 7;
+
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+
+    let yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+
+}
+
+function updateClock(){
+
+    const now = new Date();
+
+    document.getElementById("hh").textContent =
+        pad(now.getHours());
+
+    document.getElementById("mm").textContent =
+        pad(now.getMinutes());
+
+    document.getElementById("ss").textContent =
+        pad(now.getSeconds());
+
+    document.getElementById("day").textContent =
+        jours[now.getDay()];
+
+    document.getElementById("date").textContent =
+        now.getDate() + " " +
+        mois[now.getMonth()] + " " +
+        now.getFullYear();
+
+    document.getElementById("week").textContent =
+        "📅 Semaine " + weekNumber(now);
+
+}
+
+updateClock();
+
+setInterval(updateClock,1000);
+
+</script>
+
+</body>
+</html>

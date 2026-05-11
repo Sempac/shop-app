@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Caisse journalière — The SMARTPHONE</title>
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 20px;
+  background: #f3f4f6;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+input { padding: 10px; margin-right: 10px; border:1px solid #ccc; border-radius:4px; }
+button {
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 10px 16px;
+}
+/* ── Bouton Accueil plus gros ── */
+.home-btn {
+  background: #1e40af;
+  color: white;
+  font-size: 16px;
+  padding: 14px 22px !important;
+  border-radius: 8px;
+}
+.home-btn:hover { background: #1d4ed8; }
+.load-btn  { background: #3b82f6; color: white; }
+.print-btn { background: #22c55e; color: white; }
+
+/* ── Entête impression ── */
+.print-header {
+  display: none;
+  margin-bottom: 18px;
+  border-bottom: 3px solid #000;
+  padding-bottom: 14px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.print-header .left { flex: 1; }
+.print-header .shop-name { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+.print-header .shop-sub  { font-size: 11px; color: #555; font-style: italic; margin-top: 2px; }
+.print-header .info-line { font-size: 11px; color: #333; margin-top: 4px; }
+.print-header .right { text-align: right; }
+.print-header .report-title { font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+.print-header .report-date  { font-size: 13px; font-weight: 700; margin-top: 5px; }
+.print-header .report-printed { font-size: 10px; color: #777; margin-top: 3px; }
+
+table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+th, td { border: 1px solid #ddd; padding: 8px; }
+th { background: #111827; color: white; font-size: 12px; }
+td { font-size: 13px; }
+td.center { text-align: center; }
+td.right  { text-align: right; font-weight: bold; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+.badge-vente { background: #dbeafe; color: #1e40af; }
+.badge-rep   { background: #ffedd5; color: #9a3412; }
+.mixte { font-size: 11px; font-weight: bold; }
+.mixte span { display: block; font-size: 10px; color: #555; font-weight: normal; }
+
+tfoot td { background: #111827; color: white; font-weight: bold; font-size: 13px; border: 1px solid #333; }
+tfoot td.right { text-align: right; font-size: 15px; }
+
+.summary { margin-top: 20px; background: white; padding: 15px; border-radius: 8px; }
+.summary h3 { margin-top: 0; margin-bottom: 12px; }
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.card { background: #f9fafb; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+.card b { font-size: 16px; display: block; margin-top: 4px; }
+
+.signatures { display: none; margin-top: 48px; }
+.sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; margin-top: 8px; }
+.sig-box { text-align: center; }
+.sig-line { border-top: 1.5px solid #000; padding-top: 6px; font-size: 11px; color: #555; margin-top: 52px; }
+
+@media print {
+  button, input { display: none !important; }
+  body { background: white; padding: 12px; }
+  .print-header { display: flex !important; }
+  h2#title { display: none; }
+  .badge-vente, .badge-rep { background: none !important; color: #000 !important; padding: 0; font-size: 11px; }
+  .mixte span { color: #444 !important; }
+  tfoot td { background: none !important; color: #000 !important; border: 1.5px solid #000 !important; }
+  .card { border: 1px solid #999 !important; background: none !important; }
+  .summary { border: 1px solid #ccc; border-radius: 0; }
+  .signatures { display: block !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ENTÊTE IMPRESSION UNIQUEMENT -->
+<div class="print-header" id="printHeader">
+  <div class="left">
+    <div class="shop-name">The SMARTPHONE</div>
+    <div class="shop-sub">Vente &amp; Réparation de smartphones</div>
+    <div class="info-line">📍 1 Avenue d'Italie, 75013 Paris</div>
+    <div class="info-line">📞 01 47 07 18 66 &nbsp;|&nbsp; 06 86 84 82 79</div>
+    <div class="info-line">✉️ smartphonesatelier4@gmail.com</div>
+  </div>
+  <div class="right">
+    <div class="report-title">Rapport de clôture journalière</div>
+    <div class="report-date" id="printDate"></div>
+    <div class="report-printed" id="printedAt"></div>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="header">
+  <div>
+    <input type="date" id="date">
+    <button class="load-btn" onclick="loadReport()">🔎 Charger</button>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+    <button class="print-btn" onclick="window.print()">🖨 Imprimer</button>
+  </div>
+</div>
+
+<h2 id="title"></h2>
+
+<table id="mainTable" style="display:none">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Désignation / Appareil</th>
+      <th>Fournisseur</th>
+      <th>Type</th>
+      <th>Paiement</th>
+      <th>Total ligne</th>
+    </tr>
+  </thead>
+  <tbody id="body"></tbody>
+  <tfoot id="tableFooter"></tfoot>
+</table>
+
+<div class="summary" id="summaryBox" style="display:none"></div>
+
+<div class="signatures" id="signatures">
+  <div class="sig-grid">
+    <div class="sig-box"><div class="sig-line">Responsable caisse · Signature &amp; cachet</div></div>
+    <div class="sig-box"><div class="sig-line">Gérant / Directeur · Signature &amp; cachet</div></div>
+  </div>
+</div>
+
+<script>
+const fmtEur = n => Number(n || 0).toFixed(2) + ' €';
+
+function paiementHtml(method) {
+  const m = (method || '').toLowerCase();
+  const isCB  = m.includes('cb') || m.includes('card') || m === 'carte';
+  const isEsp = m.includes('esp') || m.includes('cash');
+  if (isCB && isEsp) return `<div class="mixte">MIXTE<span>CB + Espèces</span></div>`;
+  if (isCB)  return 'CB';
+  if (isEsp) return 'Espèces';
+  return method || '—';
+}
+
+function dateLabel(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+}
+
+document.getElementById('date').value = new Date().toISOString().slice(0, 10);
+
+async function loadReport() {
+  const date = document.getElementById('date').value;
+  document.getElementById('title').innerText = 'Chargement...';
+  document.getElementById('mainTable').style.display = 'none';
+  document.getElementById('summaryBox').style.display = 'none';
+  try {
+    const res  = await fetch('/api/daily-report?date=' + date);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderReport(date, data);
+  } catch(e) {
+    document.getElementById('title').innerText = '❌ Erreur : ' + e.message;
+  }
+}
+
+function renderReport(date, data) {
+  const tv = data.totaux_ventes      || {};
+  const tr = data.totaux_reparations || {};
+  const totalVentes = parseFloat(tv.grand_total || 0);
+  const totalRep    = parseFloat(tr.grand_total || 0);
+  const grandTotal  = totalVentes + totalRep;
+  const vCB  = parseFloat(tv.total_cb  || 0);
+  const vEsp = parseFloat(tv.total_esp || 0);
+  const rCB  = parseFloat(tr.total_cb  || 0);
+  const rEsp = parseFloat(tr.total_esp || 0);
+  const totalCB  = vCB + rCB;
+  const totalEsp = vEsp + rEsp;
+  const nbV       = parseInt(tv.nb_ventes || 0);
+  const nbR       = parseInt(tr.nb_reps   || 0);
+  const totalDep  = parseFloat(data.total_depenses || 0);
+  const netCaisse = grandTotal - totalDep;
+
+  const lignes = [
+    ...(data.ventes || []).map(v => ({
+      id: 'V-'+v.id, designation: v.designation||'—', fournisseur: v.fournisseur||'—',
+      type: 'Vente', method: v.payment_method, total: parseFloat(v.total||0),
+    })),
+    ...(data.reparations || []).map(r => ({
+      id: 'R-'+r.id, designation: (r.designation||'').trim()||'—', fournisseur: 'SAV',
+      type: 'Réparation', method: r.payment_method, total: parseFloat(r.total||0),
+    })),
+  ];
+
+  document.getElementById('title').innerText     = 'Caisse du : ' + date;
+  document.getElementById('printDate').innerText = dateLabel(date);
+  document.getElementById('printedAt').innerText = 'Imprimé le ' + new Date().toLocaleString('fr-FR');
+
+  const body = document.getElementById('body');
+  body.innerHTML = lignes.length === 0
+    ? `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">Aucune opération ce jour</td></tr>`
+    : lignes.map(l => `
+      <tr>
+        <td style="font-size:11px;color:#888">${l.id}</td>
+        <td><b>${l.designation}</b></td>
+        <td style="color:#555">${l.fournisseur}</td>
+        <td class="center"><span class="badge ${l.type==='Vente'?'badge-vente':'badge-rep'}">${l.type}</span></td>
+        <td class="center">${paiementHtml(l.method)}</td>
+        <td class="right">${fmtEur(l.total)}</td>
+      </tr>`).join('');
+
+  document.getElementById('tableFooter').innerHTML = `
+    <tr>
+      <td colspan="4"><b>TOTAL GÉNÉRAL — ${lignes.length} opération(s)</b></td>
+      <td style="font-size:11px;text-align:center">CB: ${fmtEur(totalCB)}<br>Esp: ${fmtEur(totalEsp)}</td>
+      <td class="right" style="font-size:16px">${fmtEur(grandTotal)}</td>
+    </tr>`;
+
+  document.getElementById('summaryBox').innerHTML = `
+    <h3>📊 Résumé caisse — ${dateLabel(date)}</h3>
+    <div class="summary-grid">
+      <div class="card">🛒 Ventes<br><b>${fmtEur(totalVentes)}</b><span style="font-size:11px;color:#888">${nbV} transaction(s)</span></div>
+      <div class="card">🔧 Réparations<br><b>${fmtEur(totalRep)}</b><span style="font-size:11px;color:#888">${nbR} réparation(s)</span></div>
+      <div class="card">💳 Total CB<br><b>${fmtEur(totalCB)}</b></div>
+      <div class="card">💵 Total Espèces<br><b>${fmtEur(totalEsp)}</b></div>
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="background:#f9fafb;border:1px solid #ddd;border-radius:6px;padding:10px 18px;font-size:13px">
+        📉 Dépenses du jour&nbsp;&nbsp;<b style="font-size:16px;color:#dc2626">− ${fmtEur(totalDep)}</b>
+      </div>
+      <div style="background:#111827;color:white;border-radius:6px;padding:10px 18px;font-size:22px;font-weight:bold">
+        NET CAISSE : ${fmtEur(netCaisse)}
+      </div>
+    </div>
+    <div style="text-align:right;font-size:16px;color:#555;margin-top:6px">CA brut : ${fmtEur(grandTotal)}</div>`;
+
+  document.getElementById('mainTable').style.display = 'table';
+  document.getElementById('summaryBox').style.display = 'block';
+}
+
+loadReport();
+</script>
+</body>
+</html>

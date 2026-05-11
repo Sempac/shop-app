@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Caisse Pro</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  display:flex;
+  height:100vh;
+  background:#f1f5f9;
+}
+
+.left{
+  width:40%;
+  background:#0f172a;
+  color:white;
+  padding:15px;
+}
+
+.right{
+  flex:1;
+  padding:20px;
+  background:white;
+}
+
+input,button{
+  padding:10px;
+  margin-bottom:8px;
+  width:100%;
+}
+
+.search-btn{
+  background:#3b82f6;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+
+#result button{
+  width:100%;
+  margin:5px 0;
+  padding:10px;
+  background:#10b981;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+td,th{
+  padding:8px;
+  border-bottom:1px solid #ddd;
+  color:black;
+}
+
+.total{
+  font-size:22px;
+  font-weight:bold;
+  margin-top:10px;
+  color:black;
+}
+
+.pay{
+  width:100%;
+  padding:12px;
+  background:#22c55e;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+
+label{
+  display:block;
+  margin-top:10px;
+  color:black;
+}
+
+.nav a{
+  display:block;
+  text-align:center;
+  padding:10px;
+  background:#111827;
+  color:white;
+  text-decoration:none;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="left">
+
+<h3>Produits</h3>
+
+<input id="search" placeholder="Nom ou code barre">
+<button class="search-btn" onclick="searchProduct()">Rechercher</button>
+
+<div id="result"></div>
+
+<div class="nav">
+  <a href="history.html">📦 Historique des ventes</a>
+</div>
+
+</div>
+
+<div class="right">
+
+<h2>Panier</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Produit</th>
+  <th>Prix</th>
+  <th>Qté</th>
+  <th>Remise</th>
+  <th></th>
+</tr>
+</thead>
+
+<tbody id="cart"></tbody>
+</table>
+
+<div class="total" id="total">0</div>
+
+<!-- ================= PAIEMENT ================= -->
+<h3>Paiement</h3>
+
+<label><input type="radio" name="payment" value="CB" checked> 💳 CB</label>
+<label><input type="radio" name="payment" value="ESPECES"> 💵 Espèces</label>
+
+<!-- ================= IMPRESSION ================= -->
+<h3>Impression</h3>
+
+<label><input type="radio" name="print" value="none" checked> ❌ Pas d'impression</label>
+<label><input type="radio" name="print" value="ticket"> 🧾 Ticket 80mm</label>
+<label><input type="radio" name="print" value="invoice"> 📄 Facture A4</label>
+
+<button class="pay" onclick="checkout()">VALIDER VENTE</button>
+
+</div>
+
+<script>
+
+let cart = [];
+
+// ================= PRODUCTS =================
+async function searchProduct(){
+
+ const v = document.getElementById("search").value.toLowerCase();
+
+ const r = await fetch("/api/products");
+ const d = await r.json();
+
+ const f = d.filter(p =>
+   (p.name && p.name.toLowerCase().includes(v)) ||
+   (p.barcode && p.barcode.includes(v))
+ );
+
+ const div = document.getElementById("result");
+ div.innerHTML = "";
+
+ f.forEach(p=>{
+   const b = document.createElement("button");
+   b.innerText = `${p.name} - ${p.price}€`;
+   b.onclick = () => add(p);
+   div.appendChild(b);
+ });
+}
+
+// ================= ADD =================
+function add(p){
+
+ let e = cart.find(x => x.id === p.id);
+
+ if(e) e.qty++;
+ else cart.push({...p, qty:1, discount:0});
+
+ render();
+}
+
+// ================= DISCOUNT =================
+function updateDiscount(i,val){
+ cart[i].discount = Number(val) || 0;
+ render();
+}
+
+// ================= RENDER =================
+function render(){
+
+ let total = 0;
+ const tb = document.getElementById("cart");
+ tb.innerHTML = "";
+
+ cart.forEach((c,i)=>{
+
+   const line = (c.price * c.qty) - (c.discount * c.qty);
+   total += line;
+
+   tb.innerHTML += `
+   <tr>
+     <td>${c.name}</td>
+     <td>${c.price}</td>
+     <td>${c.qty}</td>
+     <td>
+       <input type="number"
+              value="${c.discount}"
+              onchange="updateDiscount(${i},this.value)">
+     </td>
+     <td>
+       <button onclick="cart.splice(${i},1);render()">❌</button>
+     </td>
+   </tr>`;
+ });
+
+ document.getElementById("total").innerText = total.toFixed(2);
+}
+
+// ================= CHECKOUT =================
+async function checkout(){
+
+ if(cart.length === 0){
+   alert("Panier vide");
+   return;
+ }
+
+ const payment = document.querySelector('input[name="payment"]:checked').value;
+ const printMode = document.querySelector('input[name="print"]:checked').value;
+
+ const r = await fetch("/api/orders",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({cart,payment})
+ });
+
+ const d = await r.json();
+
+ if(!d.success){
+   alert("Erreur vente");
+   return;
+ }
+
+ const orderId = d.orderId;
+
+ alert("Vente OK #" + orderId);
+
+ cart = [];
+ render();
+
+ if(printMode !== "none"){
+   await printOrder(orderId, printMode);
+ }
+}
+
+// ================= PRINT =================
+async function printOrder(id,type){
+
+ const r = await fetch("/api/orders/" + id);
+ const data = await r.json();
+
+ if(!data.order) return alert("Erreur impression");
+
+ const now = new Date().toLocaleString();
+
+ let rows = "";
+
+ data.items.forEach(i=>{
+   const line = (i.price*i.quantity)-(i.discount*i.quantity);
+
+   rows += `
+   <tr>
+     <td>${i.name}</td>
+     <td>${i.quantity}</td>
+     <td>${i.price}</td>
+     <td>${i.discount}</td>
+     <td>${line.toFixed(2)}</td>
+   </tr>`;
+ });
+
+ const w = window.open("", "_blank");
+ if(!w) return alert("Popup bloqué");
+
+ let html = "";
+
+ // ================= TICKET =================
+ if(type === "ticket"){
+   html = `
+<html>
+<head>
+<style>
+@page { size: 80mm auto; margin:5mm; }
+body{font-family:Arial;font-size:12px;width:72mm;}
+h2,p{text-align:center;margin:2px;}
+table{width:100%;border-collapse:collapse;}
+td,th{border-bottom:1px dashed #999;padding:4px;font-size:11px;}
+.total{text-align:center;font-weight:bold;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<h2>CAISSE PRO</h2>
+<p>#${data.order.id}</p>
+<p>${now}</p>
+
+<table>
+<tr><th>Produit</th><th>Qté</th><th>€</th><th>R</th><th>T</th></tr>
+${rows}
+</table>
+
+<div class="total">TOTAL : ${data.order.total} €</div>
+
+<script>window.onload=()=>window.print();<\/script>
+
+</body>
+</html>`;
+ }
+
+ // ================= FACTURE =================
+ if(type === "invoice"){
+   html = `
+<html>
+<head>
+<style>
+body{font-family:Arial;padding:40px;}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+td,th{border:1px solid #000;padding:8px;}
+.total{margin-top:20px;font-size:18px;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<h2>FACTURE</h2>
+<p>Commande #${data.order.id}</p>
+<p>Date : ${now}</p>
+
+<table>
+<tr><th>Produit</th><th>Qté</th><th>Prix</th><th>Remise</th><th>Total</th></tr>
+${rows}
+</table>
+
+<div class="total">TOTAL : ${data.order.total} €</div>
+
+<script>window.onload=()=>window.print();<\/script>
+
+</body>
+</html>`;
+ }
+
+ w.document.write(html);
+ w.document.close();
+}
+
+</script>
+
+</body>
+</html>

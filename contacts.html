@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Contacts — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;height:100vh;display:flex;flex-direction:column;}
+
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar h2{margin:0;font-size:17px;}
+button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
+.btn-home  {background:#1e40af;color:white;}
+.btn-green {background:#22c55e;color:white;}
+
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:#111827;padding:12px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:4px;}
+.sidebar-title{font-size:11px;color:#475569;font-weight:bold;text-transform:uppercase;margin:8px 0 4px;padding-left:4px;}
+.cat-btn{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:#94a3b8;border:none;background:transparent;width:100%;text-align:left;font-family:Arial;}
+.cat-btn:hover{background:#1e293b;color:white;}
+.cat-btn.active{background:#1e3a8a;color:white;font-weight:bold;}
+.cat-count{margin-left:auto;font-size:10px;background:#334155;padding:2px 6px;border-radius:8px;}
+.search-box{background:#1e293b;border:none;border-radius:8px;padding:9px 12px;color:white;font-size:13px;width:100%;font-family:Arial;margin-bottom:8px;}
+.search-box::placeholder{color:#475569;}
+.search-box:focus{outline:2px solid #3b82f6;}
+
+/* CONTENT */
+.content{flex:1;overflow:auto;padding:16px;}
+.contacts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+
+/* CARD CONTACT */
+.contact-card{background:white;border-radius:12px;padding:16px;box-shadow:0 1px 4px #0001;border-left:4px solid #e2e8f0;transition:0.15s;}
+.contact-card:hover{box-shadow:0 4px 12px #0002;}
+.contact-card.fav{border-left-color:#f59e0b;}
+
+.cc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.cc-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;margin-right:10px;}
+.cc-info{flex:1;}
+.cc-name{font-size:14px;font-weight:bold;color:#0f172a;}
+.cc-company{font-size:12px;color:#64748b;margin-top:2px;}
+.cc-cat-badge{font-size:10px;font-weight:bold;padding:2px 8px;border-radius:8px;white-space:nowrap;}
+
+.cc-details{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;font-size:12px;color:#374151;}
+.cc-detail{display:flex;align-items:center;gap:6px;}
+.cc-detail-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
+
+.cc-actions{display:flex;gap:5px;flex-wrap:wrap;}
+.action-btn{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:6px;text-decoration:none;font-size:11px;font-weight:bold;font-family:Arial;border:none;cursor:pointer;}
+.ab-call{background:#16a34a;color:white;}
+.ab-sms {background:#2563eb;color:white;}
+.ab-wa  {background:#25d366;color:white;}
+.ab-mail{background:#7c3aed;color:white;}
+.ab-edit{background:#f1f5f9;color:#374151;}
+.ab-del {background:#fee2e2;color:#ef4444;}
+
+.fav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:2px;line-height:1;}
+
+.empty{text-align:center;color:#94a3b8;padding:40px;font-size:14px;}
+
+/* CAT COLORS */
+.cat-Equipe       {background:#dbeafe;color:#1e40af;}
+.cat-Fournisseur  {background:#dcfce7;color:#166534;}
+.cat-Reparateur   {background:#fef3c7;color:#92400e;}
+.cat-Transporteur {background:#f3e8ff;color:#7c3aed;}
+.cat-Banque       {background:#ecfdf5;color:#065f46;}
+.cat-Comptable    {background:#fce7f3;color:#9d174d;}
+.cat-Juridique    {background:#fef9c3;color:#854d0e;}
+.cat-Client_VIP   {background:#fee2e2;color:#991b1b;}
+.cat-Autre        {background:#f1f5f9;color:#475569;}
+
+/* MODAL */
+.moverlay{display:none;position:fixed;inset:0;background:#00000075;z-index:1000;align-items:center;justify-content:center;}
+.moverlay.show{display:flex;}
+.modal{background:white;border-radius:14px;padding:22px;width:540px;max-width:95vw;max-height:92vh;overflow-y:auto;}
+.modal h3{margin:0 0 16px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mfg{display:flex;flex-direction:column;gap:3px;}
+.mfg.full{grid-column:1/span 2;}
+.mfg label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.mfg input,.mfg select,.mfg textarea{padding:9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;font-family:Arial;width:100%;}
+.mfg textarea{height:65px;resize:vertical;}
+.mfg input:focus,.mfg select:focus{outline:none;border-color:#3b82f6;}
+.mbtns{display:flex;gap:8px;margin-top:14px;}
+.mbtn{flex:1;padding:11px;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.mbtn-save{background:#22c55e;color:white;}
+.mbtn-cancel{background:#f1f5f9;color:#374151;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h2>📒 Carnet de Contacts</h2>
+  <div style="display:flex;gap:8px">
+    <button class="btn-green" id="btnNewContact">➕ Nouveau contact</button>
+    <button class="btn-home"  onclick="location.href='index.html'">🏠 Accueil</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <input class="search-box" id="searchBox" placeholder="🔍 Rechercher...">
+    <div class="sidebar-title">Catégories</div>
+    <button class="cat-btn active" data-cat="">🌐 Tous <span class="cat-count" id="cnt-all">0</span></button>
+    <button class="cat-btn" data-cat="Equipe">👥 Équipe <span class="cat-count" id="cnt-Equipe">0</span></button>
+    <button class="cat-btn" data-cat="Fournisseur">🏭 Fournisseurs <span class="cat-count" id="cnt-Fournisseur">0</span></button>
+    <button class="cat-btn" data-cat="Reparateur">🔧 Réparateurs <span class="cat-count" id="cnt-Reparateur">0</span></button>
+    <button class="cat-btn" data-cat="Transporteur">🚚 Transporteurs <span class="cat-count" id="cnt-Transporteur">0</span></button>
+    <button class="cat-btn" data-cat="Banque">🏦 Banque <span class="cat-count" id="cnt-Banque">0</span></button>
+    <button class="cat-btn" data-cat="Comptable">📊 Comptable <span class="cat-count" id="cnt-Comptable">0</span></button>
+    <button class="cat-btn" data-cat="Juridique">⚖️ Juridique <span class="cat-count" id="cnt-Juridique">0</span></button>
+    <button class="cat-btn" data-cat="Client_VIP">⭐ Clients VIP <span class="cat-count" id="cnt-Client_VIP">0</span></button>
+    <button class="cat-btn" data-cat="Autre">📦 Autres <span class="cat-count" id="cnt-Autre">0</span></button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="contacts-grid" id="contactsGrid">
+      <div class="empty">Chargement...</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="moverlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">➕ Nouveau contact</h3>
+    <div class="mgrid">
+      <div class="mfg full">
+        <label>Catégorie</label>
+        <select id="c_cat">
+          <option value="Equipe">👥 Équipe (Gérant, Vendeur, Technicien...)</option>
+          <option value="Fournisseur">🏭 Fournisseur</option>
+          <option value="Reparateur">🔧 Réparateur externe</option>
+          <option value="Transporteur">🚚 Transporteur / Coursier</option>
+          <option value="Banque">🏦 Banque / Finance</option>
+          <option value="Comptable">📊 Comptable / Expert-comptable</option>
+          <option value="Juridique">⚖️ Juridique / Assurance</option>
+          <option value="Client_VIP">⭐ Client VIP</option>
+          <option value="Autre">📦 Autre</option>
+        </select>
+      </div>
+      <div class="mfg full"><label>Nom *</label>
+        <input id="c_name" placeholder="Ex: Mohamed Allouche">
+      </div>
+      <div class="mfg full"><label>Société / Entreprise</label>
+        <input id="c_company" placeholder="Ex: Phone Discount, BNP Paribas...">
+      </div>
+      <div class="mfg"><label>📞 Téléphone principal</label>
+        <input id="c_phone" placeholder="Ex: 06 12 34 56 78">
+      </div>
+      <div class="mfg"><label>📞 Téléphone 2 (optionnel)</label>
+        <input id="c_phone2" placeholder="Ex: 01 23 45 67 89">
+      </div>
+      <div class="mfg"><label>📱 WhatsApp (si différent)</label>
+        <input id="c_whatsapp" placeholder="Ex: 06 12 34 56 78">
+      </div>
+      <div class="mfg"><label>✉️ Email</label>
+        <input id="c_email" type="email" placeholder="Ex: contact@example.com">
+      </div>
+      <div class="mfg full"><label>📍 Adresse</label>
+        <input id="c_address" placeholder="Ex: 15 Rue du Commerce, 75015 Paris">
+      </div>
+      <div class="mfg full"><label>💬 Notes</label>
+        <textarea id="c_notes" placeholder="Informations utiles, horaires, spécialités..."></textarea>
+      </div>
+      <div class="mfg full">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="c_fav" style="width:auto">
+          ⭐ Marquer comme favori
+        </label>
+      </div>
+    </div>
+    <input type="hidden" id="c_id">
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="btnCancelModal">Annuler</button>
+      <button class="mbtn mbtn-save"   id="btnSaveModal">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let contacts = [];
+let activeCat = '';
+let searchQ   = '';
+
+const CAT_ICONS = {
+  Equipe:'👥', Fournisseur:'🏭', Reparateur:'🔧', Transporteur:'🚚',
+  Banque:'🏦', Comptable:'📊', Juridique:'⚖️', Client_VIP:'⭐', Autre:'📦'
+};
+const CAT_LABELS = {
+  Equipe:'Équipe', Fournisseur:'Fournisseur', Reparateur:'Réparateur',
+  Transporteur:'Transporteur', Banque:'Banque', Comptable:'Comptable',
+  Juridique:'Juridique', Client_VIP:'Client VIP', Autre:'Autre'
+};
+
+/* ── INIT ── */
+async function init() {
+  try {
+    const res = await fetch('/api/contacts');
+    contacts  = await res.json();
+    updateCounts();
+    renderContacts();
+  } catch(e) {
+    document.getElementById('contactsGrid').innerHTML =
+      `<div class="empty">❌ ${e.message}<br><small>Vérifiez que create_contacts.sql a été exécuté.</small></div>`;
+  }
+}
+
+function updateCounts() {
+  const all = contacts.length;
+  document.getElementById('cnt-all').textContent = all;
+  ['Equipe','Fournisseur','Reparateur','Transporteur','Banque','Comptable','Juridique','Client_VIP','Autre'].forEach(cat => {
+    const el = document.getElementById('cnt-'+cat);
+    if (el) el.textContent = contacts.filter(c=>c.category===cat).length;
+  });
+}
+
+/* ── RENDU ── */
+function renderContacts() {
+  const grid = document.getElementById('contactsGrid');
+  let filtered = contacts.filter(c => {
+    const matchCat = !activeCat || c.category === activeCat;
+    const matchQ   = !searchQ  ||
+      (c.name||'').toLowerCase().includes(searchQ) ||
+      (c.company||'').toLowerCase().includes(searchQ) ||
+      (c.phone||'').includes(searchQ) ||
+      (c.email||'').toLowerCase().includes(searchQ) ||
+      (c.notes||'').toLowerCase().includes(searchQ);
+    return matchCat && matchQ;
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty">😕 Aucun contact trouvé<br><small>Ajoutez votre premier contact avec le bouton vert</small></div>';
+    return;
+  }
+
+  /* Favoris en premier */
+  filtered.sort((a,b) => (b.is_favorite?1:0) - (a.is_favorite?1:0) || a.name.localeCompare(b.name));
+
+  grid.innerHTML = filtered.map(c => renderCard(c)).join('');
+}
+
+function renderCard(c) {
+  const phone   = c.phone||'';
+  const wa      = c.whatsapp||c.phone||'';
+  const email   = c.email||'';
+  const intl    = wa.replace(/[\s\.\-]/g,'').replace(/^0/,'33');
+  const msg     = encodeURIComponent(`Bonjour ${c.name}, c'est The SMARTPHONE. `);
+  const mailMsg = encodeURIComponent(`Bonjour ${c.name},\n\nCordialement,\nThe SMARTPHONE`);
+
+  /* Boutons contact */
+  const btnCall = phone ? `<a class="action-btn ab-call" href="tel:${phone.replace(/\s/g,'')}">📞 Appeler</a>` : '';
+  const btnSMS  = phone ? `<a class="action-btn ab-sms"  href="sms:${phone.replace(/\s/g,'')}&body=${msg}">💬 SMS</a>` : '';
+  const btnWA   = wa    ? `<a class="action-btn ab-wa"   href="https://wa.me/${intl}?text=${msg}" target="_blank">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="white" style="vertical-align:middle">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg> WhatsApp</a>` : '';
+  const btnMail = email ? `<a class="action-btn ab-mail" href="mailto:${email}?subject=The SMARTPHONE&body=${mailMsg}">✉️ Email</a>` : '';
+
+  return `
+    <div class="contact-card${c.is_favorite?' fav':''}">
+      <div class="cc-top">
+        <div style="display:flex;align-items:flex-start;flex:1">
+          <div class="cc-avatar" style="background:${catBg(c.category)};color:${catColor(c.category)}">
+            ${CAT_ICONS[c.category]||'👤'}
+          </div>
+          <div class="cc-info">
+            <div class="cc-name">${c.name}</div>
+            ${c.company?`<div class="cc-company">🏢 ${c.company}</div>`:''}
+            <span class="cc-cat-badge cat-${c.category}">${CAT_LABELS[c.category]||c.category}</span>
+          </div>
+        </div>
+        <button class="fav-btn" data-id="${c.id}" title="${c.is_favorite?'Retirer des favoris':'Ajouter aux favoris'}">
+          ${c.is_favorite?'⭐':'☆'}
+        </button>
+      </div>
+
+      <div class="cc-details">
+        ${phone?`<div class="cc-detail"><span class="cc-detail-icon">📞</span>${phone}</div>`:''}
+        ${c.phone2?`<div class="cc-detail"><span class="cc-detail-icon">📞</span>${c.phone2}</div>`:''}
+        ${email?`<div class="cc-detail"><span class="cc-detail-icon">✉️</span>${email}</div>`:''}
+        ${c.address?`<div class="cc-detail"><span class="cc-detail-icon">📍</span>${c.address}</div>`:''}
+        ${c.notes?`<div class="cc-detail"><span class="cc-detail-icon">💬</span><i style="color:#64748b">${c.notes}</i></div>`:''}
+      </div>
+
+      <div class="cc-actions">
+        ${btnCall}${btnSMS}${btnWA}${btnMail}
+        <button class="action-btn ab-edit" data-edit="${c.id}">✏️</button>
+        <button class="action-btn ab-del"  data-del="${c.id}">🗑</button>
+      </div>
+    </div>`;
+}
+
+function catBg(cat) {
+  const m={Equipe:'#dbeafe',Fournisseur:'#dcfce7',Reparateur:'#fef3c7',
+    Transporteur:'#f3e8ff',Banque:'#ecfdf5',Comptable:'#fce7f3',
+    Juridique:'#fef9c3',Client_VIP:'#fee2e2',Autre:'#f1f5f9'};
+  return m[cat]||'#f1f5f9';
+}
+function catColor(cat) {
+  const m={Equipe:'#1e40af',Fournisseur:'#166534',Reparateur:'#92400e',
+    Transporteur:'#7c3aed',Banque:'#065f46',Comptable:'#9d174d',
+    Juridique:'#854d0e',Client_VIP:'#991b1b',Autre:'#475569'};
+  return m[cat]||'#475569';
+}
+
+/* ── EVENTS DELEGATION ── */
+document.getElementById('contactsGrid').addEventListener('click', async e => {
+  const favBtn  = e.target.closest('.fav-btn');
+  const editBtn = e.target.closest('[data-edit]');
+  const delBtn  = e.target.closest('[data-del]');
+  if (favBtn)  await toggleFav(Number(favBtn.dataset.id));
+  if (editBtn) openModal(Number(editBtn.dataset.edit));
+  if (delBtn)  await deleteContact(Number(delBtn.dataset.del));
+});
+
+async function toggleFav(id) {
+  const c = contacts.find(x=>x.id===id);
+  if (!c) return;
+  await fetch('/api/contacts/'+id, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({...c, is_favorite: !c.is_favorite})
+  });
+  init();
+}
+
+async function deleteContact(id) {
+  const c = contacts.find(x=>x.id===id);
+  if (!confirm(`Supprimer "${c?.name}" ?`)) return;
+  await fetch('/api/contacts/'+id, {method:'DELETE'});
+  init();
+}
+
+/* ── MODAL ── */
+function openModal(id) {
+  document.getElementById('c_id').value = id||'';
+  document.getElementById('modalTitle').textContent = id ? '✏️ Modifier le contact' : '➕ Nouveau contact';
+  document.getElementById('c_fav').checked = false;
+  ['c_cat','c_name','c_company','c_phone','c_phone2','c_whatsapp','c_email','c_address','c_notes']
+    .forEach(x => { const el=document.getElementById(x); if(el) el.value=''; });
+  document.getElementById('c_cat').value = 'Fournisseur';
+
+  if (id) {
+    const c = contacts.find(x=>x.id===id);
+    if (!c) return;
+    document.getElementById('c_cat').value      = c.category||'Autre';
+    document.getElementById('c_name').value     = c.name||'';
+    document.getElementById('c_company').value  = c.company||'';
+    document.getElementById('c_phone').value    = c.phone||'';
+    document.getElementById('c_phone2').value   = c.phone2||'';
+    document.getElementById('c_whatsapp').value = c.whatsapp||'';
+    document.getElementById('c_email').value    = c.email||'';
+    document.getElementById('c_address').value  = c.address||'';
+    document.getElementById('c_notes').value    = c.notes||'';
+    document.getElementById('c_fav').checked    = c.is_favorite||false;
+  }
+  document.getElementById('modal').classList.add('show');
+  setTimeout(() => document.getElementById('c_name').focus(), 100);
+}
+
+async function saveContact() {
+  const id   = document.getElementById('c_id').value;
+  const name = document.getElementById('c_name').value.trim();
+  if (!name) { alert('⚠️ Nom obligatoire'); return; }
+
+  const body = {
+    category:   document.getElementById('c_cat').value,
+    name,
+    company:    document.getElementById('c_company').value||null,
+    phone:      document.getElementById('c_phone').value||null,
+    phone2:     document.getElementById('c_phone2').value||null,
+    whatsapp:   document.getElementById('c_whatsapp').value||null,
+    email:      document.getElementById('c_email').value||null,
+    address:    document.getElementById('c_address').value||null,
+    notes:      document.getElementById('c_notes').value||null,
+    is_favorite:document.getElementById('c_fav').checked,
+  };
+
+  try {
+    const res = await fetch(id ? '/api/contacts/'+id : '/api/contacts', {
+      method: id ? 'PUT' : 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    document.getElementById('modal').classList.remove('show');
+    init();
+  } catch(e) { alert('❌ '+e.message); }
+}
+
+/* ── FILTRES ── */
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCat = btn.dataset.cat;
+    renderContacts();
+  });
+});
+
+document.getElementById('searchBox').addEventListener('input', e => {
+  searchQ = e.target.value.toLowerCase().trim();
+  renderContacts();
+});
+
+/* ── BOUTONS MODAL ── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btnNewContact').addEventListener('click', () => openModal(null));
+  document.getElementById('btnSaveModal').addEventListener('click', saveContact);
+  document.getElementById('btnCancelModal').addEventListener('click', () => document.getElementById('modal').classList.remove('show'));
+});
+
+init();
+</script>
+</body>
+</html>

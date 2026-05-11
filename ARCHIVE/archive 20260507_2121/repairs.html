@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SAV - Réparations</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+}
+
+.container{
+  display:flex;
+  height:100vh;
+}
+
+/* LEFT */
+.left{
+  width:35%;
+  border-right:1px solid #334155;
+  padding:10px;
+  overflow:auto;
+}
+
+.search{
+  width:100%;
+  padding:10px;
+  border-radius:6px;
+  border:none;
+  margin-bottom:10px;
+}
+
+.search-btn{
+  width:100%;
+  padding:10px;
+  background:#3b82f6;
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* CARD */
+.card{
+  background:#111827;
+  padding:10px;
+  margin-bottom:8px;
+  cursor:pointer;
+  border-radius:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* RIGHT */
+.right{
+  flex:1;
+  padding:20px;
+  overflow:auto;
+}
+
+input, select, textarea{
+  width:100%;
+  padding:8px;
+  margin:5px 0 10px 0;
+  border-radius:6px;
+  border:none;
+}
+
+textarea{height:80px;}
+
+button{
+  padding:10px;
+  border:none;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.new-btn{background:#22c55e;}
+.save-btn{background:#3b82f6;}
+.reset-btn{background:#ef4444;margin-left:10px;}
+
+/* STATUS */
+.badge{
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:6px;
+}
+
+.badge-recu{background:#f59e0b;}
+.badge-cours{background:#3b82f6;}
+.badge-termine{background:#16a34a;}
+
+hr{border:1px solid #334155;margin:15px 0;}
+
+/* DETAIL GRID */
+.detail-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.box{
+  background:#111827;
+  padding:10px;
+  border-radius:8px;
+}
+
+.full{
+  grid-column:1/3;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- LEFT -->
+<div class="left">
+
+<h3>🔧 Réparations</h3>
+
+<input class="search" id="search" placeholder="Recherche">
+<button class="search-btn" onclick="searchRepair()">Rechercher</button>
+
+<div id="repairList"></div>
+
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+
+<h3>➕ Nouvelle réparation</h3>
+
+<input id="customer_name" placeholder="Client">
+<input id="phone" placeholder="Téléphone">
+<input id="device_type" placeholder="Type">
+<input id="brand" placeholder="Marque">
+<input id="model" placeholder="Modèle">
+<input id="serial_number" placeholder="Série">
+<input id="issue" placeholder="Panne">
+<input id="estimated_price" type="number" placeholder="Prix estimé">
+<textarea id="comment" placeholder="Commentaire"></textarea>
+
+<button class="new-btn" onclick="createRepair()">Créer</button>
+<button class="reset-btn" onclick="resetForm()">Reset</button>
+
+<hr>
+
+<div id="detail"></div>
+
+</div>
+
+</div>
+
+<script>
+
+let currentRepair = null;
+
+/* ================= LOAD ================= */
+async function loadRepairs(){
+
+  const res = await fetch('/api/repairs');
+  const data = await res.json();
+
+  const list = document.getElementById('repairList');
+  list.innerHTML = '';
+
+  data.forEach(r=>{
+
+    let badgeClass = 'badge-recu';
+
+    if(r.status === 'EN_COURS') badgeClass = 'badge-cours';
+    if(r.status === 'TERMINE') badgeClass = 'badge-termine';
+
+    list.innerHTML += `
+      <div class="card" onclick="showRepair(${r.id})">
+
+        <div>
+          <b>#${r.id}</b> ${r.customer_name || ''}
+        </div>
+
+        <div class="badge ${badgeClass}">
+          ${r.status || ''}
+        </div>
+
+      </div>
+    `;
+  });
+}
+
+/* ================= SEARCH ================= */
+async function searchRepair(){
+
+  const q = document.getElementById('search').value;
+
+  const res = await fetch('/api/repairs/search?q=' + encodeURIComponent(q));
+  const data = await res.json();
+
+  const list = document.getElementById('repairList');
+  list.innerHTML = '';
+
+  data.forEach(r=>{
+
+    let badgeClass = 'badge-recu';
+
+    if(r.status === 'EN_COURS') badgeClass = 'badge-cours';
+    if(r.status === 'TERMINE') badgeClass = 'badge-termine';
+
+    list.innerHTML += `
+      <div class="card" onclick="showRepair(${r.id})">
+        <div>
+          <b>#${r.id}</b> ${r.customer_name || ''}
+        </div>
+        <div class="badge ${badgeClass}">
+          ${r.status}
+        </div>
+      </div>
+    `;
+  });
+}
+
+/* ================= CREATE ================= */
+async function createRepair(){
+
+  await fetch('/api/repairs',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      customer_name: customer_name.value,
+      phone: phone.value,
+      device_type: device_type.value,
+      brand: brand.value,
+      model: model.value,
+      serial_number: serial_number.value,
+      issue: issue.value,
+      estimated_price: estimated_price.value,
+      comment: comment.value
+    })
+  });
+
+  resetForm();
+  loadRepairs();
+}
+
+/* ================= SHOW (FINAL 2 COLONNES) ================= */
+async function showRepair(id){
+
+  const r = await fetch('/api/repairs/'+id).then(r=>r.json());
+
+  currentRepair = r;
+
+  document.getElementById('detail').innerHTML = `
+
+  <h2>🔧 Réparation #${r.id}</h2>
+
+  <div class="detail-grid">
+
+    <div class="box"><b>Client</b><br>${r.customer_name || ''}</div>
+    <div class="box"><b>Téléphone</b><br>${r.phone || ''}</div>
+
+    <div class="box"><b>Appareil</b><br>${r.brand || ''} ${r.model || ''}</div>
+    <div class="box"><b>Type</b><br>${r.device_type || ''}</div>
+
+    <div class="box"><b>Série</b><br>${r.serial_number || ''}</div>
+    <div class="box"><b>Panne</b><br>${r.issue || ''}</div>
+
+    <div class="box"><b>Prix estimé</b><br>${r.estimated_price || 0} €</div>
+    <div class="box">
+      <b>Prix final</b><br>
+      <input id="final_price" value="${r.final_price || 0}">
+    </div>
+
+    <div class="box full">
+      <b>Commentaire</b><br>
+      ${r.comment || ''}
+    </div>
+
+    <div class="box full">
+
+      <b>Statut</b><br>
+
+      <select id="status">
+        <option value="EN_ATTENTE" ${r.status==='EN_ATTENTE'?'selected':''}>EN_ATTENTE</option>
+        <option value="EN_COURS" ${r.status==='EN_COURS'?'selected':''}>EN_COURS</option>
+        <option value="TERMINE" ${r.status==='TERMINE'?'selected':''}>TERMINE</option>
+      </select>
+
+      <br><br>
+
+      <button class="save-btn" onclick="updateRepair(${r.id})">
+        💾 Sauvegarder
+      </button>
+
+    </div>
+
+  </div>
+  `;
+}
+
+/* ================= UPDATE ================= */
+async function updateRepair(id){
+
+  await fetch('/api/repairs/'+id,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      status: document.getElementById('status').value,
+      final_price: document.getElementById('final_price').value
+    })
+  });
+
+  loadRepairs();
+  showRepair(id);
+}
+
+/* ================= RESET ================= */
+function resetForm(){
+
+  customer_name.value='';
+  phone.value='';
+  device_type.value='';
+  brand.value='';
+  model.value='';
+  serial_number.value='';
+  issue.value='';
+  estimated_price.value='';
+  comment.value='';
+
+}
+
+/* ================= INIT ================= */
+loadRepairs();
+
+</script>
+
+</body>
+</html>

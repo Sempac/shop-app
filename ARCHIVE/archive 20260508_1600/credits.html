@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Crédits clients — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h2{margin:0;font-size:18px;}
+.home-btn{padding:10px 20px;background:#1e40af;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;}
+.container{display:grid;grid-template-columns:1fr 1.6fr;gap:20px;padding:20px;max-width:1300px;margin:0 auto;}
+.card{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 4px #0001;}
+.card h3{margin:0 0 16px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.fg label{font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.fg input,.fg select{padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Arial;width:100%;}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center;}
+.stat .val{font-size:22px;font-weight:bold;margin:6px 0;}
+.stat .lbl{font-size:11px;color:#64748b;text-transform:uppercase;}
+table{width:100%;border-collapse:collapse;}
+th{background:#1e293b;color:white;padding:9px 12px;text-align:left;font-size:11px;}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
+tr:hover td{background:#f8fafc;}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;}
+.EN_COURS{background:#fef3c7;color:#92400e;}.SOLDE{background:#d1fae5;color:#065f46;}.ANNULE{background:#fee2e2;color:#991b1b;}
+.progress{height:8px;background:#f1f5f9;border-radius:4px;margin-top:4px;}
+.progress-bar{height:100%;background:#22c55e;border-radius:4px;}
+.pay-btn{padding:5px 12px;background:#22c55e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;}
+.detail-panel{background:#f8fafc;border-radius:10px;padding:16px;margin-top:16px;display:none;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h2>💳 Crédits clients</h2>
+  <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
+</div>
+
+<div class="container">
+  <!-- GAUCHE : stats + paiement -->
+  <div>
+    <div class="card">
+      <h3>📊 Situation actuelle</h3>
+      <div class="stat-row">
+        <div class="stat"><div class="lbl">Crédits actifs</div><div class="val" id="nbCredits" style="color:#f59e0b">0</div></div>
+        <div class="stat"><div class="lbl">Total dû</div><div class="val" id="totalDue" style="color:#ef4444">0 €</div></div>
+        <div class="stat"><div class="lbl">Soldés ce mois</div><div class="val" id="nbSolde" style="color:#22c55e">0</div></div>
+      </div>
+      <h3>🔍 Rechercher un client</h3>
+      <div class="fg"><input id="search_credit" placeholder="Nom ou téléphone..." oninput="searchCredits()"></div>
+      <div id="search_results"></div>
+    </div>
+
+    <!-- Panneau paiement partiel -->
+    <div class="card" id="payPanel" style="margin-top:20px;display:none">
+      <h3 id="payTitle">💳 Encaisser un paiement</h3>
+      <div class="fg"><label>Montant reçu (€)</label><input type="number" id="pay_amount" placeholder="0.00" min="0.01" step="0.01"></div>
+      <div class="fg"><label>Mode paiement</label>
+        <select id="pay_method">
+          <option value="cash">💵 Espèces</option>
+          <option value="card">💳 Carte</option>
+        </select>
+      </div>
+      <div class="fg"><label>Note (optionnel)</label><input id="pay_note" placeholder="Ex: Acompte 1"></div>
+      <button onclick="payCredit()" style="width:100%;padding:12px;background:#22c55e;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer">✅ Enregistrer le paiement</button>
+    </div>
+  </div>
+
+  <!-- DROITE : liste crédits -->
+  <div class="card">
+    <h3>📋 Liste des crédits</h3>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <select id="f_status" onchange="loadCredits()" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+        <option value="EN_COURS">En cours</option>
+        <option value="SOLDE">Soldés</option>
+        <option value="ANNULE">Annulés</option>
+      </select>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Client</th><th>Total</th><th>Payé</th><th>Reste</th><th>Progression</th><th>Statut</th><th></th></tr></thead>
+      <tbody id="creditsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const fmt=n=>Number(n||0).toFixed(2)+' €';
+let currentCreditId=null;
+
+async function loadStats(){
+  const res=await fetch('/api/credits?status=EN_COURS');
+  const data=await res.json();
+  document.getElementById('nbCredits').textContent=data.length;
+  const due=data.reduce((s,c)=>s+Number(c.amount_due||0),0);
+  document.getElementById('totalDue').textContent=fmt(due);
+  const resS=await fetch('/api/credits?status=SOLDE');
+  const dataS=await resS.json();
+  const thisMonth=new Date().toISOString().slice(0,7);
+  document.getElementById('nbSolde').textContent=dataS.filter(c=>c.updated_at&&c.updated_at.slice(0,7)===thisMonth).length;
+}
+
+async function loadCredits(){
+  const status=document.getElementById('f_status').value;
+  const res=await fetch('/api/credits?status='+status);
+  const data=await res.json();
+  const tbody=document.getElementById('creditsBody');
+  tbody.innerHTML=data.length===0
+    ?'<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:20px">Aucun crédit</td></tr>'
+    :data.map(c=>{
+      const pct=c.total_amount>0?Math.round((c.amount_paid/c.total_amount)*100):0;
+      return `<tr>
+        <td>#${c.id}</td>
+        <td><b>${c.customer_name}</b><br><small style="color:#94a3b8">${c.phone||''}</small></td>
+        <td>${fmt(c.total_amount)}</td>
+        <td style="color:#22c55e;font-weight:bold">${fmt(c.amount_paid)}</td>
+        <td style="color:#ef4444;font-weight:bold">${fmt(c.amount_due)}</td>
+        <td style="min-width:80px">
+          <div style="font-size:10px;color:#64748b;margin-bottom:2px">${pct}%</div>
+          <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
+        </td>
+        <td><span class="badge ${c.status}">${c.status}</span></td>
+        <td>${c.status==='EN_COURS'?`<button class="pay-btn" onclick="openPay(${c.id},'${c.customer_name}',${c.amount_due})">💰 Payer</button>`:''}</td>
+      </tr>`;
+    }).join('');
+}
+
+function openPay(id,name,due){
+  currentCreditId=id;
+  document.getElementById('payPanel').style.display='block';
+  document.getElementById('payTitle').textContent=`💳 Paiement — ${name} (reste: ${fmt(due)})`;
+  document.getElementById('pay_amount').value='';
+  document.getElementById('pay_note').value='';
+  document.getElementById('pay_amount').focus();
+  window.scrollTo(0,0);
+}
+
+async function payCredit(){
+  if(!currentCreditId){return;}
+  const amount=Number(document.getElementById('pay_amount').value);
+  if(!amount||amount<=0){alert('⚠️ Montant invalide');return;}
+  const res=await fetch('/api/credits/'+currentCreditId+'/pay',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({amount,payment_method:document.getElementById('pay_method').value,notes:document.getElementById('pay_note').value})
+  });
+  const d=await res.json();
+  if(d.error){alert('❌ '+d.error);return;}
+  alert(d.status==='SOLDE'?'✅ Crédit soldé ! Client à jour.':'✅ Paiement enregistré. Reste : '+fmt(d.amount_due));
+  document.getElementById('payPanel').style.display='none';
+  currentCreditId=null;
+  loadCredits(); loadStats();
+}
+
+async function searchCredits(){
+  const q=document.getElementById('search_credit').value;
+  if(q.length<2){document.getElementById('search_results').innerHTML='';return;}
+  const res=await fetch('/api/credits/search?q='+encodeURIComponent(q));
+  const data=await res.json();
+  const div=document.getElementById('search_results');
+  div.innerHTML=data.length===0
+    ?'<p style="color:#94a3b8;font-size:13px">Aucun résultat</p>'
+    :data.map(c=>`
+      <div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:8px;border-left:4px solid ${c.status==='EN_COURS'?'#f59e0b':'#22c55e'}">
+        <div style="font-weight:bold">${c.customer_name} ${c.phone?'— '+c.phone:''}</div>
+        <div style="font-size:13px;margin-top:4px">Reste : <b style="color:#ef4444">${fmt(c.amount_due)}</b> / Total : ${fmt(c.total_amount)}</div>
+        <span class="badge ${c.status}" style="margin-top:6px;display:inline-block">${c.status}</span>
+        ${c.status==='EN_COURS'?`<button class="pay-btn" style="margin-left:8px" onclick="openPay(${c.id},'${c.customer_name}',${c.amount_due})">💰 Payer</button>`:''}
+      </div>`).join('');
+}
+
+loadStats(); loadCredits();
+</script>
+</body>
+</html>

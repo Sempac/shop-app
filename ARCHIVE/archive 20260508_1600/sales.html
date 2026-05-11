@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Caisse — The SMARTPHONE</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial;
+  display: flex;
+  height: 100vh;
+  background: #f1f5f9;
+}
+
+/* ── LEFT ── */
+.left {
+  width: 42%;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.left-top {
+  padding: 10px;
+  flex-shrink: 0;
+}
+
+.home-btn {
+  width: 100%;
+  padding: 14px;
+  background: #1e40af;
+  color: white;
+  border: none;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.home-btn:hover { background: #1d4ed8; }
+
+/* Barre recherche */
+.search-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.search-row input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  background: #1e293b;
+  color: white;
+}
+.search-row input::placeholder { color: #64748b; }
+.search-row input:focus { outline: 2px solid #3b82f6; }
+.clear-btn {
+  padding: 10px 12px;
+  background: #334155;
+  color: #94a3b8;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Boutons catégories */
+.cat-scroll {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.cat-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  background: #1e293b;
+  color: #94a3b8;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.cat-btn:hover  { background: #334155; color: white; }
+.cat-btn.active { background: #3b82f6; color: white; }
+.cat-btn.all    { background: #334155; color: white; }
+
+/* Compteur résultats */
+.result-count {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+
+/* Liste produits scrollable */
+.product-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 10px 10px;
+}
+.product-list::-webkit-scrollbar { width: 4px; }
+.product-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+.prod-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 5px;
+  background: #1e293b;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-left: 3px solid transparent;
+}
+.prod-item:hover { background: #273548; border-left-color: #3b82f6; }
+.prod-item.out-of-stock { opacity: 0.5; }
+
+.prod-left { flex: 1; }
+.prod-name { font-size: 13px; font-weight: bold; color: #e2e8f0; }
+.prod-cat  { font-size: 10px; color: #64748b; margin-top: 2px; }
+
+.prod-right { text-align: right; flex-shrink: 0; margin-left: 10px; }
+.prod-price { font-size: 14px; font-weight: bold; color: #22c55e; }
+.prod-stock { font-size: 10px; margin-top: 2px; }
+.stock-ok   { color: #64748b; }
+.stock-low  { color: #f59e0b; }
+.stock-out  { color: #ef4444; }
+
+.no-result {
+  text-align: center;
+  color: #475569;
+  padding: 30px 10px;
+  font-size: 13px;
+}
+
+/* ── RIGHT ── */
+.right {
+  flex: 1;
+  padding: 16px 20px;
+  background: white;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+h2 { margin: 0 0 12px; font-size: 18px; color: #0f172a; }
+
+table { width: 100%; border-collapse: collapse; }
+td, th { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+th { background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; }
+
+.qty-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qty-ctrl button {
+  width: 26px; height: 26px;
+  border: none; border-radius: 4px;
+  background: #e2e8f0; cursor: pointer;
+  font-size: 16px; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+}
+.qty-ctrl button:hover { background: #cbd5e1; }
+.qty-val { min-width: 24px; text-align: center; font-weight: bold; }
+
+.remove-btn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.discount-input {
+  width: 60px;
+  padding: 4px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.total-bar {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #0f172a;
+  color: white;
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: bold;
+  text-align: right;
+}
+
+.bottom-section { margin-top: 12px; }
+.field-label { font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+.field-input {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.field-select {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 10px;
+  background: white;
+}
+
+.print-box {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 20px;
+}
+.print-box label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pay-btn {
+  width: 100%;
+  padding: 14px;
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.pay-btn:hover { background: #16a34a; }
+.pay-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+/* Panier vide */
+.empty-cart {
+  text-align: center;
+  color: #94a3b8;
+  padding: 30px;
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LEFT ══ -->
+<div class="left">
+  <div class="left-top">
+    <button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+
+    <!-- Recherche -->
+    <div class="search-row">
+      <input id="search" placeholder="🔍  Nom du produit ou code barre..." oninput="filterProducts()">
+      <button class="clear-btn" onclick="clearSearch()">✕</button>
+    </div>
+
+    <!-- Catégories -->
+    <div class="cat-scroll" id="catButtons"></div>
+
+    <div class="result-count" id="resultCount"></div>
+  </div>
+
+  <!-- Liste produits -->
+  <div class="product-list" id="productList"></div>
+</div>
+
+<!-- ══ RIGHT ══ -->
+<div class="right">
+  <h2>🛒 Panier</h2>
+
+  <table id="cartTable">
+    <thead>
+      <tr>
+        <th>Produit</th>
+        <th>Prix</th>
+        <th>Qté</th>
+        <th>Remise €</th>
+        <th>Total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="cartBody">
+      <tr><td colspan="6"><div class="empty-cart">Panier vide — sélectionnez un produit à gauche</div></td></tr>
+    </tbody>
+  </table>
+
+  <div class="total-bar" id="totalBar">TOTAL : 0.00 €</div>
+
+  <div class="bottom-section">
+    <div class="field-label">Client (optionnel)</div>
+    <input class="field-input" id="customer" placeholder="Nom du client">
+
+    <div class="field-label">Mode de paiement</div>
+    <select class="field-select" id="payment">
+      <option value="card">💳 Carte bancaire</option>
+      <option value="cash">💵 Espèces</option>
+      <option value="mixed">🔀 Mixte (CB + Espèces)</option>
+    </select>
+
+    <div class="print-box">
+      <label><input type="checkbox" id="print_ticket"  onclick="togglePrint('ticket')"> 🧾 Ticket 80mm</label>
+      <label><input type="checkbox" id="print_invoice" onclick="togglePrint('invoice')"> 📄 Facture A4</label>
+    </div>
+
+    <button class="pay-btn" id="payBtn" onclick="checkout()">✅ VALIDER LA VENTE</button>
+  </div>
+</div>
+
+<script>
+/* ══ DONNÉES ══ */
+let allProducts  = [];
+let cart         = [];
+let printMode    = null;
+let activeCategory = 'Tous';
+
+const SHOP = {
+  name:    'The SMARTPHONE',
+  sub:     'Vente & Réparation de smartphones',
+  address: "1 Avenue d'Italie, 75013 Paris",
+  tel1:    '01 47 07 18 66',
+  tel2:    '06 86 84 82 79',
+  email:   'smartphonesatelier4@gmail.com',
+};
+
+/* ══ CATÉGORIES avec icônes ══ */
+const CAT_ICONS = {
+  'Tous':             '⚡',
+  'Smartphone':       '📱',
+  'Tablette':         '📟',
+  'PC Portable':      '💻',
+  'Accessoire Info':  '⌨️',
+  'Coque':            '🛡️',
+  'Protection écran': '🔲',
+  'Chargeur':         '🔌',
+  'Câble':            '🔗',
+  'Audio':            '🎧',
+  'Pièce détachée':   '🔧',
+  'Prestation':       '🛠️',
+};
+
+/* ══ INIT ══ */
+async function init() {
+  const res  = await fetch('/api/products');
+  allProducts = await res.json();
+  buildCategories();
+  filterProducts();
+}
+
+/* ══ CATÉGORIES ══ */
+function buildCategories() {
+  const cats = ['Tous', ...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  const div  = document.getElementById('catButtons');
+  div.innerHTML = '';
+  cats.forEach(cat => {
+    const icon = CAT_ICONS[cat] || '📦';
+    const btn  = document.createElement('button');
+    btn.className  = 'cat-btn' + (cat === 'Tous' ? ' active' : '');
+    btn.innerHTML  = `${icon} ${cat}`;
+    btn.onclick    = () => selectCategory(cat);
+    div.appendChild(btn);
+  });
+}
+
+function selectCategory(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  filterProducts();
+}
+
+/* ══ FILTRE PRODUITS ══ */
+function filterProducts() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+
+  let filtered = allProducts.filter(p => {
+    const matchCat  = activeCategory === 'Tous' || p.category === activeCategory;
+    const matchText = !q ||
+      (p.name    && p.name.toLowerCase().includes(q)) ||
+      (p.barcode && p.barcode.toLowerCase().includes(q));
+    return matchCat && matchText;
+  });
+
+  // Tri : stock dispo en premier, puis alphabétique
+  filtered.sort((a, b) => {
+    if ((b.stock_quantity > 0) !== (a.stock_quantity > 0))
+      return b.stock_quantity > 0 ? 1 : -1;
+    return a.name.localeCompare(b.name);
+  });
+
+  renderProducts(filtered);
+}
+
+function clearSearch() {
+  document.getElementById('search').value = '';
+  filterProducts();
+  document.getElementById('search').focus();
+}
+
+/* ══ AFFICHAGE PRODUITS ══ */
+function renderProducts(list) {
+  const div = document.getElementById('productList');
+  const count = document.getElementById('resultCount');
+
+  count.textContent = `${list.length} produit(s) trouvé(s)`;
+
+  if (!list.length) {
+    div.innerHTML = `<div class="no-result">😕 Aucun produit trouvé<br><small>Essayez un autre mot ou catégorie</small></div>`;
+    return;
+  }
+
+  div.innerHTML = list.map(p => {
+    const qty   = parseInt(p.stock_quantity || 0);
+    const stockClass = qty === 0 ? 'stock-out' : qty <= 2 ? 'stock-low' : 'stock-ok';
+    const stockText  = qty === 0 ? '❌ Rupture' : qty <= 2 ? `⚠️ ${qty} en stock` : `✅ ${qty} en stock`;
+    const outCls = qty === 0 ? ' out-of-stock' : '';
+
+    return `
+      <div class="prod-item${outCls}" onclick="addToCart(${p.id})">
+        <div class="prod-left">
+          <div class="prod-name">${p.name}</div>
+          <div class="prod-cat">${p.category || ''}</div>
+        </div>
+        <div class="prod-right">
+          <div class="prod-price">${Number(p.sale_price || p.price || 0).toFixed(2)} €</div>
+          <div class="prod-stock ${stockClass}">${stockText}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ══ PANIER ══ */
+function addToCart(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  let item = cart.find(x => x.id === id);
+  if (item) {
+    item.qty++;
+  } else {
+    cart.push({
+      id:       p.id,
+      name:     p.name,
+      price:    Number(p.sale_price || p.price || 0),
+      qty:      1,
+      discount: 0,
+    });
+  }
+  renderCart();
+}
+
+function updateQty(i, delta) {
+  cart[i].qty = Math.max(1, cart[i].qty + delta);
+  renderCart();
+}
+
+function updateDiscount(i, val) {
+  cart[i].discount = Math.max(0, Number(val) || 0);
+  renderCart();
+}
+
+function removeItem(i) {
+  cart.splice(i, 1);
+  renderCart();
+}
+
+function renderCart() {
+  const tbody = document.getElementById('cartBody');
+  if (!cart.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-cart">Panier vide — sélectionnez un produit à gauche</div></td></tr>';
+    document.getElementById('totalBar').textContent = 'TOTAL : 0.00 €';
+    document.getElementById('payBtn').disabled = true;
+    return;
+  }
+
+  let total = 0;
+  tbody.innerHTML = cart.map((c, i) => {
+    const line = (c.price - c.discount) * c.qty;
+    total += line;
+    return `
+    <tr>
+      <td><b>${c.name}</b></td>
+      <td>${c.price.toFixed(2)} €</td>
+      <td>
+        <div class="qty-ctrl">
+          <button onclick="updateQty(${i},-1)">−</button>
+          <span class="qty-val">${c.qty}</span>
+          <button onclick="updateQty(${i},+1)">+</button>
+        </div>
+      </td>
+      <td><input class="discount-input" type="number" min="0" value="${c.discount}" onchange="updateDiscount(${i},this.value)" placeholder="0"></td>
+      <td><b>${line.toFixed(2)} €</b></td>
+      <td><button class="remove-btn" onclick="removeItem(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('totalBar').textContent = `TOTAL : ${total.toFixed(2)} €`;
+  document.getElementById('payBtn').disabled = false;
+}
+
+/* ══ IMPRESSION ══ */
+function togglePrint(mode) {
+  if (printMode === mode) {
+    printMode = null;
+    document.getElementById('print_ticket').checked  = false;
+    document.getElementById('print_invoice').checked = false;
+    return;
+  }
+  printMode = mode;
+  document.getElementById('print_ticket').checked  = mode === 'ticket';
+  document.getElementById('print_invoice').checked = mode === 'invoice';
+}
+
+/* ══ VALIDATION VENTE ══ */
+async function checkout() {
+  if (!cart.length) return;
+  const payment  = document.getElementById('payment').value;
+  const customer = document.getElementById('customer').value;
+
+  const res = await fetch('/api/orders', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ cart, payment, customer }),
+  });
+  const d = await res.json();
+  if (!d.success) { alert('❌ Erreur vente : ' + (d.error || '')); return; }
+
+  alert(`✅ Vente enregistrée — N° ${d.orderId}`);
+  if (printMode) await printOrder(d.orderId, printMode);
+
+  cart = [];
+  renderCart();
+  document.getElementById('customer').value = '';
+  filterProducts(); // rafraîchit le stock
+}
+
+/* ══ IMPRESSION TICKET / FACTURE ══ */
+async function printOrder(id, type) {
+  const res  = await fetch('/api/orders/' + id);
+  const data = await res.json();
+  if (!data.order) { alert('Erreur impression'); return; }
+
+  let rows = '';
+  data.items.forEach(i => {
+    const line = (Number(i.price) * Number(i.quantity)) - (Number(i.discount) * Number(i.quantity));
+    rows += `<tr>
+      <td>${i.name}</td>
+      <td style="text-align:center">${i.quantity}</td>
+      <td style="text-align:right">${Number(i.price).toFixed(2)} €</td>
+      <td style="text-align:right">${Number(i.discount).toFixed(2)} €</td>
+      <td style="text-align:right">${line.toFixed(2)} €</td>
+    </tr>`;
+  });
+
+  const w = window.open('', '_blank');
+
+  if (type === 'ticket') {
+    w.document.write(`<html><head><meta charset="UTF-8">
+    <style>
+    @page{size:80mm auto;margin:5mm;}
+    body{font-family:Arial;width:72mm;font-size:12px;}
+    .c{text-align:center;} .b{font-weight:bold;}
+    hr{border:none;border-top:1px dashed #999;margin:5px 0;}
+    table{width:100%;border-collapse:collapse;}
+    td,th{border-bottom:1px dashed #ccc;padding:3px 4px;font-size:11px;}
+    .tot{font-size:14px;font-weight:bold;text-align:center;margin:8px 0;}
+    .ft{font-size:10px;text-align:center;color:#555;margin-top:5px;}
+    </style></head><body>
+    <div class="c b" style="font-size:15px">${SHOP.name}</div>
+    <div class="c" style="font-size:10px">${SHOP.sub}</div>
+    <div class="c" style="font-size:10px">${SHOP.address}</div>
+    <div class="c" style="font-size:10px">📞 ${SHOP.tel1} / ${SHOP.tel2}</div>
+    <hr>
+    <div class="c">Ticket #${data.order.id}</div>
+    <div class="c">${new Date(data.order.created_at).toLocaleString('fr-FR')}</div>
+    <div class="c">Client : ${data.order.customer_name || 'CLIENT'}</div>
+    <div class="c">Paiement : ${data.order.payment_method}</div>
+    <hr>
+    <table><tr><th>Produit</th><th>Qté</th><th>Total</th></tr>${rows}</table>
+    <div class="tot">TOTAL : ${Number(data.order.total).toFixed(2)} €</div>
+    <hr>
+    <div class="ft">Merci de votre visite !</div>
+    <div class="ft">${SHOP.email}</div>
+    <script>window.onload=()=>window.print();<\/script>
+    </body></html>`);
+
+  } else {
+    w.document.write(`<html><head><meta charset="UTF-8">
+    <style>
+    body{font-family:Arial;padding:30px;color:#000;}
+    .sh{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:22px;}
+    .sn{font-size:22px;font-weight:900;} .ss{font-size:11px;color:#555;font-style:italic;margin-top:2px;}
+    .si{font-size:11px;color:#333;margin-top:3px;}
+    .it{font-size:20px;font-weight:900;text-align:right;text-transform:uppercase;}
+    .im{font-size:12px;text-align:right;margin-top:4px;color:#555;}
+    table{width:100%;border-collapse:collapse;margin-top:20px;}
+    th{border:1px solid #000;padding:8px;background:#e5e7eb;text-align:left;}
+    td{border:1px solid #000;padding:8px;}
+    .tb{margin-top:20px;text-align:right;font-size:20px;font-weight:bold;border-top:2px solid #000;padding-top:10px;}
+    .ft{margin-top:40px;font-size:11px;color:#555;text-align:center;border-top:1px solid #ccc;padding-top:10px;}
+    </style></head><body>
+    <div class="sh">
+      <div><div class="sn">${SHOP.name}</div><div class="ss">${SHOP.sub}</div>
+      <div class="si">📍 ${SHOP.address}</div>
+      <div class="si">📞 ${SHOP.tel1} | ${SHOP.tel2}</div>
+      <div class="si">✉️ ${SHOP.email}</div></div>
+      <div><div class="it">FACTURE</div>
+      <div class="im">N° ${data.order.id}</div>
+      <div class="im">${new Date(data.order.created_at).toLocaleString('fr-FR')}</div></div>
+    </div>
+    <p><b>Client :</b> ${data.order.customer_name || 'CLIENT'}</p>
+    <p><b>Paiement :</b> ${data.order.payment_method}</p>
+    <table><tr><th>Produit</th><th>Qté</th><th>Prix unit.</th><th>Remise</th><th>Total</th></tr>${rows}</table>
+    <div class="tb">TOTAL : ${Number(data.order.total).toFixed(2)} €</div>
+    <div class="ft">${SHOP.name} — ${SHOP.address} — ${SHOP.tel1} — ${SHOP.email}</div>
+    <script>window.onload=()=>window.print();<\/script>
+    </body></html>`);
+  }
+  w.document.close();
+}
+
+/* ══ INIT ══ */
+init();
+</script>
+</body>
+</html>

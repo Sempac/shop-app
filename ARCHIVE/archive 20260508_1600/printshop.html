@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Impression — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h2{margin:0;font-size:18px;}
+.home-btn{padding:10px 20px;background:#1e40af;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;}
+.container{display:grid;grid-template-columns:1fr 1.5fr;gap:20px;padding:20px;max-width:1200px;margin:0 auto;}
+.card{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 4px #0001;}
+.card h3{margin:0 0 16px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+
+/* Zone upload */
+.drop-zone{border:2.5px dashed #cbd5e1;border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f8fafc;}
+.drop-zone:hover,.drop-zone.drag{border-color:#3b82f6;background:#eff6ff;}
+.drop-zone .icon{font-size:48px;margin-bottom:10px;}
+.drop-zone p{margin:6px 0;color:#64748b;font-size:14px;}
+.drop-zone input{display:none;}
+
+/* Options impression */
+.opt-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
+.opt{border:2px solid #e2e8f0;border-radius:10px;padding:14px;cursor:pointer;text-align:center;transition:all 0.15s;}
+.opt:hover{border-color:#3b82f6;}
+.opt.selected-bw{border-color:#1e293b;background:#1e293b;color:white;}
+.opt.selected-color{border-color:#3b82f6;background:#eff6ff;color:#1e40af;}
+.opt .opt-icon{font-size:28px;display:block;margin-bottom:6px;}
+.opt .opt-label{font-size:13px;font-weight:bold;}
+
+.copies-row{display:flex;align-items:center;gap:12px;margin:12px 0;}
+.copies-row label{font-size:13px;font-weight:bold;color:#374151;}
+.copies-row input{width:70px;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;text-align:center;}
+
+.btn-print{width:100%;padding:14px;background:#0f172a;color:white;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px;}
+.btn-print:hover{background:#1e293b;}
+.btn-print:disabled{background:#94a3b8;cursor:not-allowed;}
+
+/* QR Code */
+.qr-box{background:#0f172a;border-radius:12px;padding:20px;text-align:center;color:white;margin-bottom:16px;}
+.qr-box .qr-label{font-size:13px;color:#94a3b8;margin-bottom:12px;}
+.qr-img{background:white;border-radius:8px;padding:10px;display:inline-block;margin:0 auto;}
+.qr-url{font-size:11px;color:#64748b;margin-top:10px;word-break:break-all;}
+
+/* File preview */
+.preview-box{border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-top:14px;display:none;}
+.preview-box img{max-width:100%;max-height:300px;border-radius:6px;display:block;margin:0 auto;}
+.preview-box iframe{width:100%;height:300px;border:none;border-radius:6px;}
+.file-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;}
+.file-name{font-weight:bold;color:#0f172a;}
+.file-size{color:#94a3b8;}
+.remove-file{background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;}
+
+/* Queue */
+table{width:100%;border-collapse:collapse;}
+th{background:#1e293b;color:white;padding:9px 12px;text-align:left;font-size:11px;}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
+tr:hover td{background:#f8fafc;}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;}
+.EN_ATTENTE{background:#fef3c7;color:#92400e;}.IMPRIME{background:#d1fae5;color:#065f46;}.ANNULE{background:#fee2e2;color:#991b1b;}
+.print-q-btn{padding:5px 12px;background:#0f172a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h2>🖨️ Impression documents</h2>
+  <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
+</div>
+
+<div class="container">
+  <!-- GAUCHE -->
+  <div>
+    <!-- QR Code Wi-Fi pour clients -->
+    <div class="card">
+      <h3>📱 QR Code client</h3>
+      <div class="qr-box">
+        <div class="qr-label">Le client scanne ce QR code pour envoyer son document</div>
+        <div class="qr-img"><canvas id="qrCanvas" width="180" height="180"></canvas></div>
+        <div class="qr-url" id="qrUrl">Chargement...</div>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin:8px 0 0">👉 Affichez ce QR code à la caisse. Le client scanne, sélectionne son fichier, et il apparaît directement dans la file d'attente ci-contre.</p>
+    </div>
+
+    <!-- Upload manuel -->
+    <div class="card" style="margin-top:16px">
+      <h3>📂 Envoyer un document manuellement</h3>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+           ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+        <div class="icon">📄</div>
+        <p><b>Cliquez ou glissez un fichier ici</b></p>
+        <p style="font-size:12px">PDF, JPG, PNG — Max 20 Mo</p>
+        <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFile(event)">
+      </div>
+
+      <div class="preview-box" id="previewBox">
+        <div class="file-info">
+          <span class="file-name" id="fileName"></span>
+          <span class="file-size" id="fileSize"></span>
+          <button class="remove-file" onclick="clearFile()">✕ Supprimer</button>
+        </div>
+        <div id="previewContent"></div>
+      </div>
+
+      <!-- Options -->
+      <div class="opt-row">
+        <div class="opt selected-bw" id="opt-bw" onclick="selectMode('bw')">
+          <span class="opt-icon">⬛</span>
+          <span class="opt-label">Noir & Blanc</span>
+        </div>
+        <div class="opt" id="opt-color" onclick="selectMode('color')">
+          <span class="opt-icon">🎨</span>
+          <span class="opt-label">Couleur</span>
+        </div>
+      </div>
+
+      <div class="copies-row">
+        <label>Nombre de copies :</label>
+        <input type="number" id="copies" value="1" min="1" max="20">
+      </div>
+
+      <button class="btn-print" id="btnPrint" onclick="submitPrint()" disabled>🖨️ Envoyer à l'impression</button>
+    </div>
+  </div>
+
+  <!-- DROITE : file d'attente -->
+  <div class="card">
+    <h3>📋 File d'impression <span id="pendingCount" style="background:#ef4444;color:white;border-radius:20px;padding:2px 8px;font-size:12px;margin-left:6px">0</span></h3>
+    <table>
+      <thead><tr><th>#</th><th>Fichier</th><th>Type</th><th>Copies</th><th>Mode</th><th>Statut</th><th></th></tr></thead>
+      <tbody id="queueBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let selectedFile = null;
+let colorMode    = 'bw';
+
+/* ── QR CODE (simple canvas sans lib externe) ── */
+function drawQR() {
+  const url = window.location.origin + '/printshop.html';
+  document.getElementById('qrUrl').textContent = url;
+  /* QR simplifié — affiche juste l'URL dans un encadré */
+  const canvas = document.getElementById('qrCanvas');
+  const ctx    = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,180,180);
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 11px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('📱 Envoyez votre fichier', 90, 50);
+  ctx.fillText('sur cette page :', 90, 68);
+  ctx.font = '10px Arial';
+  ctx.fillStyle = '#3b82f6';
+  const words = url.replace('http://','').split('/');
+  ctx.fillText(words[0], 90, 95);
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '9px Arial';
+  ctx.fillText('→ Ouvrez dans votre navigateur', 90, 115);
+  ctx.fillText('→ Sélectionnez votre fichier', 90, 130);
+  ctx.fillText('→ Choisissez N&B ou Couleur', 90, 145);
+  ctx.fillText('→ Cliquez Envoyer', 90, 160);
+  /* Bordure décorative */
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(4,4,172,172);
+}
+
+/* ── DRAG & DROP ── */
+function handleDragOver(e)  { e.preventDefault(); document.getElementById('dropZone').classList.add('drag'); }
+function handleDragLeave()  { document.getElementById('dropZone').classList.remove('drag'); }
+function handleDrop(e)      { e.preventDefault(); document.getElementById('dropZone').classList.remove('drag'); if(e.dataTransfer.files[0]) showFile(e.dataTransfer.files[0]); }
+function handleFile(e)      { if(e.target.files[0]) showFile(e.target.files[0]); }
+
+function showFile(file) {
+  selectedFile = file;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size/1024).toFixed(0)+' Ko';
+  document.getElementById('btnPrint').disabled = false;
+  const pBox = document.getElementById('previewBox');
+  pBox.style.display = 'block';
+  const prev = document.getElementById('previewContent');
+  const url  = URL.createObjectURL(file);
+  if (file.type === 'application/pdf') {
+    prev.innerHTML = `<iframe src="${url}"></iframe>`;
+  } else if (file.type.startsWith('image/')) {
+    prev.innerHTML = `<img src="${url}" alt="preview">`;
+  } else {
+    prev.innerHTML = `<p style="text-align:center;color:#64748b;padding:20px">Aperçu non disponible — fichier prêt à l'envoi</p>`;
+  }
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('previewBox').style.display = 'none';
+  document.getElementById('previewContent').innerHTML = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('btnPrint').disabled = true;
+}
+
+/* ── MODE COULEUR ── */
+function selectMode(mode) {
+  colorMode = mode;
+  document.getElementById('opt-bw').className    = 'opt' + (mode==='bw'    ? ' selected-bw'    : '');
+  document.getElementById('opt-color').className = 'opt' + (mode==='color' ? ' selected-color' : '');
+}
+
+/* ── ENVOI ── */
+async function submitPrint() {
+  if (!selectedFile) return;
+  const copies = Number(document.getElementById('copies').value)||1;
+  const fd     = new FormData();
+  fd.append('file',       selectedFile);
+  fd.append('copies',     copies);
+  fd.append('color_mode', colorMode);
+
+  document.getElementById('btnPrint').textContent = '⏳ Envoi en cours...';
+  document.getElementById('btnPrint').disabled = true;
+
+  try {
+    const res  = await fetch('/api/print/upload', { method:'POST', body:fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert('✅ Document envoyé ! Il apparaît dans la file d\'impression.');
+    clearFile();
+    loadQueue();
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+  document.getElementById('btnPrint').textContent = '🖨️ Envoyer à l\'impression';
+  document.getElementById('btnPrint').disabled = false;
+}
+
+/* ── FILE D'IMPRESSION ── */
+async function loadQueue() {
+  const res  = await fetch('/api/print/queue');
+  const data = await res.json();
+  const pending = data.filter(d=>d.status==='EN_ATTENTE').length;
+  document.getElementById('pendingCount').textContent = pending;
+
+  const tbody = document.getElementById('queueBody');
+  tbody.innerHTML = data.length===0
+    ?'<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px">File vide</td></tr>'
+    :data.map(d=>`<tr>
+      <td>#${d.id}</td>
+      <td><b>${d.filename}</b></td>
+      <td>${d.filetype||'—'}</td>
+      <td>${d.copies}</td>
+      <td>${d.color_mode==='color'?'🎨 Couleur':'⬛ N&B'}</td>
+      <td><span class="badge ${d.status}">${d.status}</span></td>
+      <td>
+        ${d.status==='EN_ATTENTE'?`
+          <button class="print-q-btn" onclick="printDoc(${d.id},'${d.filepath}')">🖨️ Imprimer</button>
+          <button onclick="cancelPrint(${d.id})" style="padding:5px 10px;background:#fee2e2;color:#ef4444;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-left:4px">✕</button>
+        `:''}
+      </td>
+    </tr>`).join('');
+}
+
+async function printDoc(id, filepath) {
+  /* Ouvre le fichier dans un nouvel onglet → l'utilisateur imprime */
+  window.open('/'+filepath, '_blank');
+  /* Marquer comme imprimé */
+  await fetch('/api/print/'+id+'/done', { method:'PUT' });
+  setTimeout(loadQueue, 1000);
+}
+
+async function cancelPrint(id) {
+  await fetch('/api/print/'+id+'/cancel', { method:'PUT' });
+  loadQueue();
+}
+
+/* Rafraîchissement auto toutes les 10 sec */
+drawQR();
+loadQueue();
+setInterval(loadQueue, 10000);
+</script>
+</body>
+</html>

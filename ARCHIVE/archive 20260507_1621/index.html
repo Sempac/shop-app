@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>CAISSE PRO - ACCUEIL</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* HEADER */
+.header{
+  padding:20px;
+  background:#111827;
+  border-bottom:3px solid #1f2937;
+}
+
+.header h1{
+  margin:0;
+  font-size:34px;
+}
+
+.header p{
+  margin-top:5px;
+  color:#cbd5e1;
+}
+
+/* MAIN GRID */
+.main{
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:25px;
+  padding:30px;
+}
+
+/* BUTTON CARD */
+.card{
+  border-radius:18px;
+  padding:30px;
+  text-decoration:none;
+  color:white;
+  transition:0.2s;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  min-height:200px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.35);
+}
+
+.card:hover{
+  transform:scale(1.04);
+}
+
+/* ICON */
+.icon{
+  font-size:60px;
+  margin-bottom:15px;
+}
+
+/* TITLE */
+.title{
+  font-size:28px;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+/* DESC */
+.desc{
+  text-align:center;
+  font-size:16px;
+  line-height:1.5;
+}
+
+/* COLORS */
+
+.sales{
+  background:linear-gradient(135deg,#16a34a,#22c55e);
+}
+
+.history{
+  background:linear-gradient(135deg,#2563eb,#3b82f6);
+}
+
+.stock{
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+}
+
+.customers{
+  background:linear-gradient(135deg,#db2777,#ec4899);
+}
+
+.stats{
+  background:linear-gradient(135deg,#7c3aed,#8b5cf6);
+}
+
+.settings{
+  background:linear-gradient(135deg,#dc2626,#ef4444);
+}
+
+/* FOOTER */
+.footer{
+  background:#111827;
+  padding:12px;
+  text-align:center;
+  color:#94a3b8;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+
+<h1>🛒 CAISSE PRO</h1>
+<p>Tableau principal</p>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- SALES -->
+<a href="sales.html" class="card sales">
+
+<div class="icon">⚡</div>
+
+<div class="title">
+VENTES
+</div>
+
+<div class="desc">
+Mode caisse rapide<br>
+Scan code barre<br>
+Validation vente
+</div>
+
+</a>
+
+<!-- HISTORY -->
+<a href="history.html" class="card history">
+
+<div class="icon">🧾</div>
+
+<div class="title">
+HISTORIQUE
+</div>
+
+<div class="desc">
+Recherche ventes<br>
+Réimpression<br>
+Filtres avancés
+</div>
+
+</a>
+
+<!-- STOCK -->
+<a href="stock.html" class="card stock">
+
+<div class="icon">📦</div>
+
+<div class="title">
+STOCK
+</div>
+
+<div class="desc">
+Gestion produits<br>
+Inventaire<br>
+Quantités
+</div>
+
+</a>
+
+<!-- CUSTOMERS -->
+<a href="#" class="card customers">
+
+<div class="icon">👥</div>
+
+<div class="title">
+CLIENTS
+</div>
+
+<div class="desc">
+Fiches clients<br>
+Historique achats<br>
+Fidélité
+</div>
+
+</a>
+
+<!-- STATS -->
+<a href="#" class="card stats">
+
+<div class="icon">📊</div>
+
+<div class="title">
+STATISTIQUES
+</div>
+
+<div class="desc">
+Chiffre d'affaires<br>
+Top ventes<br>
+Rapports
+</div>
+
+</a>
+
+<!-- SETTINGS -->
+<a href="#" class="card settings">
+
+<div class="icon">⚙️</div>
+
+<div class="title">
+PARAMÈTRES
+</div>
+
+<div class="desc">
+Imprimantes<br>
+Configuration<br>
+Sauvegardes
+</div>
+
+</a>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+
+CAISSE PRO © 2026
+
+</div>
+
+</body>
+</html>

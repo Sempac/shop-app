@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Rapport Journalier</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    .total { font-weight: bold; }
+    button { padding: 10px 15px; margin-top: 10px; }
+  </style>
+</head>
+<body><h1>Rapport de fin de journée</h1><!-- TABLE 1: Détail --><h2>Détail des opérations</h2>
+<table id="detailsTable">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Référence</th>
+      <th>Paiement</th>
+      <th>Montant (€)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table><!-- TABLE 2: Totaux paiement --><h2>Totaux par mode de paiement</h2>
+<table>
+  <tr><td>Total CB</td><td id="totalCB">0 €</td></tr>
+  <tr><td>Total Espèces</td><td id="totalCash">0 €</td></tr>
+  <tr class="total"><td>Total Global</td><td id="totalGlobal">0 €</td></tr>
+</table><!-- TABLE 3: Dépenses --><h2>Dépenses</h2>
+<table id="expensesTable">
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th>Montant (€)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table><p class="total">Total Dépenses : <span id="totalExpenses">0 €</span></p><!-- RESULTAT --><h2>Résultat Net</h2>
+<p class="total" id="netResult">0 €</p><button onclick="window.print()">🖨 Imprimer</button>
+
+<script>
+// ====== DONNÉES SIMULÉES ======
+const operations = [
+  { type: 'Vente', ref: 'iPhone 11', payment: 'card', amount: 40 },
+  { type: 'Vente', ref: 'Coque', payment: 'cash', amount: 10 },
+  { type: 'Réparation', ref: 'Samsung écran', payment: 'card', amount: 80 }
+];
+
+const expenses = [
+  { desc: 'Achat stock', amount: 50 },
+  { desc: 'Divers', amount: 20 }
+];
+
+// ====== REMPLISSAGE TABLE DETAILS ======
+const detailsBody = document.querySelector('#detailsTable tbody');
+operations.forEach(op => {
+  const row = `<tr>
+    <td>${op.type}</td>
+    <td>${op.ref}</td>
+    <td>${op.payment === 'card' ? 'CB' : 'Espèces'}</td>
+    <td>${op.amount} €</td>
+  </tr>`;
+  detailsBody.innerHTML += row;
+});
+
+// ====== CALCULS ======
+let totalCB = 0;
+let totalCash = 0;
+
+operations.forEach(op => {
+  if (op.payment === 'card') totalCB += op.amount;
+  else totalCash += op.amount;
+});
+
+const totalGlobal = totalCB + totalCash;
+
+// ====== DEPENSES ======
+const expensesBody = document.querySelector('#expensesTable tbody');
+let totalExpenses = 0;
+
+expenses.forEach(exp => {
+  const row = `<tr>
+    <td>${exp.desc}</td>
+    <td>${exp.amount} €</td>
+  </tr>`;
+  expensesBody.innerHTML += row;
+  totalExpenses += exp.amount;
+});
+
+// ====== RESULTAT ======
+const netResult = totalGlobal - totalExpenses;
+
+// ====== AFFICHAGE ======
+document.getElementById('totalCB').innerText = totalCB + ' €';
+document.getElementById('totalCash').innerText = totalCash + ' €';
+document.getElementById('totalGlobal').innerText = totalGlobal + ' €';
+document.getElementById('totalExpenses').innerText = totalExpenses + ' €';
+document.getElementById('netResult').innerText = netResult + ' €';
+</script></body>
+</html>

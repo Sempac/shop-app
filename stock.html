@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Stock — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;height:100vh;display:flex;flex-direction:column;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar h2{margin:0;font-size:17px;}
+button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
+.btn-home{background:#1e40af;color:white;}
+.btn-green{background:#22c55e;color:white;}
+.edit-btn{background:#e0f2fe;color:#0369a1;border-radius:4px;padding:3px 8px;font-size:11px;font-weight:bold;font-family:Arial;margin-right:2px;}
+.del-btn{background:#fee2e2;color:#ef4444;border-radius:4px;padding:3px 8px;font-size:11px;font-family:Arial;}
+.detail-btn{background:#f3e8ff;color:#7c3aed;border-radius:4px;padding:3px 8px;font-size:11px;font-family:Arial;margin-right:2px;}
+.main{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:220px;background:white;padding:12px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:7px;}
+.sidebar h3{margin:0 0 4px;font-size:13px;color:#0f172a;}
+.fg label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;display:block;margin-bottom:3px;}
+.fg input,.fg select{width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;}
+.fg input:focus,.fg select:focus{outline:none;border-color:#3b82f6;}
+.reset-btn{width:100%;padding:8px;background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:12px;font-family:Arial;}
+.alert-box{background:#fef3c7;border:1.5px solid #f59e0b;border-radius:7px;padding:8px 10px;font-size:11px;color:#92400e;font-weight:bold;}
+.content{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+.stats-row{display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0;}
+.stat{background:white;border-radius:8px;padding:10px 14px;font-size:12px;min-width:110px;box-shadow:0 1px 3px #0001;border-left:4px solid #e2e8f0;}
+.stat b{display:block;font-size:20px;margin-top:2px;}
+.stat.s-total{border-left-color:#3b82f6;}.stat.s-total b{color:#3b82f6;}
+.stat.s-ok{border-left-color:#22c55e;}.stat.s-ok b{color:#22c55e;}
+.stat.s-low{border-left-color:#f59e0b;}.stat.s-low b{color:#f59e0b;}
+.stat.s-out{border-left-color:#ef4444;}.stat.s-out b{color:#ef4444;}
+.stat.s-val{border-left-color:#7c3aed;}.stat.s-val b{color:#7c3aed;}
+.table-wrap{flex:1;overflow:auto;}
+table{width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px #0001;font-size:12px;}
+th{background:#111827;color:white;padding:9px 10px;text-align:left;white-space:nowrap;font-size:11px;}
+td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+tr:hover td{background:#f8fafc;}
+.badge-cond{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:bold;}
+.cNEUF{background:#dcfce7;color:#166534;}
+.cOCCASION{background:#fef3c7;color:#92400e;}
+.cRECONDITIONNE{background:#dbeafe;color:#1e40af;}
+.stock-ok{color:#16a34a;font-weight:bold;}
+.stock-low{color:#f59e0b;font-weight:bold;}
+.stock-out{color:#ef4444;font-weight:bold;}
+.color-dot{display:inline-flex;align-items:center;gap:4px;font-size:11px;}
+.color-circle{width:13px;height:13px;border-radius:50%;border:1px solid #ccc;flex-shrink:0;}
+.detail-panel{display:none;position:fixed;top:0;right:0;width:380px;height:100vh;background:white;box-shadow:-4px 0 20px #0002;z-index:500;flex-direction:column;}
+.detail-panel.show{display:flex;flex-direction:column;}
+.dp-header{background:#111827;color:white;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.dp-header h3{margin:0;font-size:14px;}
+.dp-close{background:#334155;color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:Arial;}
+.dp-body{padding:18px;flex:1;overflow-y:auto;}
+.dp-name{font-size:18px;font-weight:bold;color:#0f172a;margin-bottom:4px;}
+.dp-price{font-size:26px;font-weight:900;color:#16a34a;margin-bottom:10px;}
+.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.dp-info{background:#f8fafc;border-radius:6px;padding:8px 10px;}
+.dp-info .lbl{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;margin-bottom:2px;}
+.dp-info .val{font-size:12px;font-weight:bold;color:#0f172a;}
+.dp-sell-btn{width:100%;padding:13px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;font-family:Arial;margin-bottom:8px;}
+.dp-sell-btn:disabled{background:#94a3b8;cursor:not-allowed;}
+.dp-edit-btn{width:100%;padding:10px;background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.rupt-box{background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:12px;margin-bottom:8px;}
+.rupt-title{font-size:12px;font-weight:bold;color:#991b1b;margin-bottom:8px;}
+.contact-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+.c-btn{padding:5px 11px;border-radius:6px;text-decoration:none;font-size:11px;font-weight:bold;font-family:Arial;display:inline-block;}
+.c-call{background:#16a34a;color:white;}
+.c-sms{background:#2563eb;color:white;}
+.c-wa{background:#25d366;color:white;}
+.moverlay{display:none;position:fixed;inset:0;background:#00000070;z-index:1000;align-items:center;justify-content:center;}
+.moverlay.show{display:flex;}
+.modal{background:white;border-radius:14px;padding:22px;width:560px;max-width:96vw;max-height:92vh;overflow-y:auto;}
+.modal h3{margin:0 0 14px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.mfg{display:flex;flex-direction:column;gap:3px;}
+.mfg.full{grid-column:1/span 2;}
+.mfg label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.mfg input,.mfg select{padding:9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;font-family:Arial;width:100%;}
+.mfg input:focus,.mfg select:focus{outline:none;border-color:#3b82f6;}
+.msec{background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.msec-title{font-size:10px;font-weight:bold;text-transform:uppercase;color:#64748b;margin-bottom:8px;}
+.mbtns{display:flex;gap:8px;margin-top:14px;}
+.mbtn{flex:1;padding:11px;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.mbtn-save{background:#22c55e;color:white;}
+.mbtn-cancel{background:#f1f5f9;color:#374151;}
+
+/* PANEL COMPARATEUR */
+.comp-panel{display:none;position:fixed;top:0;right:0;width:520px;height:100vh;background:white;box-shadow:-4px 0 24px #0003;z-index:600;flex-direction:column;}
+.comp-panel.show{display:flex;flex-direction:column;}
+.comp-header{background:#0f172a;color:white;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.comp-header h3{margin:0;font-size:14px;}
+.comp-body{flex:1;overflow-y:auto;padding:16px;}
+.comp-close{background:#334155;color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:Arial;}
+
+/* Tableau comparatif */
+.comp-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}
+.comp-table th{background:#0f172a;color:white;padding:8px 10px;text-align:left;font-size:11px;white-space:nowrap;}
+.comp-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.comp-table tr:hover td{background:#f8fafc;}
+.comp-table tr.best-price td{background:#f0fdf4;font-weight:bold;}
+
+/* Étoiles */
+.stars{color:#f59e0b;letter-spacing:1px;}
+
+/* Type badge */
+.type-badge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold;}
+.type-OLED    {background:#4c1d95;color:white;}
+.type-OEM     {background:#1e3a8a;color:white;}
+.type-AMOLED  {background:#5b21b6;color:white;}
+.type-INCELL  {background:#0e7490;color:white;}
+.type-LCD     {background:#374151;color:white;}
+.type-Original{background:#166534;color:white;}
+.type-Compatible{background:#92400e;color:white;}
+
+/* Bouton recherche fournisseur */
+.sup-search-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#1e40af;color:white;border-radius:5px;text-decoration:none;font-size:11px;font-weight:bold;font-family:Arial;}
+
+/* Formulaire ajout prix */
+.add-price-form{background:#f8fafc;border-radius:8px;padding:12px;margin-top:10px;border:1.5px dashed #e2e8f0;}
+.add-price-form h4{margin:0 0 10px;font-size:12px;color:#374151;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.form-row input,.form-row select{padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;}
+.form-row.full{grid-template-columns:1fr;}
+.add-btn{width:100%;padding:8px;background:#22c55e;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;margin-top:4px;}
+
+/* Section fournisseurs */
+.sup-card{background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #e2e8f0;}
+.sup-card .sn{font-size:13px;font-weight:bold;color:#0f172a;}
+.sup-card .ss{font-size:11px;color:#64748b;margin-top:2px;}
+.sup-manage-btn{padding:4px 9px;background:#e0f2fe;color:#0369a1;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h2>📦 Gestion du Stock</h2>
+  <div style="display:flex;gap:8px">
+    <button class="btn-green" id="btnNewProd">➕ Nouveau produit</button>
+    <button class="btn-home" onclick="location.href='index.html'">🏠 Accueil</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <h3>🔍 Filtres</h3>
+    <div id="alertBox" class="alert-box" style="display:none"></div>
+    <div class="fg"><label>Recherche</label><input id="f_search" placeholder="Nom, couleur..."></div>
+    <div class="fg"><label>Catégorie</label>
+      <select id="f_cat">
+        <option value="">Toutes</option>
+        <option>Smartphone</option><option>Tablette</option><option>PC Portable</option>
+        <option>Carte SIM</option><option>Coque</option><option>Protection écran</option>
+        <option>Chargeur</option><option>Câble</option><option>Audio</option>
+        <option>Accessoire Info</option><option>Pièce détachée</option><option>Prestation</option>
+      </select>
+    </div>
+    <div class="fg"><label>État</label>
+      <select id="f_cond">
+        <option value="">Tous</option>
+        <option value="NEUF">Neuf</option>
+        <option value="OCCASION">Occasion</option>
+        <option value="RECONDITIONNE">Reconditionné</option>
+      </select>
+    </div>
+    <div class="fg"><label>Grade</label>
+      <select id="f_grade">
+        <option value="">Tous</option>
+        <option>NEUF</option><option>Grade A+</option><option>Grade A</option>
+        <option>Grade B</option><option>Grade C</option><option>Grade D</option>
+        <option>Pour pièces</option>
+      </select>
+    </div>
+    <div class="fg"><label>Couleur</label>
+      <select id="f_color">
+        <option value="">Toutes</option>
+        <option>Noir</option><option>Blanc</option><option>Gris</option><option>Argent</option>
+        <option>Or</option><option>Rose</option><option>Rouge</option><option>Bleu</option>
+        <option>Bleu marine</option><option>Vert</option><option>Violet</option>
+        <option>Jaune</option><option>Orange</option><option>Transparent</option>
+      </select>
+    </div>
+    <div class="fg"><label>Fournisseur</label><input id="f_supplier" placeholder="Ex: Mohamed..."></div>
+    <div class="fg"><label>Zone</label><input id="f_zone" placeholder="Ex: Armoire 1"></div>
+    <div class="fg"><label>Stock</label>
+      <select id="f_stock">
+        <option value="">Tous</option>
+        <option value="ok">En stock</option>
+        <option value="low">Faible</option>
+        <option value="out">Rupture</option>
+      </select>
+    </div>
+    <button class="reset-btn" id="btnReset">♻ Réinitialiser</button>
+  </div>
+
+  <div class="content">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Nom</th><th>Catégorie</th><th>État</th><th>Grade</th>
+            <th>Couleur</th><th>Fournisseur</th><th>Zone</th>
+            <th>Stock</th><th>P.Achat</th><th>P.Vente</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="stockBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL DETAIL -->
+<div class="detail-panel" id="detailPanel">
+  <div class="dp-header">
+    <h3>📋 Fiche produit</h3>
+    <button class="dp-close" id="btnCloseDetail">✕ Fermer</button>
+  </div>
+  <div class="dp-body" id="detailBody"></div>
+</div>
+
+<!-- MODAL -->
+<div class="moverlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">➕ Nouveau produit</h3>
+    <div class="msec">
+      <div class="msec-title">📋 Informations</div>
+      <div class="mgrid">
+        <div class="mfg full"><label>Nom *</label><input id="p_name" placeholder="Ex: iPhone 12 64Go Noir"></div>
+        <div class="mfg"><label>Catégorie</label>
+          <select id="p_cat">
+            <option>Smartphone</option><option>Tablette</option><option>PC Portable</option>
+            <option>Carte SIM</option><option>Coque</option><option>Protection écran</option>
+            <option>Chargeur</option><option>Câble</option><option>Audio</option>
+            <option>Accessoire Info</option><option>Pièce détachée</option><option>Prestation</option>
+          </select>
+        </div>
+        <div class="mfg"><label>État</label>
+          <select id="p_cond">
+            <option value="NEUF">Neuf</option>
+            <option value="OCCASION">Occasion</option>
+            <option value="RECONDITIONNE">Reconditionné</option>
+          </select>
+        </div>
+        <div class="mfg"><label>Grade</label>
+          <select id="p_grade">
+            <option value="">— Sans grade —</option>
+            <option value="NEUF">NEUF</option>
+            <option value="Grade A+">Grade A+</option>
+            <option value="Grade A">Grade A</option>
+            <option value="Grade B">Grade B</option>
+            <option value="Grade C">Grade C</option>
+            <option value="Grade D">Grade D</option>
+            <option value="Pour pièces">Pour pièces</option>
+          </select>
+        </div>
+        <div class="mfg"><label>Couleur</label>
+          <select id="p_color">
+            <option value="">— Sans couleur —</option>
+            <option>Noir</option><option>Blanc</option><option>Gris</option><option>Argent</option>
+            <option>Or</option><option>Rose</option><option>Rouge</option><option>Bleu</option>
+            <option>Bleu marine</option><option>Bleu ciel</option><option>Vert</option>
+            <option>Vert kaki</option><option>Violet</option><option>Lavande</option>
+            <option>Jaune</option><option>Orange</option><option>Marron</option>
+            <option>Bordeaux</option><option>Transparent</option><option>Multicolore</option>
+          </select>
+        </div>
+        <div class="mfg full"><label>Fournisseur / Origine</label>
+          <input id="p_supplier" placeholder="Ex: Mohamed, Lot mai 2026...">
+        </div>
+        <div class="mfg"><label>Code barre</label><input id="p_barcode" placeholder="Ex: 3700123456789"></div>
+      </div>
+    </div>
+    <div class="msec">
+      <div class="msec-title">📍 Emplacement</div>
+      <div class="mgrid">
+        <div class="mfg"><label>Zone</label>
+          <select id="p_zone">
+            <option value="">— Non défini —</option>
+            <option>Armoire 1</option><option>Armoire 2</option><option>Armoire 3</option>
+            <option>Présentoir 1</option><option>Présentoir 2</option><option>Présentoir 3</option>
+            <option>Vitrine 1</option><option>Vitrine 2</option>
+            <option>Étagère 1</option><option>Étagère 2</option><option>Étagère 3</option>
+            <option>Réserve</option><option>Comptoir</option>
+          </select>
+        </div>
+        <div class="mfg"><label>Détail</label>
+          <select id="p_detail">
+            <option value="">— Non défini —</option>
+            <option>Tiroir 1 GAUCHE</option><option>Tiroir 1 DROITE</option>
+            <option>Tiroir 2 GAUCHE</option><option>Tiroir 2 DROITE</option>
+            <option>Tiroir 3 GAUCHE</option><option>Tiroir 3 DROITE</option>
+            <option>Haut GAUCHE</option><option>Haut DROITE</option>
+            <option>Milieu GAUCHE</option><option>Milieu DROITE</option>
+            <option>Bas GAUCHE</option><option>Bas DROITE</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="msec">
+      <div class="msec-title">💰 Prix &amp; Stock</div>
+      <div class="mgrid">
+        <div class="mfg"><label>Prix achat (€)</label><input type="number" id="p_buy" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg"><label>Prix vente (€) *</label><input type="number" id="p_sell" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg"><label>Quantité</label><input type="number" id="p_qty" value="1" min="0"></div>
+        <div class="mfg"><label>Seuil alerte</label><input type="number" id="p_alert" value="3" min="0"></div>
+      </div>
+    </div>
+    <input type="hidden" id="p_id">
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="btnCancelModal">Annuler</button>
+      <button class="mbtn mbtn-save" id="btnSaveModal">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var allProducts = [];
+var allContacts = [];
+var filtered = [];
+
+var COLORS_MAP = {
+  'Noir':'#1f2937','Blanc':'#f9fafb','Gris':'#9ca3af','Argent':'#d1d5db',
+  'Or':'#d4af37','Rose':'#f9a8d4','Rouge':'#ef4444','Bleu':'#3b82f6',
+  'Bleu marine':'#1e3a8a','Bleu ciel':'#7dd3fc','Vert':'#22c55e',
+  'Vert kaki':'#65a30d','Violet':'#8b5cf6','Lavande':'#c4b5fd',
+  'Jaune':'#fbbf24','Orange':'#f97316','Marron':'#92400e',
+  'Bordeaux':'#9f1239','Transparent':'#e2e8f0','Multicolore':'#a78bfa'
+};
+
+var GRADE_MAP = {
+  'NEUF':       {bg:'#dcfce7',color:'#166534'},
+  'Grade A+':   {bg:'#fef9c3',color:'#854d0e'},
+  'Grade A':    {bg:'#dbeafe',color:'#1e40af'},
+  'Grade B':    {bg:'#e0f2fe',color:'#0e7490'},
+  'Grade C':    {bg:'#fef3c7',color:'#92400e'},
+  'Grade D':    {bg:'#fee2e2',color:'#991b1b'},
+  'Pour pièces':{bg:'#f3f4f6',color:'#374151'}
+};
+
+function fmt(n) { return Number(n||0).toFixed(2) + ' €'; }
+
+async function loadAll() {
+  try {
+    var rp = await fetch('/api/products');
+    allProducts = await rp.json();
+  } catch(e) { allProducts = []; }
+  try {
+    var rc = await fetch('/api/contacts');
+    allContacts = await rc.json();
+  } catch(e) { allContacts = []; }
+  applyFilters();
+  showAlerts();
+}
+
+function showAlerts() {
+  var low = allProducts.filter(function(p) {
+    return p.category !== 'Prestation' && parseInt(p.stock_quantity||0) > 0 && parseInt(p.stock_quantity||0) <= parseInt(p.stock_alert||3);
+  });
+  var out = allProducts.filter(function(p) {
+    return p.category !== 'Prestation' && parseInt(p.stock_quantity||0) === 0;
+  });
+  var box = document.getElementById('alertBox');
+  if (low.length || out.length) {
+    box.style.display = 'block';
+    box.textContent = out.length + ' rupture(s) · ' + low.length + ' stock(s) faible(s)';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function applyFilters() {
+  var q        = document.getElementById('f_search').value.toLowerCase().trim();
+  var cat      = document.getElementById('f_cat').value;
+  var cond     = document.getElementById('f_cond').value;
+  var grade    = document.getElementById('f_grade').value;
+  var color    = document.getElementById('f_color').value;
+  var supplier = document.getElementById('f_supplier').value.toLowerCase();
+  var zone     = document.getElementById('f_zone').value.toLowerCase();
+  var stock    = document.getElementById('f_stock').value;
+
+  filtered = allProducts.filter(function(p) {
+    var qty  = parseInt(p.stock_quantity||0);
+    var alrt = parseInt(p.stock_alert||3);
+    if (cat      && p.category !== cat) return false;
+    if (cond     && (p.condition||'NEUF') !== cond) return false;
+    if (grade    && (p.grade||'') !== grade) return false;
+    if (color    && (p.color||'') !== color) return false;
+    if (supplier && (p.supplier_name||'').toLowerCase().indexOf(supplier) < 0) return false;
+    if (zone     && (p.location_zone||'').toLowerCase().indexOf(zone) < 0) return false;
+    if (stock === 'ok'  && qty <= 0) return false;
+    if (stock === 'low' && (qty <= 0 || qty > alrt)) return false;
+    if (stock === 'out' && qty !== 0) return false;
+    if (q) {
+      var match = p.name.toLowerCase().indexOf(q) >= 0
+        || (p.color||'').toLowerCase().indexOf(q) >= 0
+        || (p.supplier_name||'').toLowerCase().indexOf(q) >= 0
+        || (p.grade||'').toLowerCase().indexOf(q) >= 0
+        || (p.location_zone||'').toLowerCase().indexOf(q) >= 0;
+      if (!match) return false;
+    }
+    return true;
+  });
+  renderStats();
+  renderTable();
+}
+
+function resetFilters() {
+  document.getElementById('f_search').value   = '';
+  document.getElementById('f_zone').value     = '';
+  document.getElementById('f_supplier').value = '';
+  document.getElementById('f_cat').value      = '';
+  document.getElementById('f_cond').value     = '';
+  document.getElementById('f_grade').value    = '';
+  document.getElementById('f_color').value    = '';
+  document.getElementById('f_stock').value    = '';
+  applyFilters();
+}
+
+function renderStats() {
+  var total = filtered.length;
+  var ok    = filtered.filter(function(p){ return parseInt(p.stock_quantity||0) > parseInt(p.stock_alert||3); }).length;
+  var low   = filtered.filter(function(p){ var q=parseInt(p.stock_quantity||0),a=parseInt(p.stock_alert||3); return q>0&&q<=a; }).length;
+  var out   = filtered.filter(function(p){ return parseInt(p.stock_quantity||0)===0; }).length;
+  var val   = filtered.reduce(function(s,p){ return s+(Number(p.purchase_price||0)*parseInt(p.stock_quantity||0)); }, 0);
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat s-total"><span>Produits</span><b>'+total+'</b></div>' +
+    '<div class="stat s-ok"><span>En stock</span><b>'+ok+'</b></div>' +
+    '<div class="stat s-low"><span>Faible</span><b>'+low+'</b></div>' +
+    '<div class="stat s-out"><span>Rupture</span><b>'+out+'</b></div>' +
+    '<div class="stat s-val"><span>Valeur</span><b>'+val.toFixed(0)+' €</b></div>';
+}
+
+function renderTable() {
+  var tbody = document.getElementById('stockBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#94a3b8;padding:24px">Aucun produit trouvé</td></tr>';
+    return;
+  }
+  var rows = '';
+  for (var i = 0; i < filtered.length; i++) {
+    var p    = filtered[i];
+    var qty  = parseInt(p.stock_quantity||0);
+    var alrt = parseInt(p.stock_alert||3);
+    var sc   = qty === 0 ? 'stock-out' : qty <= alrt ? 'stock-low' : 'stock-ok';
+    var st   = qty === 0 ? '❌ Rupture' : qty <= alrt ? '⚠️ ' + qty : '' + qty;
+    var cond = p.condition || 'NEUF';
+    var condLabel = cond === 'NEUF' ? 'Neuf' : cond === 'OCCASION' ? 'Occasion' : 'Recond.';
+
+    var colorHtml = '—';
+    if (p.color) {
+      var bg = COLORS_MAP[p.color] || '#e2e8f0';
+      colorHtml = '<div class="color-dot"><div class="color-circle" style="background:' + bg + '"></div>' + p.color + '</div>';
+    }
+
+    var gradeHtml = '—';
+    if (p.grade && GRADE_MAP[p.grade]) {
+      var gs = GRADE_MAP[p.grade];
+      gradeHtml = '<span style="font-size:10px;font-weight:bold;padding:2px 6px;border-radius:4px;background:' + gs.bg + ';color:' + gs.color + '">' + p.grade + '</span>';
+    }
+
+    var supplierHtml = p.supplier_name ? '🏭 ' + p.supplier_name : '—';
+    var locHtml = p.location_zone ? '📍 ' + p.location_zone + (p.location_detail ? ' › ' + p.location_detail : '') : '—';
+
+    var pid = p.id;
+    var pname = p.name.replace(/'/g, "\\'");
+
+    rows += '<tr>';
+    rows += '<td style="color:#94a3b8;font-size:11px">#' + p.id + '</td>';
+    rows += '<td><b>' + p.name + '</b></td>';
+    rows += '<td style="color:#64748b">' + (p.category||'—') + '</td>';
+    rows += '<td><span class="badge-cond c' + cond + '">' + condLabel + '</span></td>';
+    rows += '<td>' + gradeHtml + '</td>';
+    rows += '<td>' + colorHtml + '</td>';
+    rows += '<td style="font-size:11px;color:#475569">' + supplierHtml + '</td>';
+    rows += '<td style="font-size:11px;color:#3b82f6">' + locHtml + '</td>';
+    rows += '<td class="' + sc + '">' + st + '</td>';
+    rows += '<td>' + Number(p.purchase_price||0).toFixed(2) + ' €</td>';
+    rows += '<td style="font-weight:bold;color:#16a34a">' + Number(p.sale_price||p.price||0).toFixed(2) + ' €</td>';
+    rows += '<td>';
+    rows += '<button class="detail-btn" onclick="showDetail(' + pid + ')">🔍</button>';
+    rows += '<button class="detail-btn" style="background:#ecfdf5;color:#166534" onclick="showComparator(' + pid + ',&quot;' + pname + '&quot;)" title="Comparer chez les fournisseurs">💰</button>';
+    if (qty === 0) {
+      rows += '<button class="detail-btn" style="background:#fef2f2;color:#991b1b" onclick="showDetail(' + pid + ')" title="Rupture — contacter fournisseur">📞</button>';
+    }
+    rows += '<button class="edit-btn" onclick="openModal(' + pid + ')">✏️</button>';
+    rows += '<button class="del-btn" onclick="deleteProduct(' + pid + ',\'' + pname + '\')">🗑</button>';
+    rows += '</td>';
+    rows += '</tr>';
+  }
+  tbody.innerHTML = rows;
+}
+
+/* FICHE DETAIL */
+function showDetail(id) {
+  var p = allProducts.find(function(x){ return x.id === id; });
+  if (!p) return;
+
+  var qty    = parseInt(p.stock_quantity||0);
+  var alrt   = parseInt(p.stock_alert||3);
+  var margin = Number(p.sale_price||0) - Number(p.purchase_price||0);
+  var gs     = GRADE_MAP[p.grade||''] || {};
+
+  var html = '';
+  html += '<div class="dp-name">' + p.name + '</div>';
+  if (p.grade && gs.bg) {
+    html += '<div style="margin-bottom:8px"><span style="font-size:12px;font-weight:bold;padding:4px 10px;border-radius:6px;background:' + gs.bg + ';color:' + gs.color + '">' + p.grade + '</span></div>';
+  }
+  html += '<div class="dp-price">' + Number(p.sale_price||0).toFixed(2) + ' €</div>';
+  html += '<div class="dp-grid">';
+  html += '<div class="dp-info"><div class="lbl">Catégorie</div><div class="val">' + (p.category||'—') + '</div></div>';
+  html += '<div class="dp-info"><div class="lbl">État</div><div class="val">' + (p.condition||'NEUF') + '</div></div>';
+
+  var colorVal = '—';
+  if (p.color) {
+    var cbg = COLORS_MAP[p.color] || '#e2e8f0';
+    colorVal = '<div style="display:flex;align-items:center;gap:6px"><div style="width:14px;height:14px;border-radius:50%;background:' + cbg + ';border:1px solid #ccc"></div>' + p.color + '</div>';
+  }
+  html += '<div class="dp-info"><div class="lbl">Couleur</div><div class="val">' + colorVal + '</div></div>';
+
+  var stockColor = qty === 0 ? '#ef4444' : qty <= alrt ? '#f59e0b' : '#16a34a';
+  var stockTxt   = qty === 0 ? '❌ Rupture' : qty + ' unité(s)';
+  html += '<div class="dp-info"><div class="lbl">Stock</div><div class="val" style="color:' + stockColor + '">' + stockTxt + '</div></div>';
+  html += '<div class="dp-info"><div class="lbl">Prix achat</div><div class="val">' + Number(p.purchase_price||0).toFixed(2) + ' €</div></div>';
+  html += '<div class="dp-info"><div class="lbl">Marge</div><div class="val" style="color:' + (margin>=0?'#16a34a':'#ef4444') + '">' + (margin>=0?'+':'') + margin.toFixed(2) + ' €</div></div>';
+  if (p.supplier_name) {
+    html += '<div class="dp-info" style="grid-column:1/span 2"><div class="lbl">Fournisseur</div><div class="val">🏭 ' + p.supplier_name + '</div></div>';
+  }
+  if (p.location_zone) {
+    html += '<div class="dp-info" style="grid-column:1/span 2"><div class="lbl">Emplacement</div><div class="val">📍 ' + p.location_zone + (p.location_detail ? ' › ' + p.location_detail : '') + '</div></div>';
+  }
+  if (p.barcode) {
+    html += '<div class="dp-info" style="grid-column:1/span 2"><div class="lbl">Code barre</div><div class="val" style="font-family:monospace">' + p.barcode + '</div></div>';
+  }
+  html += '</div>';
+
+  if (qty > 0) {
+    html += '<button class="dp-sell-btn" onclick="sellFromStock(' + id + ')">⚡ Vendre ce produit</button>';
+  } else {
+    /* RUPTURE — section contact fournisseur */
+    html += '<button class="dp-sell-btn" disabled>❌ Rupture de stock</button>';
+    html += '<div class="rupt-box">';
+    html += '<div class="rupt-title">📞 Contacter un fournisseur</div>';
+
+    /* Fournisseur associé au produit */
+    if (p.supplier_name) {
+      var linked = null;
+      for (var i = 0; i < allContacts.length; i++) {
+        var ct = allContacts[i];
+        var sn = p.supplier_name.toLowerCase();
+        if (ct.name.toLowerCase().indexOf(sn) >= 0 || sn.indexOf(ct.name.toLowerCase()) >= 0 || (ct.company||'').toLowerCase().indexOf(sn) >= 0) {
+          linked = ct; break;
+        }
+      }
+      html += '<div style="background:white;border-radius:6px;padding:8px 10px;margin-bottom:10px;border:1px solid #e2e8f0">';
+      html += '<div style="font-size:11px;color:#374151;margin-bottom:5px">🏭 Fournisseur associé : <b>' + p.supplier_name + '</b></div>';
+      if (linked && linked.phone) {
+        var ph   = linked.phone.replace(/\s/g,'');
+        var intl = ph.replace(/^0/,'33');
+        var msg  = encodeURIComponent('Bonjour ' + linked.name + ', c\'est The SMARTPHONE. Avez-vous des ' + p.name + ' disponibles ?');
+        html += '<div class="contact-row">';
+        html += '<a class="c-btn c-call" href="tel:' + ph + '">📞 ' + linked.phone + '</a>';
+        html += '<a class="c-btn c-sms"  href="sms:' + ph + '&body=' + msg + '">💬 SMS</a>';
+        html += '<a class="c-btn c-wa"   href="https://wa.me/' + intl + '?text=' + msg + '" target="_blank">WhatsApp</a>';
+        html += '</div>';
+      } else {
+        html += '<div style="font-size:11px;color:#94a3b8">Pas de numéro dans le carnet — <a href="contacts.html" style="color:#3b82f6">Ajouter</a></div>';
+      }
+      html += '</div>';
+    }
+
+    /* Autres fournisseurs du carnet */
+    var fournisseurs = allContacts.filter(function(ct){ return ct.category === 'Fournisseur' || ct.category === 'Reparateur'; });
+    html += '<div style="font-size:11px;font-weight:bold;color:#64748b;margin-bottom:5px">Choisir un autre fournisseur :</div>';
+    if (!fournisseurs.length) {
+      html += '<div style="font-size:11px;color:#94a3b8">Aucun fournisseur dans le carnet — <a href="contacts.html" style="color:#3b82f6">Ajouter</a></div>';
+    } else {
+      html += '<select id="supSel" style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;margin-bottom:6px">';
+      html += '<option value="">— Sélectionner —</option>';
+      for (var j = 0; j < fournisseurs.length; j++) {
+        var f = fournisseurs[j];
+        var label = f.name + (f.company ? ' — ' + f.company : '') + (f.phone ? ' (' + f.phone + ')' : '');
+        html += '<option value="' + j + '" data-phone="' + (f.phone||'') + '" data-name="' + f.name + '">' + label + '</option>';
+      }
+      html += '</select>';
+      html += '<div id="supBtns"></div>';
+    }
+    html += '</div>';
+  }
+
+  html += '<button class="dp-edit-btn" onclick="openModal(' + id + ');closeDetail()">✏️ Modifier ce produit</button>';
+
+  document.getElementById('detailBody').innerHTML = html;
+  document.getElementById('detailPanel').classList.add('show');
+
+  /* Attacher event sur le select fournisseur */
+  var sel = document.getElementById('supSel');
+  if (sel) {
+    sel.addEventListener('change', function() {
+      var opt = sel.selectedOptions[0];
+      var div = document.getElementById('supBtns');
+      if (!opt || !opt.value) { div.innerHTML = ''; return; }
+      var phone = opt.dataset.phone;
+      var name  = opt.dataset.name;
+      if (!phone) {
+        div.innerHTML = '<div style="font-size:11px;color:#ef4444">Pas de numéro — ajoutez-le dans le carnet</div>';
+        return;
+      }
+      var ph   = phone.replace(/\s/g,'');
+      var intl = ph.replace(/^0/,'33');
+      var msg  = encodeURIComponent('Bonjour ' + name + ', c\'est The SMARTPHONE. Avez-vous des ' + p.name + ' disponibles ?');
+      div.innerHTML =
+        '<div class="contact-row">' +
+        '<a class="c-btn c-call" href="tel:' + ph + '">📞 ' + phone + '</a>' +
+        '<a class="c-btn c-sms"  href="sms:' + ph + '&body=' + msg + '">💬 SMS</a>' +
+        '<a class="c-btn c-wa"   href="https://wa.me/' + intl + '?text=' + msg + '" target="_blank">WhatsApp</a>' +
+        '</div>';
+    });
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('show');
+}
+
+function sellFromStock(id) {
+  var p = allProducts.find(function(x){ return x.id === id; });
+  if (!p || parseInt(p.stock_quantity||0) === 0) { alert('Produit en rupture'); return; }
+  sessionStorage.setItem('preload_product', JSON.stringify({
+    id: p.id, name: p.name, price: Number(p.sale_price||p.price||0), qty: 1, discount: 0
+  }));
+  window.location.href = 'sales.html';
+}
+
+/* MODAL */
+function openModal(id) {
+  document.getElementById('p_id').value = '';
+  document.getElementById('modalTitle').textContent = id ? '✏️ Modifier' : '➕ Nouveau produit';
+  var fields = ['p_name','p_barcode','p_buy','p_sell','p_supplier'];
+  fields.forEach(function(f){ document.getElementById(f).value = ''; });
+  document.getElementById('p_qty').value   = '1';
+  document.getElementById('p_alert').value = '3';
+  document.getElementById('p_cat').value   = 'Smartphone';
+  document.getElementById('p_cond').value  = 'NEUF';
+  document.getElementById('p_color').value = '';
+  document.getElementById('p_grade').value = '';
+  document.getElementById('p_zone').value  = '';
+  document.getElementById('p_detail').value= '';
+
+  if (id) {
+    var p = allProducts.find(function(x){ return x.id === id; });
+    if (!p) return;
+    document.getElementById('p_id').value      = p.id;
+    document.getElementById('p_name').value    = p.name || '';
+    document.getElementById('p_cat').value     = p.category || 'Smartphone';
+    document.getElementById('p_cond').value    = p.condition || 'NEUF';
+    document.getElementById('p_color').value   = p.color || '';
+    document.getElementById('p_grade').value   = p.grade || '';
+    document.getElementById('p_supplier').value= p.supplier_name || '';
+    document.getElementById('p_zone').value    = p.location_zone || '';
+    document.getElementById('p_detail').value  = p.location_detail || '';
+    document.getElementById('p_barcode').value = p.barcode || '';
+    document.getElementById('p_buy').value     = p.purchase_price || '';
+    document.getElementById('p_sell').value    = p.sale_price || p.price || '';
+    document.getElementById('p_qty').value     = p.stock_quantity || 0;
+    document.getElementById('p_alert').value   = p.stock_alert || 3;
+  }
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+async function saveProduct() {
+  var id   = document.getElementById('p_id').value;
+  var name = document.getElementById('p_name').value.trim();
+  var sell = Number(document.getElementById('p_sell').value);
+  if (!name) { alert('Nom obligatoire'); return; }
+  if (!sell) { alert('Prix de vente obligatoire'); return; }
+  var body = {
+    name:           name,
+    category:       document.getElementById('p_cat').value,
+    condition:      document.getElementById('p_cond').value,
+    color:          document.getElementById('p_color').value || null,
+    grade:          document.getElementById('p_grade').value || null,
+    supplier_name:  document.getElementById('p_supplier').value || null,
+    location_zone:  document.getElementById('p_zone').value || null,
+    location_detail:document.getElementById('p_detail').value || null,
+    barcode:        document.getElementById('p_barcode').value || null,
+    purchase_price: Number(document.getElementById('p_buy').value||0),
+    sale_price:     sell,
+    stock_quantity: Number(document.getElementById('p_qty').value||0),
+    stock_alert:    Number(document.getElementById('p_alert').value||3)
+  };
+  var url = id ? '/api/products/' + id : '/api/products/quick';
+  var res = await fetch(url, {method: id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  var d   = await res.json();
+  if (d.error) { alert('Erreur : ' + d.error); return; }
+  closeModal();
+  loadAll();
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm('Supprimer "' + name + '" ?')) return;
+  var res = await fetch('/api/products/' + id, {method:'DELETE'});
+  var d   = await res.json();
+  if (d.error) { alert('Erreur : ' + d.error); return; }
+  closeDetail();
+  loadAll();
+}
+
+
+/* ================================================================
+   COMPARATEUR FOURNISSEURS
+================================================================ */
+var allSuppliers = [];
+var currentCompProduct = null;
+var currentCompPrices  = [];
+var showAddForm = false;
+
+async function loadSuppliers() {
+  try {
+    var r = await fetch('/api/suppliers-catalog');
+    allSuppliers = await r.json();
+  } catch(e) { allSuppliers = []; }
+}
+
+async function showComparator(productId, productName) {
+  currentCompProduct = { id: productId, name: productName };
+  document.getElementById('compPanel').classList.add('show');
+  document.getElementById('compBody').innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px;font-size:13px">⏳ Chargement...</div>';
+
+  /* Charger fournisseurs et prix en parallèle */
+  try {
+    var [rs, rp] = await Promise.all([
+      fetch('/api/suppliers-catalog'),
+      fetch('/api/supplier-prices?product=' + encodeURIComponent(productName))
+    ]);
+    allSuppliers      = await rs.json();
+    currentCompPrices = await rp.json();
+  } catch(e) {
+    allSuppliers = []; currentCompPrices = [];
+  }
+  renderComparator();
+}
+
+function renderComparator() {
+  var p      = currentCompProduct;
+  var prices = currentCompPrices;
+  var body   = document.getElementById('compBody');
+  if (!p) return;
+
+  var html = '';
+  html += '<div style="font-size:16px;font-weight:bold;color:#0f172a;margin-bottom:4px">' + p.name + '</div>';
+
+  /* Séparer fournisseurs pro et références marché */
+  var proSuppliers = allSuppliers.filter(function(s){ return s.name !== 'BackMarket' && s.name !== 'LeBonCoin'; });
+  var marketRefs   = allSuppliers.filter(function(s){ return s.name === 'BackMarket' || s.name === 'LeBonCoin'; });
+
+  /* Fournisseurs pro */
+  html += '<div style="margin-bottom:12px">';
+  html += '<div style="font-size:11px;font-weight:bold;color:#64748b;margin-bottom:6px;text-transform:uppercase">🏭 Fournisseurs pro — Recherche directe</div>';
+  html += '<div style="display:flex;gap:5px;flex-wrap:wrap">';
+  for (var i = 0; i < proSuppliers.length; i++) {
+    var s = proSuppliers[i];
+    var encoded = s.query_encoding === 'percent'
+      ? encodeURIComponent(p.name)
+      : encodeURIComponent(p.name).replace(/%20/g, '+');
+    var url = s.search_url ? s.search_url.replace('{query}', encoded) : s.website;
+    html += '<a href="' + url + '" target="_blank" style="display:inline-flex;align-items:center;gap:3px;padding:6px 12px;background:#1e293b;color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;font-family:Arial">';
+    html += (s.logo_emoji||'🏭') + ' ' + s.name;
+    html += '</a>';
+  }
+  html += '</div></div>';
+
+  /* Prix marché */
+  if (marketRefs.length) {
+    html += '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">';
+    html += '<div style="font-size:11px;font-weight:bold;color:#92400e;margin-bottom:6px;text-transform:uppercase">📊 Prix marché — Voir les prix de revente</div>';
+    html += '<div style="font-size:11px;color:#92400e;margin-bottom:8px">Comparez avec les prix grand public pour fixer votre prix de vente</div>';
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    for (var mi = 0; mi < marketRefs.length; mi++) {
+      var sm = marketRefs[mi];
+      var encodedM = sm.query_encoding === 'percent'
+        ? encodeURIComponent(p.name)
+        : encodeURIComponent(p.name).replace(/%20/g, '+');
+      var urlM = sm.search_url ? sm.search_url.replace('{query}', encodedM) : sm.website;
+      var bgColor = sm.name === 'BackMarket' ? '#3d1f00' : '#f97316';
+      html += '<a href="' + urlM + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:7px 14px;background:' + bgColor + ';color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;font-family:Arial">';
+      html += (sm.logo_emoji||'🏪') + ' ' + sm.name;
+      html += ' <span style="font-size:10px;opacity:0.8">→</span>';
+      html += '</a>';
+    }
+    html += '</div>';
+    html += '<div style="font-size:10px;color:#92400e;margin-top:6px;opacity:0.8">💡 Astuce : si BackMarket revend à 180€, visez 150-160€ pour être compétitif</div>';
+    html += '</div>';
+  }
+
+  /* Tableau des prix saisis */
+  html += '<div style="font-size:11px;font-weight:bold;color:#64748b;margin-bottom:8px;text-transform:uppercase">';
+  html += '📊 Comparaison de prix (' + prices.length + ' enregistré(s))';
+  html += '</div>';
+
+  if (!prices.length) {
+    html += '<div style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;color:#94a3b8;font-size:12px;margin-bottom:12px">';
+    html += 'Aucun prix enregistré pour ce produit<br>Ajoutez des prix ci-dessous';
+    html += '</div>';
+  } else {
+    /* Trouver le meilleur prix */
+    var bestPrice = Infinity;
+    for (var j = 0; j < prices.length; j++) {
+      if (prices[j].price && Number(prices[j].price) < bestPrice) {
+        bestPrice = Number(prices[j].price);
+      }
+    }
+
+    html += '<table class="comp-table">';
+    html += '<thead><tr><th>Fournisseur</th><th>Type</th><th>Prix</th><th>Qualité</th><th>Dispo</th><th>MAJ</th><th></th></tr></thead>';
+    html += '<tbody>';
+    for (var k = 0; k < prices.length; k++) {
+      var pr = prices[k];
+      var isBest = Number(pr.price) === bestPrice;
+      var stars  = '';
+      for (var s2 = 0; s2 < 5; s2++) { stars += s2 < (pr.quality_rating||3) ? '★' : '☆'; }
+      var typeClass = 'type-' + (pr.quality_type||'').replace(/\s/g,'');
+      var typeBadge = pr.quality_type ? '<span class="type-badge ' + typeClass + '">' + pr.quality_type + '</span>' : '—';
+      var dispo     = pr.in_stock ? '✅' : '❌';
+      var maj       = pr.updated_at ? new Date(pr.updated_at).toLocaleDateString('fr-FR') : '—';
+      var prLink    = pr.url ? '<a href="' + pr.url + '" target="_blank" style="color:#3b82f6;font-size:11px">🔗</a>' : '';
+
+      html += '<tr' + (isBest ? ' class="best-price"' : '') + '>';
+      html += '<td>' + (pr.logo_emoji||'🏭') + ' <b>' + (pr.supplier_name||'—') + '</b>' + (isBest ? ' 🏆' : '') + '</td>';
+      html += '<td>' + typeBadge + '</td>';
+      html += '<td style="color:' + (isBest?'#16a34a':'#0f172a') + ';font-weight:bold">' + Number(pr.price||0).toFixed(2) + ' €</td>';
+      html += '<td><span class="stars">' + stars + '</span></td>';
+      html += '<td>' + dispo + '</td>';
+      html += '<td style="color:#94a3b8;font-size:10px">' + maj + '</td>';
+      html += '<td>' + prLink + ' <button onclick="deletePrice(' + pr.id + ')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:10px;font-family:Arial">✕</button></td>';
+      html += '</tr>';
+      if (pr.notes) {
+        html += '<tr><td colspan="7" style="font-size:11px;color:#64748b;padding:4px 10px;background:#f8fafc">💬 ' + pr.notes + '</td></tr>';
+      }
+    }
+    html += '</tbody></table>';
+
+    if (bestPrice < Infinity) {
+      html += '<div style="background:#f0fdf4;border:1.5px solid #22c55e;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px">';
+      html += '🏆 Meilleur prix : <b style="color:#16a34a">' + bestPrice.toFixed(2) + ' €</b>';
+      html += '</div>';
+    }
+  }
+
+  /* Formulaire ajout prix */
+  html += '<button onclick="toggleAddForm()" style="width:100%;padding:9px;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;margin-bottom:8px">';
+  html += '➕ Ajouter un prix fournisseur</button>';
+  html += '<div id="addPriceForm" style="display:' + (showAddForm?'block':'none') + '">';
+  html += '<div class="add-price-form">';
+  html += '<h4>📝 Nouveau prix</h4>';
+  html += '<div class="form-row">';
+  html += '<div><label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px">FOURNISSEUR *</label>';
+  html += '<select id="np_sup" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%">';
+  html += '<option value="">— Choisir —</option>';
+  for (var m = 0; m < allSuppliers.length; m++) {
+    html += '<option value="' + allSuppliers[m].id + '">' + (allSuppliers[m].logo_emoji||'') + ' ' + allSuppliers[m].name + '</option>';
+  }
+  html += '</select></div>';
+  html += '<div><label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px">TYPE DE QUALITÉ</label>';
+  html += '<select id="np_type" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%">';
+  html += '<option value="">—</option>';
+  ['Original','OEM','OLED','AMOLED','INCELL','LCD','Compatible'].forEach(function(t){
+    html += '<option value="' + t + '">' + t + '</option>';
+  });
+  html += '</select></div>';
+  html += '</div>';
+  html += '<div class="form-row">';
+  html += '<div><label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px">PRIX (€) *</label>';
+  html += '<input type="number" id="np_price" placeholder="0.00" min="0" step="0.01" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%"></div>';
+  html += '<div><label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px">QUALITÉ (/5)</label>';
+  html += '<select id="np_qual" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%">';
+  ['5 ⭐⭐⭐⭐⭐','4 ⭐⭐⭐⭐','3 ⭐⭐⭐','2 ⭐⭐','1 ⭐'].forEach(function(s,i){
+    html += '<option value="' + (5-i) + '"' + (5-i===3?' selected':'') + '>' + s + '</option>';
+  });
+  html += '</select></div>';
+  html += '</div>';
+  html += '<div class="form-row full"><div>';
+  html += '<label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px">LIEN DIRECT (optionnel)</label>';
+  html += '<input type="url" id="np_url" placeholder="https://..." style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%">';
+  html += '</div></div>';
+  html += '<div class="form-row full"><div>';
+  html += '<label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px">NOTES</label>';
+  html += '<input type="text" id="np_notes" placeholder="Ex: Prix négocié, promo..." style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%">';
+  html += '</div></div>';
+  html += '<div style="display:flex;gap:6px;margin-top:6px">';
+  html += '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="np_instock" checked> En stock</label>';
+  html += '</div>';
+  html += '<button class="add-btn" onclick="saveNewPrice()">✅ Enregistrer ce prix</button>';
+  html += '</div></div>';
+
+  /* Gérer les fournisseurs */
+  html += '<div style="margin-top:16px;border-top:2px solid #f1f5f9;padding-top:14px">';
+  html += '<div style="font-size:11px;font-weight:bold;color:#64748b;margin-bottom:8px;text-transform:uppercase">⚙️ Gérer les fournisseurs</div>';
+  for (var n = 0; n < allSuppliers.length; n++) {
+    var sup = allSuppliers[n];
+    var stars3 = '';
+    for (var s3 = 0; s3 < 5; s3++) { stars3 += s3 < (sup.rating||5) ? '★' : '☆'; }
+    html += '<div class="sup-card" style="border-left-color:' + (sup.logo_emoji==='🟣'?'#7c3aed':sup.logo_emoji==='🔵'?'#3b82f6':sup.logo_emoji==='🟢'?'#22c55e':sup.logo_emoji==='🟡'?'#eab308':sup.logo_emoji==='🟠'?'#f97316':'#ef4444') + '">';
+    html += '<div>';
+    html += '<div class="sn">' + (sup.logo_emoji||'🏭') + ' ' + sup.name + ' <span style="color:#f59e0b">' + stars3 + '</span></div>';
+    html += '<div class="ss">' + (sup.specialty||'') + '</div>';
+    html += '<div class="ss">Livraison : ' + (sup.delivery||'—') + '</div>';
+    html += '</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:4px">';
+    html += '<a href="' + (sup.website||'#') + '" target="_blank" style="padding:4px 9px;background:#1e293b;color:white;border-radius:5px;text-decoration:none;font-size:11px;font-weight:bold;font-family:Arial;text-align:center">🌐 Site</a>';
+    html += '<button onclick="editSupplier(' + sup.id + ')" class="sup-manage-btn">✏️ Modifier</button>';
+    html += '<button onclick="deleteSupplier(' + sup.id + ')" style="padding:4px 9px;background:#fee2e2;color:#ef4444;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial">🗑</button>';
+    html += '</div>';
+    html += '</div>';
+  }
+  html += '<button onclick="addSupplier()" style="width:100%;padding:9px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;margin-top:8px">➕ Ajouter un fournisseur</button>';
+  html += '</div>';
+
+  body.innerHTML = html;
+}
+
+function toggleAddForm() {
+  showAddForm = !showAddForm;
+  var f = document.getElementById('addPriceForm');
+  if (f) f.style.display = showAddForm ? 'block' : 'none';
+}
+
+async function saveNewPrice() {
+  var supId  = document.getElementById('np_sup').value;
+  var price  = document.getElementById('np_price').value;
+  if (!supId || !price) { alert('Fournisseur et prix obligatoires'); return; }
+  var body = {
+    product_name:   currentCompProduct.name,
+    product_id:     currentCompProduct.id || null,
+    supplier_id:    Number(supId),
+    price:          Number(price),
+    quality_type:   document.getElementById('np_type').value || null,
+    quality_rating: Number(document.getElementById('np_qual').value || 3),
+    in_stock:       document.getElementById('np_instock').checked,
+    url:            document.getElementById('np_url').value || null,
+    notes:          document.getElementById('np_notes').value || null
+  };
+  try {
+    var res = await fetch('/api/supplier-prices', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    var d = await res.json();
+    if (d.error) throw new Error(d.error);
+    showAddForm = false;
+    /* Recharger les prix */
+    var rp = await fetch('/api/supplier-prices?product=' + encodeURIComponent(currentCompProduct.name));
+    currentCompPrices = await rp.json();
+    renderComparator();
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+async function deletePrice(id) {
+  if (!confirm('Supprimer ce prix ?')) return;
+  await fetch('/api/supplier-prices/' + id, {method:'DELETE'});
+  var rp = await fetch('/api/supplier-prices?product=' + encodeURIComponent(currentCompProduct.name));
+  currentCompPrices = await rp.json();
+  renderComparator();
+}
+
+async function addSupplier() {
+  var name = prompt('Nom du fournisseur :');
+  if (!name) return;
+  var website    = prompt('Site web (ex: https://monsite.fr) :') || '';
+  var search_url = prompt('URL de recherche - mettez {query} pour le terme de recherche. Ex: https://monsite.fr/search?q={query}') || '';
+  var specialty  = prompt('Spécialité (ex: Pièces OEM, batteries...) :') || '';
+  var delivery   = prompt('Délai de livraison (ex: 24h, 48h) :') || '';
+  var emoji      = prompt('Emoji logo (ex: 🟣 🔵 🟢 🟡 🟠 🔴) :') || '🏭';
+  var body = { name, website, search_url, logo_emoji:emoji, specialty, delivery, rating:5 };
+  try {
+    var res = await fetch('/api/suppliers-catalog', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    var d = await res.json();
+    if (d.error) throw new Error(d.error);
+    alert('✅ Fournisseur "' + name + '" ajouté !');
+    showComparator(currentCompProduct.id, currentCompProduct.name);
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+async function editSupplier(id) {
+  var sup  = allSuppliers.find(function(s){ return s.id === id; });
+  if (!sup) return;
+  var name       = prompt('Nom :', sup.name) || sup.name;
+  var website    = prompt('Site web :', sup.website||'') || sup.website;
+  var search_url = prompt('URL de recherche :', sup.search_url||'') || sup.search_url;
+  var specialty  = prompt('Spécialité :', sup.specialty||'') || sup.specialty;
+  var delivery   = prompt('Livraison :', sup.delivery||'') || sup.delivery;
+  var body = { name, website, search_url, logo_emoji:sup.logo_emoji, specialty, delivery, rating:sup.rating, notes:sup.notes, is_active:true };
+  try {
+    var res = await fetch('/api/suppliers-catalog/' + id, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    var d = await res.json();
+    if (d.error) throw new Error(d.error);
+    showComparator(currentCompProduct.id, currentCompProduct.name);
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+async function deleteSupplier(id) {
+  var sup = allSuppliers.find(function(s){ return s.id === id; });
+  if (!confirm('Supprimer "' + (sup?sup.name:id) + '" ?')) return;
+  await fetch('/api/suppliers-catalog/' + id, {method:'DELETE'});
+  showComparator(currentCompProduct.id, currentCompProduct.name);
+}
+
+function closeComparator() {
+  document.getElementById('compPanel').classList.remove('show');
+  showAddForm = false;
+}
+
+/* EVENTS */
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('btnNewProd').addEventListener('click', function(){ openModal(null); });
+  document.getElementById('btnCancelModal').addEventListener('click', closeModal);
+  document.getElementById('btnSaveModal').addEventListener('click', saveProduct);
+  document.getElementById('btnCloseDetail').addEventListener('click', closeDetail);
+  document.getElementById('btnCloseComp').addEventListener('click', closeComparator);
+  document.getElementById('btnReset').addEventListener('click', resetFilters);
+
+  var filterIds = ['f_search','f_cat','f_cond','f_grade','f_color','f_supplier','f_zone','f_stock'];
+  filterIds.forEach(function(fid) {
+    var el = document.getElementById(fid);
+    if (el) el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', applyFilters);
+  });
+
+  loadAll();
+});
+</script>
+
+<!-- PANEL COMPARATEUR FOURNISSEURS -->
+<div class="comp-panel" id="compPanel">
+  <div class="comp-header">
+    <h3>💰 Comparer chez les fournisseurs</h3>
+    <button class="comp-close" id="btnCloseComp">✕ Fermer</button>
+  </div>
+  <div class="comp-body" id="compBody">
+    <div style="text-align:center;color:#94a3b8;padding:40px">Chargement...</div>
+  </div>
+</div>
+</body>
+</html>

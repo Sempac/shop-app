@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Retours — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h2{margin:0;font-size:18px;}
+.home-btn{padding:10px 20px;background:#1e40af;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;}
+.tabs{display:flex;gap:0;background:#1e293b;border-bottom:3px solid #3b82f6;}
+.tab{padding:14px 24px;cursor:pointer;font-weight:bold;font-size:14px;color:#94a3b8;border:none;background:none;}
+.tab.active{color:white;border-bottom:3px solid #3b82f6;margin-bottom:-3px;}
+.tab-content{display:none;padding:20px;max-width:1200px;margin:0 auto;}
+.tab-content.active{display:grid;grid-template-columns:1fr 1.4fr;gap:20px;}
+.tab-damaged{display:none;padding:20px;max-width:900px;margin:0 auto;}
+.tab-damaged.active{display:block;}
+.card{background:white;border-radius:12px;padding:20px;box-shadow:0 1px 4px #0001;}
+.card h3{margin:0 0 16px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.fg label{font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Arial;width:100%;}
+.fg textarea{height:60px;resize:vertical;}
+.btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:4px;}
+.btn-red{background:#ef4444;color:white;}.btn-orange{background:#f59e0b;color:white;}.btn-purple{background:#8b5cf6;color:white;}
+table{width:100%;border-collapse:collapse;}
+th{background:#1e293b;color:white;padding:9px 12px;text-align:left;font-size:11px;}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
+tr:hover td{background:#f8fafc;}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;}
+.EN_ATTENTE{background:#fef3c7;color:#92400e;}.ACCEPTE{background:#d1fae5;color:#065f46;}
+.REFUSE{background:#fee2e2;color:#991b1b;}.ENVOYE{background:#dbeafe;color:#1e40af;}
+.REMBOURSE{background:#d1fae5;color:#065f46;}.REMPLACE{background:#ede9fe;color:#5b21b6;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h2>↩️ Retours</h2>
+  <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('store')">🏪 Retours clients</button>
+  <button class="tab" onclick="showTab('supplier')">🏭 Retours fournisseur</button>
+  <button class="tab" onclick="showTab('damaged')">⚠️ Stock inutilisable</button>
+</div>
+
+<!-- RETOURS CLIENTS -->
+<div class="tab-content active" id="tab-store">
+  <div>
+    <div class="card">
+      <h3>➕ Nouveau retour client</h3>
+      <div class="fg"><label>N° commande (optionnel)</label><input id="rs_order" placeholder="Ex: 81"></div>
+      <div class="fg"><label>Nom client</label><input id="rs_customer" placeholder="Nom du client"></div>
+      <div class="fg"><label>Téléphone</label><input id="rs_phone" placeholder="06 XX XX XX XX"></div>
+      <div class="fg"><label>Produit(s) retourné(s)</label><input id="rs_product" placeholder="Ex: iPhone 14 Pro"></div>
+      <div class="fg"><label>Motif du retour</label><textarea id="rs_reason" placeholder="Ex: Produit défectueux, ne correspond pas..."></textarea></div>
+      <div class="fg"><label>Montant remboursement (€)</label><input type="number" id="rs_amount" placeholder="0.00" min="0"></div>
+      <div class="fg"><label>Mode remboursement</label>
+        <select id="rs_method">
+          <option value="cash">💵 Espèces</option>
+          <option value="card">💳 Carte</option>
+          <option value="avoir">📋 Avoir en magasin</option>
+        </select>
+      </div>
+      <button class="btn btn-red" onclick="addStoreReturn()">✅ Enregistrer le retour</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📋 Historique retours clients</h3>
+    <table>
+      <thead><tr><th>#</th><th>Client</th><th>Produit</th><th>Motif</th><th>Remboursement</th><th>Statut</th><th></th></tr></thead>
+      <tbody id="storeReturnBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RETOURS FOURNISSEUR -->
+<div class="tab-content" id="tab-supplier">
+  <div>
+    <div class="card">
+      <h3>➕ Retour fournisseur</h3>
+      <div class="fg"><label>Fournisseur</label><input id="rf_supplier" placeholder="Nom du fournisseur"></div>
+      <div class="fg"><label>Produit défaillant</label><input id="rf_product" placeholder="Ex: Écran iPhone 13 OEM"></div>
+      <div class="fg"><label>Quantité</label><input type="number" id="rf_qty" value="1" min="1"></div>
+      <div class="fg"><label>Motif (défaillance)</label><textarea id="rf_reason" placeholder="Ex: Écran mort à la livraison, pixels défectueux..."></textarea></div>
+      <div class="fg"><label>Montant attendu (€)</label><input type="number" id="rf_amount" placeholder="0.00" min="0"></div>
+      <div class="fg"><label>N° suivi colis (optionnel)</label><input id="rf_tracking" placeholder="Ex: 1Z999AA10123456784"></div>
+      <button class="btn btn-orange" onclick="addSupplierReturn()">✅ Enregistrer le retour</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📋 Historique retours fournisseur</h3>
+    <table>
+      <thead><tr><th>#</th><th>Fournisseur</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Statut</th><th></th></tr></thead>
+      <tbody id="supplierReturnBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- STOCK INUTILISABLE -->
+<div class="tab-damaged" id="tab-damaged">
+  <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;">
+    <div class="card">
+      <h3>⚠️ Déclarer un produit inutilisable</h3>
+      <div class="fg"><label>Produit</label><input id="sd_product" placeholder="Ex: Écran iPhone 13 OEM"></div>
+      <div class="fg"><label>Quantité</label><input type="number" id="sd_qty" value="1" min="1"></div>
+      <div class="fg"><label>Cause</label><textarea id="sd_reason" placeholder="Ex: Écran cassé lors du montage, mauvaise manipulation..."></textarea></div>
+      <div class="fg"><label>Responsable</label><input id="sd_resp" placeholder="Nom du technicien"></div>
+      <div class="fg"><label>Valeur estimée (€)</label><input type="number" id="sd_cost" placeholder="0.00" min="0"></div>
+      <button class="btn btn-purple" onclick="addDamaged()">✅ Déclarer</button>
+    </div>
+    <div class="card">
+      <h3>📋 Stock inutilisable déclaré</h3>
+      <table>
+        <thead><tr><th>#</th><th>Produit</th><th>Qté</th><th>Cause</th><th>Responsable</th><th>Valeur perdue</th></tr></thead>
+        <tbody id="damagedBody"></tbody>
+      </table>
+      <div id="damagedTotal" style="text-align:right;margin-top:12px;font-weight:bold;color:#dc2626;font-size:15px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmt = n => Number(n||0).toFixed(2) + ' €';
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', ['store','supplier','damaged'][i]===tab));
+  document.getElementById('tab-store').classList.toggle('active', tab==='store');
+  document.getElementById('tab-supplier').classList.toggle('active', tab==='supplier');
+  document.getElementById('tab-damaged').classList.toggle('active', tab==='damaged');
+  if(tab==='store')    loadStoreReturns();
+  if(tab==='supplier') loadSupplierReturns();
+  if(tab==='damaged')  loadDamaged();
+}
+
+/* ── RETOURS CLIENTS ── */
+async function addStoreReturn(){
+  const body={
+    order_id: document.getElementById('rs_order').value||null,
+    customer_name: document.getElementById('rs_customer').value,
+    phone: document.getElementById('rs_phone').value,
+    items: [{product_name: document.getElementById('rs_product').value}],
+    reason: document.getElementById('rs_reason').value,
+    refund_amount: Number(document.getElementById('rs_amount').value||0),
+    refund_method: document.getElementById('rs_method').value,
+  };
+  if(!body.reason){alert('⚠️ Motif obligatoire');return;}
+  await fetch('/api/returns/store',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  document.getElementById('rs_customer').value='';
+  document.getElementById('rs_phone').value='';
+  document.getElementById('rs_product').value='';
+  document.getElementById('rs_reason').value='';
+  document.getElementById('rs_amount').value='';
+  loadStoreReturns();
+}
+
+async function loadStoreReturns(){
+  const res=await fetch('/api/returns/store');
+  const data=await res.json();
+  const tbody=document.getElementById('storeReturnBody');
+  tbody.innerHTML=data.length===0
+    ?'<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px">Aucun retour</td></tr>'
+    :data.map(r=>{
+      const prod=(r.items&&r.items.length)?r.items.map(i=>i.product_name||'—').join(', '):'—';
+      return `<tr>
+        <td>#${r.id}</td>
+        <td><b>${r.customer_name||'—'}</b><br><small style="color:#94a3b8">${r.phone||''}</small></td>
+        <td>${prod}</td>
+        <td style="color:#555;font-size:12px">${r.reason}</td>
+        <td style="font-weight:bold;color:#dc2626">${fmt(r.refund_amount)}<br><small>${r.refund_method}</small></td>
+        <td><span class="badge ${r.status}">${r.status}</span></td>
+        <td>
+          <select onchange="updateStoreReturn(${r.id},this.value)" style="padding:4px;font-size:12px;border-radius:4px;border:1px solid #e2e8f0">
+            <option ${r.status==='EN_ATTENTE'?'selected':''}>EN_ATTENTE</option>
+            <option ${r.status==='ACCEPTE'?'selected':''}>ACCEPTE</option>
+            <option ${r.status==='REFUSE'?'selected':''}>REFUSE</option>
+          </select>
+        </td>
+      </tr>`;
+    }).join('');
+}
+
+async function updateStoreReturn(id,status){
+  await fetch('/api/returns/store/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  loadStoreReturns();
+}
+
+/* ── RETOURS FOURNISSEUR ── */
+async function addSupplierReturn(){
+  const body={
+    supplier_name: document.getElementById('rf_supplier').value,
+    product_name: document.getElementById('rf_product').value,
+    quantity: Number(document.getElementById('rf_qty').value||1),
+    reason: document.getElementById('rf_reason').value,
+    refund_amount: Number(document.getElementById('rf_amount').value||0),
+    tracking_number: document.getElementById('rf_tracking').value,
+  };
+  if(!body.reason||!body.product_name){alert('⚠️ Produit et motif obligatoires');return;}
+  await fetch('/api/returns/supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  ['rf_supplier','rf_product','rf_reason','rf_amount','rf_tracking'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rf_qty').value=1;
+  loadSupplierReturns();
+}
+
+async function loadSupplierReturns(){
+  const res=await fetch('/api/returns/supplier');
+  const data=await res.json();
+  const tbody=document.getElementById('supplierReturnBody');
+  tbody.innerHTML=data.length===0
+    ?'<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px">Aucun retour fournisseur</td></tr>'
+    :data.map(r=>`<tr>
+        <td>#${r.id}</td>
+        <td>${r.supplier_name||'—'}</td>
+        <td><b>${r.product_name}</b></td>
+        <td>${r.quantity}</td>
+        <td style="font-weight:bold;color:#dc2626">${fmt(r.refund_amount)}</td>
+        <td><span class="badge ${r.status}">${r.status}</span></td>
+        <td>
+          <select onchange="updateSupplierReturn(${r.id},this.value)" style="padding:4px;font-size:12px;border-radius:4px;border:1px solid #e2e8f0">
+            <option ${r.status==='EN_ATTENTE'?'selected':''}>EN_ATTENTE</option>
+            <option ${r.status==='ENVOYE'?'selected':''}>ENVOYE</option>
+            <option ${r.status==='REMBOURSE'?'selected':''}>REMBOURSE</option>
+            <option ${r.status==='REMPLACE'?'selected':''}>REMPLACE</option>
+            <option ${r.status==='REFUSE'?'selected':''}>REFUSE</option>
+          </select>
+        </td>
+      </tr>`).join('');
+}
+
+async function updateSupplierReturn(id,status){
+  await fetch('/api/returns/supplier/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  loadSupplierReturns();
+}
+
+/* ── STOCK INUTILISABLE ── */
+async function addDamaged(){
+  const body={
+    product_name: document.getElementById('sd_product').value,
+    quantity: Number(document.getElementById('sd_qty').value||1),
+    reason: document.getElementById('sd_reason').value,
+    responsible: document.getElementById('sd_resp').value,
+    cost_value: Number(document.getElementById('sd_cost').value||0),
+  };
+  if(!body.product_name||!body.reason){alert('⚠️ Produit et cause obligatoires');return;}
+  await fetch('/api/stock/damaged',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  ['sd_product','sd_reason','sd_resp','sd_cost'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sd_qty').value=1;
+  loadDamaged();
+}
+
+async function loadDamaged(){
+  const res=await fetch('/api/stock/damaged');
+  const data=await res.json();
+  const tbody=document.getElementById('damagedBody');
+  let total=0;
+  tbody.innerHTML=data.length===0
+    ?'<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px">Aucun produit déclaré inutilisable</td></tr>'
+    :data.map(r=>{
+      total+=Number(r.cost_value||0);
+      return `<tr>
+        <td>#${r.id}</td>
+        <td><b>${r.product_name}</b></td>
+        <td>${r.quantity}</td>
+        <td style="color:#555;font-size:12px">${r.reason}</td>
+        <td>${r.responsible||'—'}</td>
+        <td style="font-weight:bold;color:#dc2626">${fmt(r.cost_value)}</td>
+      </tr>`;
+    }).join('');
+  document.getElementById('damagedTotal').textContent='Total pertes : '+fmt(total);
+}
+
+loadStoreReturns();
+</script>
+</body>
+</html>
