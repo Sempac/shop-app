@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS suppliers_catalog (
   name           VARCHAR(100) NOT NULL,
   website        VARCHAR(200),
   search_url     VARCHAR(300),
-  logo_emoji     VARCHAR(10)  DEFAULT '🏭',
+  logo_emoji     VARCHAR(10)  DEFAULT '',
   specialty      VARCHAR(200),
   delivery       VARCHAR(50),
   rating         INT          DEFAULT 5,
@@ -30,15 +30,15 @@ CREATE TABLE IF NOT EXISTS supplier_prices (
 );
 
 -- Fournisseurs par defaut
-INSERT INTO suppliers_catalog (name, website, search_url, logo_emoji, specialty, delivery, rating, notes, query_encoding) VALUES
-('UTOPYA',        'https://www.utopya.fr',         'https://www.utopya.fr/catalogsearch/result/?q={query}',             '🟣', 'Pieces OEM/OLED, batteries, accessoires, smartphones', '24h',    5, 'Reference pro depuis 2009. Large gamme OEM.',       'plus'),
-('LCD-Phone',     'https://lcd-phone.com/fr',      'https://lcd-phone.com/fr/recherche?controller=search&s={query}',    '🔵', 'Smartphones, PC, pieces detachees, accessoires B2B',  '24-48h', 4, 'Partenaire B2B. Bonne gamme smartphones.',          'plus'),
-('DA-Pieces',     'https://da-pieces.com',         'https://da-pieces.com/search?q={query}&options%5Bprefix%5D=last',   '🟢', 'Pieces testees et garanties, stock France, OLED/OEM', '24h',    4, 'Pieces testees en France. Bon SAV.',                'plus'),
-('Pieces2Mobile', 'https://www.pieces2mobile.com', 'https://www.pieces2mobile.com/catalogsearch/result/?q={query}',     '🟡', 'Pieces toutes marques, prix de gros pro',             '48-72h', 3, 'Bon rapport qualite/prix sur les gammes LCD.',      'plus'),
-('Mobilax',       'https://www.mobilax.fr',        'https://www.mobilax.fr/search/{query}/0/search-product',            '🟠', 'Pieces + accessoires depuis 2010',                    '24-48h', 4, 'Large catalogue. Bon pour accessoires.',             'percent'),
-('Brico-Phone',   'https://www.brico-phone.com',   'https://www.brico-phone.com/catalogsearch/result/?q={query}',       '🔴', 'Multi-gammes LCD/OLED/AMOLED, batteries',            '24-48h', 3, 'Bon pour comparer les gammes ecrans.',              'plus'),
-('BackMarket',    'https://www.backmarket.fr',      'https://www.backmarket.fr/fr-fr/search?q={query}',                  '🟤', 'Prix marche - smartphones reconditionnes',            '3-5j',   4, 'Marketplace. Utile pour les prix de revente.',      'plus'),
-('LeBonCoin',     'https://www.leboncoin.fr',       'https://www.leboncoin.fr/recherche?text={query}&category=2',        '🟠', 'Prix marche occasion - smartphones',                 'Variable',3,'Occasion particuliers. Prix bas du marche.',        'plus')
+INSERT INTO suppliers_catalog (name, website, search_url, specialty, delivery, rating, notes, query_encoding) VALUES
+('UTOPYA',        'https://www.utopya.fr',         'https://www.utopya.fr/catalogsearch/result/?q={query}',          'Pieces OEM/OLED, batteries, accessoires', '24h',    5, 'Reference pro depuis 2009.',   'plus'),
+('LCD-Phone',     'https://lcd-phone.com/fr',      'https://lcd-phone.com/fr/recherche?controller=search&s={query}', 'Smartphones, PC, pieces detachees B2B',   '24-48h', 4, 'Partenaire B2B.',              'plus'),
+('DA-Pieces',     'https://da-pieces.com',         'https://da-pieces.com/search?q={query}&options%5Bprefix%5D=last','Pieces testees et garanties, France',     '24h',    4, 'Pieces testees. Bon SAV.',     'plus'),
+('Pieces2Mobile', 'https://www.pieces2mobile.com', 'https://www.pieces2mobile.com/catalogsearch/result/?q={query}',  'Pieces toutes marques, prix de gros',     '48-72h', 3, 'Bon rapport qualite/prix.',    'plus'),
+('Mobilax',       'https://www.mobilax.fr',        'https://www.mobilax.fr/search/{query}/0/search-product',         'Pieces + accessoires depuis 2010',        '24-48h', 4, 'Large catalogue.',             'percent'),
+('Brico-Phone',   'https://www.brico-phone.com',   'https://www.brico-phone.com/catalogsearch/result/?q={query}',   'Multi-gammes LCD/OLED/AMOLED',            '24-48h', 3, 'Gammes ecrans.',               'plus'),
+('BackMarket',    'https://www.backmarket.fr',     'https://www.backmarket.fr/fr-fr/search?q={query}',               'Prix marche - reconditionnes',            '3-5j',   4, 'Utile pour prix de revente.', 'plus'),
+('LeBonCoin',     'https://www.leboncoin.fr',      'https://www.leboncoin.fr/recherche?text={query}&category=2',     'Prix marche occasion',                    'Variable',3,'Prix bas du marche.',         'plus')
 ON CONFLICT DO NOTHING;
 
 SELECT name, delivery, rating FROM suppliers_catalog ORDER BY rating DESC;
