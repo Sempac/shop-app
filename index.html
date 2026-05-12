@@ -57,12 +57,12 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 <div class="user-bar">
   <div class="user-info-badge">
     <span id="userIcon">👤</span>
-    <span id="userName" style="color:white;font-weight:bold;">—</span>
-    <span class="role-badge rb-vendeur" id="roleBadge">—</span>
+    <span id="userName" style="color:white;font-weight:bold;font-size:13px;">—</span>
+    <span style="color:#475569;font-size:12px;" id="loginTime"></span>
   </div>
   <div style="display:flex;gap:6px;">
     <button class="switch-btn" onclick="window.location.href='login.html'">🔄 Changer</button>
-    <button class="logout-btn" onclick="doLogout()">🔓 Déconnexion</button>
+    <button class="logout-btn" onclick="doLogout()">🔓 Déco.</button>
   </div>
 </div>
 
@@ -117,12 +117,11 @@ if (!user) { /* requireAuth redirige automatiquement */ }
 /* Afficher le badge utilisateur */
 if (user) {
   document.getElementById('userName').textContent = user.name;
-  var icon  = user.role === 'gerant' ? '👑' : '👤';
-  var label = user.role === 'gerant' ? 'Gérant' : 'Vendeur';
-  var cls   = user.role === 'gerant' ? 'rb-gerant' : 'rb-vendeur';
+  var icon = user.role === 'gerant' ? '👑' : '👤';
   document.getElementById('userIcon').textContent = icon;
-  document.getElementById('roleBadge').textContent = label;
-  document.getElementById('roleBadge').className = 'role-badge ' + cls;
+  var loginDate = new Date(user.loginAt);
+  document.getElementById('loginTime').textContent =
+    'Connecté à ' + loginDate.getHours() + 'h' + String(loginDate.getMinutes()).padStart(2,'0');
 
   /* Masquer les modules gérant si vendeur */
   if (user.role !== 'gerant') {
