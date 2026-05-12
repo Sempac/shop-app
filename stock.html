@@ -1043,5 +1043,41 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="text-align:center;color:#94a3b8;padding:40px">Chargement...</div>
   </div>
 </div>
+
+<script src="input-tools.js"></script>
+<script>
+/* ── Input Tools : voix + scan ── */
+(function() {
+  function initTools() {
+    /* Recherche stock */
+    if (document.getElementById('f_search')) {
+      InputTools.addBoth('f_search', function() {
+        if (typeof applyFilters === 'function') applyFilters();
+      });
+    }
+    /* Fournisseur */
+    if (document.getElementById('f_supplier')) {
+      InputTools.addVoice('f_supplier', function() {
+        if (typeof applyFilters === 'function') applyFilters();
+      });
+    }
+    /* Zone */
+    if (document.getElementById('f_zone')) {
+      InputTools.addVoice('f_zone', function() {
+        if (typeof applyFilters === 'function') applyFilters();
+      });
+    }
+    /* Code barre dans modal produit */
+    if (document.getElementById('p_barcode')) {
+      InputTools.addScan('p_barcode');
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTools);
+  } else {
+    setTimeout(initTools, 300);
+  }
+})();
+</script>
 </body>
 </html>

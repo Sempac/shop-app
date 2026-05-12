@@ -10,12 +10,29 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .header-left h1{margin:0;font-size:24px;}
 .header-left p{margin:3px 0 0;color:#94a3b8;font-size:12px;}
 .header-right{text-align:right;font-size:12px;color:#94a3b8;line-height:1.8;}
-.datetime-bar{background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:1px solid #1e293b;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;}
+.datetime-bar{background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:1px solid #1e293b;padding:14px 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
 .clock{font-size:44px;font-weight:900;letter-spacing:2px;color:white;font-variant-numeric:tabular-nums;}
 .clock-sec{font-size:28px;color:#64748b;}
-.date-full{font-size:15px;color:#94a3b8;text-transform:capitalize;}
-.day-name{font-size:20px;font-weight:bold;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;}
-.week-num{font-size:11px;color:#475569;margin-top:4px;}
+.date-full{font-size:22px;font-weight:bold;color:white;text-transform:capitalize;margin-top:4px;letter-spacing:0.3px;}
+.day-name{font-size:15px;font-weight:bold;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;}
+.week-num{font-size:13px;color:#64748b;margin-top:2px;}
+
+/* CALENDRIER */
+.cal-wrap{background:#0f172a;border-radius:12px;padding:10px 12px;min-width:280px;}
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cal-title{font-size:13px;font-weight:bold;color:white;text-transform:capitalize;}
+.cal-nav{background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;padding:2px 6px;font-family:Arial;}
+.cal-nav:hover{color:white;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;}
+.cal-day-name{font-size:10px;color:#475569;font-weight:bold;padding:3px 0;text-transform:uppercase;}
+.cal-day-name.sun{color:#ef4444;}
+.cal-cell{font-size:12px;padding:4px 2px;border-radius:5px;color:#94a3b8;cursor:default;line-height:1;}
+.cal-cell.other-month{color:#334155;}
+.cal-cell.today{background:#3b82f6;color:white;font-weight:bold;border-radius:6px;}
+.cal-cell.sunday{color:#ef4444;}
+.cal-cell.holiday{color:#f59e0b;font-weight:bold;}
+.cal-cell.holiday.sunday{color:#ef4444;}
+.cal-holiday-dot{width:4px;height:4px;background:#f59e0b;border-radius:50%;margin:1px auto 0;}
 .main{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;padding:16px;overflow:auto;}
 .card{border-radius:14px;padding:18px;text-decoration:none;color:white;transition:0.2s;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:145px;box-shadow:0 6px 16px rgba(0,0,0,0.35);}
 .card:hover{transform:scale(1.04);}
@@ -76,15 +93,21 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 </div>
 
 <div class="datetime-bar">
-  <div style="display:flex;align-items:baseline;gap:16px;">
-    <div>
-      <div class="clock"><span id="hh">00</span>:<span id="mm">00</span><span class="clock-sec">:<span id="ss">00</span></span></div>
-      <div class="date-full" id="dateFull"></div>
-    </div>
-  </div>
-  <div style="text-align:right;">
+  <!-- GAUCHE : horloge + date -->
+  <div style="display:flex;flex-direction:column;gap:2px;">
+    <div class="clock"><span id="hh">00</span>:<span id="mm">00</span><span class="clock-sec">:<span id="ss">00</span></span></div>
+    <div class="date-full" id="dateFull"></div>
     <div class="day-name" id="dayName"></div>
     <div class="week-num" id="weekNum"></div>
+  </div>
+  <!-- DROITE : calendrier -->
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calPrev()">‹</button>
+      <div class="cal-title" id="calTitle"></div>
+      <button class="cal-nav" onclick="calNext()">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
   </div>
 </div>
 
@@ -139,20 +162,127 @@ function doLogout() {
 }
 
 /* ── HORLOGE ── */
-var JOURS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-function getWeekNum(d){var dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);var y=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil((((dt-y)/86400000)+1)/7);}
-function pad(n){return String(n).padStart(2,'0');}
-function tick(){
-  var n=new Date();
-  document.getElementById('hh').textContent=pad(n.getHours());
-  document.getElementById('mm').textContent=pad(n.getMinutes());
-  document.getElementById('ss').textContent=pad(n.getSeconds());
-  document.getElementById('dateFull').textContent=n.getDate()+' '+MOIS[n.getMonth()]+' '+n.getFullYear();
-  document.getElementById('dayName').textContent=JOURS[n.getDay()];
-  document.getElementById('weekNum').textContent='Semaine '+getWeekNum(n);
+var JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+var MOIS  = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+var MOIS_COURT = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+function getWeekNum(d) {
+  var dt  = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var day = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - day);
+  var y = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+  return Math.ceil((((dt - y) / 86400000) + 1) / 7);
 }
-tick(); setInterval(tick,1000);
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function tick() {
+  var n = new Date();
+  document.getElementById('hh').textContent = pad(n.getHours());
+  document.getElementById('mm').textContent = pad(n.getMinutes());
+  document.getElementById('ss').textContent = pad(n.getSeconds());
+  document.getElementById('dateFull').textContent = JOURS[n.getDay()] + ' ' + n.getDate() + ' ' + MOIS[n.getMonth()].charAt(0).toUpperCase() + MOIS[n.getMonth()].slice(1) + ' ' + n.getFullYear();
+  document.getElementById('dayName').textContent  = 'Semaine ' + getWeekNum(n);
+}
+tick(); setInterval(tick, 1000);
+
+/* ── CALENDRIER ── */
+/* Jours fériés France 2025-2027 (format MM-DD) */
+var FERIES = {
+  '01-01':'Jour de l\'An',
+  '05-01':'Fête du Travail',
+  '05-08':'Victoire 1945',
+  '07-14':'Fête Nationale',
+  '08-15':'Assomption',
+  '11-01':'Toussaint',
+  '11-11':'Armistice',
+  '12-25':'Noël'
+};
+/* Fériés variables 2025 */
+var FERIES_VAR_2025 = {'2025-04-21':'Pâques','2025-04-18':'Vendredi Saint','2025-05-29':'Ascension','2025-06-09':'Pentecôte'};
+var FERIES_VAR_2026 = {'2026-04-06':'Pâques','2026-04-03':'Vendredi Saint','2026-05-14':'Ascension','2026-05-25':'Pentecôte'};
+var FERIES_VAR_2027 = {'2027-03-29':'Pâques','2027-03-26':'Vendredi Saint','2027-05-06':'Ascension','2027-05-17':'Pentecôte'};
+
+var calYear, calMonth;
+var now = new Date();
+calYear  = now.getFullYear();
+calMonth = now.getMonth();
+
+function isHoliday(year, month, day) {
+  var mm  = String(month+1).padStart(2,'0');
+  var dd  = String(day).padStart(2,'0');
+  var key = mm + '-' + dd;
+  var full= year + '-' + mm + '-' + dd;
+  var varFeries = year === 2025 ? FERIES_VAR_2025 : year === 2026 ? FERIES_VAR_2026 : FERIES_VAR_2027;
+  return FERIES[key] || varFeries[full] || null;
+}
+
+function renderCalendar() {
+  var title = MOIS[calMonth].charAt(0).toUpperCase() + MOIS[calMonth].slice(1) + ' ' + calYear;
+  document.getElementById('calTitle').textContent = title;
+
+  var grid  = document.getElementById('calGrid');
+  var today = new Date();
+  var html  = '';
+
+  /* En-têtes jours — Dim en rouge */
+  var dayNames = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  dayNames.forEach(function(d, i) {
+    html += '<div class="cal-day-name' + (i===0?' sun':'') + '">' + d + '</div>';
+  });
+
+  /* Premier jour du mois */
+  var firstDay = new Date(calYear, calMonth, 1).getDay(); /* 0=Dim */
+  var daysInMonth    = new Date(calYear, calMonth+1, 0).getDate();
+  var daysInPrevMonth= new Date(calYear, calMonth,   0).getDate();
+
+  /* Jours mois précédent */
+  for (var i = firstDay - 1; i >= 0; i--) {
+    var d = daysInPrevMonth - i;
+    html += '<div class="cal-cell other-month">' + d + '</div>';
+  }
+
+  /* Jours du mois */
+  for (var day = 1; day <= daysInMonth; day++) {
+    var date    = new Date(calYear, calMonth, day);
+    var dow     = date.getDay(); /* 0=Dim, 6=Sam */
+    var isSun   = dow === 0;
+    var holiday = isHoliday(calYear, calMonth, day);
+    var isToday = (day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
+
+    var cls = 'cal-cell';
+    if (isToday)  cls += ' today';
+    if (isSun && !isToday) cls += ' sunday';
+    if (holiday && !isToday) cls += ' holiday';
+    if (holiday && isSun && !isToday) cls = 'cal-cell holiday sunday';
+
+    var title_attr = holiday ? ' title="' + holiday + '"' : '';
+    html += '<div class="' + cls + '"' + title_attr + '>' + day;
+    if (holiday && !isToday) html += '<div class="cal-holiday-dot"></div>';
+    html += '</div>';
+  }
+
+  /* Jours mois suivant */
+  var totalCells = firstDay + daysInMonth;
+  var remaining  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (var j = 1; j <= remaining; j++) {
+    html += '<div class="cal-cell other-month">' + j + '</div>';
+  }
+
+  grid.innerHTML = html;
+}
+
+function calPrev() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function calNext() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+renderCalendar();
 </script>
 </body>
 </html>
