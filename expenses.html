@@ -23,15 +23,14 @@ table{width:100%;border-collapse:collapse;}
 th{background:#0f172a;color:white;padding:10px 12px;text-align:left;font-size:12px;}
 td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
 tr:hover td{background:#f8fafc;}
-.cat-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;}
-.catFournisseur{background:#dbeafe;color:#1e40af;}.catLoyer{background:#fce7f3;color:#9d174d;}
-.catTransport{background:#d1fae5;color:#065f46;}.catMatriel{background:#ffedd5;color:#9a3412;}
-.catSalaire{background:#ede9fe;color:#5b21b6;}.catAutre{background:#f3f4f6;color:#374151;}
+.cat-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;background:#f1f5f9;color:#374151;}
 .total-bar{background:#0f172a;color:white;border-radius:10px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
 .total-bar span{font-size:20px;font-weight:bold;color:#f59e0b;}
 .del-btn{background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;}
+.role-notice{background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:12px;display:none;}
 @media print{.home-btn,.btn-add,.fg,.del-btn,.filters,.no-print{display:none!important;}body{background:white;}}
 </style>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="topbar">
@@ -41,22 +40,19 @@ tr:hover td{background:#f8fafc;}
     <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
   </div>
 </div>
+
 <div class="container">
   <div>
     <div class="card">
       <h3>➕ Ajouter une dépense</h3>
+      <div class="role-notice" id="roleNotice">
+        👤 Vendeur — Vous pouvez uniquement saisir certaines catégories de dépenses.
+      </div>
       <div class="fg"><label>Date</label><input type="date" id="dep_date"></div>
-      <div class="fg"><label>Description</label><input id="dep_desc" placeholder="Ex: Achat pièces Samsung"></div>
+      <div class="fg"><label>Description</label><input id="dep_desc" placeholder="Ex: Achat café, produit entretien..."></div>
       <div class="fg"><label>Montant (€)</label><input type="number" id="dep_amount" placeholder="0.00" min="0" step="0.01"></div>
       <div class="fg"><label>Catégorie</label>
-        <select id="dep_cat">
-          <option value="Fournisseur">Fournisseur</option>
-          <option value="Loyer">Loyer</option>
-          <option value="Transport">Transport</option>
-          <option value="Matériel">Matériel</option>
-          <option value="Salaire">Salaire</option>
-          <option value="Autre">Autre</option>
-        </select>
+        <select id="dep_cat"></select>
       </div>
       <button class="btn-add" onclick="addExpense()">✅ Enregistrer la dépense</button>
     </div>
@@ -65,6 +61,7 @@ tr:hover td{background:#f8fafc;}
       <div id="summaryByCat"></div>
     </div>
   </div>
+
   <div class="card">
     <h3>📋 Liste des dépenses</h3>
     <div class="filters no-print">
@@ -72,12 +69,6 @@ tr:hover td{background:#f8fafc;}
       <input type="date" id="f_to"   onchange="loadExpenses()">
       <select id="f_cat" onchange="loadExpenses()">
         <option value="">Toutes catégories</option>
-        <option value="Fournisseur">Fournisseur</option>
-        <option value="Loyer">Loyer</option>
-        <option value="Transport">Transport</option>
-        <option value="Matériel">Matériel</option>
-        <option value="Salaire">Salaire</option>
-        <option value="Autre">Autre</option>
       </select>
     </div>
     <table>
@@ -87,7 +78,12 @@ tr:hover td{background:#f8fafc;}
     <div class="total-bar"><span>TOTAL PÉRIODE</span><span id="totalExp">0.00 €</span></div>
   </div>
 </div>
+
 <script>
+var currentUser = requireAuth('expenses-limited');
+var userRole = currentUser ? currentUser.role : 'vendeur';
+var allowedCategories = [];
+
 const fmt = n => Number(n||0).toFixed(2) + ' €';
 const today    = new Date().toISOString().slice(0,10);
 const firstDay = today.slice(0,8) + '01';
@@ -95,68 +91,133 @@ document.getElementById('dep_date').value = today;
 document.getElementById('f_from').value   = firstDay;
 document.getElementById('f_to').value     = today;
 
-async function addExpense(){
-  const desc=document.getElementById('dep_desc').value.trim();
-  const amount=Number(document.getElementById('dep_amount').value);
-  const cat=document.getElementById('dep_cat').value;
-  const date=document.getElementById('dep_date').value;
-  if(!desc||!amount){alert('⚠️ Description et montant obligatoires');return;}
-  const res=await fetch('/api/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc,amount,category:cat,date})});
-  const d=await res.json();
-  if(d.error){alert('❌ '+d.error);return;}
-  document.getElementById('dep_desc').value='';
-  document.getElementById('dep_amount').value='';
+/* Charger les catégories autorisées selon le rôle */
+async function loadCategories() {
+  try {
+    /* Charger uniquement les catégories autorisées pour ce rôle */
+    var res  = await fetch('/api/expense-categories?role=' + userRole);
+    allowedCategories = await res.json();
+
+    /* Afficher notice si vendeur */
+    if (userRole !== 'gerant') {
+      document.getElementById('roleNotice').style.display = 'block';
+    }
+
+    /* Remplir le select du formulaire */
+    var depCat = document.getElementById('dep_cat');
+    depCat.innerHTML = allowedCategories.map(function(cat) {
+      return '<option value="' + cat + '">' + cat + '</option>';
+    }).join('');
+
+    /* Remplir le filtre */
+    var fCat = document.getElementById('f_cat');
+    fCat.innerHTML = '<option value="">Toutes catégories</option>' +
+      allowedCategories.map(function(cat) {
+        return '<option value="' + cat + '">' + cat + '</option>';
+      }).join('');
+
+  } catch(e) {
+    console.error('Erreur chargement catégories:', e);
+  }
+}
+
+async function addExpense() {
+  var desc   = document.getElementById('dep_desc').value.trim();
+  var amount = Number(document.getElementById('dep_amount').value);
+  var cat    = document.getElementById('dep_cat').value;
+  var date   = document.getElementById('dep_date').value;
+
+  if (!desc || !amount) { alert('⚠️ Description et montant obligatoires'); return; }
+
+  /* Vérification sécurité côté client */
+  if (userRole !== 'gerant' && allowedCategories.indexOf(cat) < 0) {
+    alert('❌ Catégorie non autorisée');
+    return;
+  }
+
+  var res = await fetch('/api/expenses', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({description:desc, amount, category:cat, date})
+  });
+  var d = await res.json();
+  if (d.error) { alert('❌ ' + d.error); return; }
+  document.getElementById('dep_desc').value   = '';
+  document.getElementById('dep_amount').value = '';
   loadExpenses();
 }
 
-async function loadExpenses(){
-  const from=document.getElementById('f_from').value;
-  const to=document.getElementById('f_to').value;
-  const cat=document.getElementById('f_cat').value;
-  let url=`/api/expenses?from=${from}&to=${to}`;
-  if(cat) url+=`&category=${encodeURIComponent(cat)}`;
-  const res=await fetch(url);
-  const data=await res.json();
-  const tbody=document.getElementById('expBody');
-  let total=0; const byCat={};
-  tbody.innerHTML=data.length===0
-    ?'<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">Aucune dépense sur cette période</td></tr>'
-    :data.map(e=>{
-      total+=Number(e.amount||0);
-      byCat[e.category]=(byCat[e.category]||0)+Number(e.amount||0);
-      const cls='cat'+((e.category||'Autre').replace(/[^a-zA-Z]/g,''));
-      return `<tr>
-        <td>${new Date(e.date).toLocaleDateString('fr-FR')}</td>
-        <td><b>${e.description}</b></td>
-        <td><span class="cat-badge ${cls}">${e.category||'Autre'}</span></td>
-        <td style="font-weight:bold;color:#dc2626">${fmt(e.amount)}</td>
-        <td class="no-print"><button class="del-btn" onclick="deleteExpense(${e.id})">🗑</button></td>
-      </tr>`;
+async function loadExpenses() {
+  var from = document.getElementById('f_from').value;
+  var to   = document.getElementById('f_to').value;
+  var cat  = document.getElementById('f_cat').value;
+
+  /* Le vendeur ne voit que ses catégories autorisées */
+  var url = '/api/expenses?from=' + from + '&to=' + to;
+  if (cat) url += '&category=' + encodeURIComponent(cat);
+
+  var res  = await fetch(url);
+  var data = await res.json();
+
+  /* Filtrer côté client si vendeur */
+  if (userRole !== 'gerant' && allowedCategories.length > 0) {
+    data = data.filter(function(e) {
+      return allowedCategories.indexOf(e.category) >= 0;
+    });
+  }
+
+  var tbody = document.getElementById('expBody');
+  var total = 0;
+  var byCat = {};
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">Aucune dépense sur cette période</td></tr>';
+  } else {
+    tbody.innerHTML = data.map(function(e) {
+      total += Number(e.amount||0);
+      byCat[e.category] = (byCat[e.category]||0) + Number(e.amount||0);
+      return '<tr>' +
+        '<td>' + new Date(e.date).toLocaleDateString('fr-FR') + '</td>' +
+        '<td><b>' + e.description + '</b></td>' +
+        '<td><span class="cat-badge">' + (e.category||'Autre') + '</span></td>' +
+        '<td style="font-weight:bold;color:#dc2626">' + fmt(e.amount) + '</td>' +
+        '<td class="no-print">' +
+          (userRole === 'gerant' ? '<button class="del-btn" onclick="deleteExpense(' + e.id + ')">🗑</button>' : '') +
+        '</td>' +
+        '</tr>';
     }).join('');
-  document.getElementById('totalExp').textContent=fmt(total);
-  const sumDiv=document.getElementById('summaryByCat');
-  sumDiv.innerHTML=Object.entries(byCat).length===0
-    ?'<p style="color:#94a3b8;font-size:13px">Aucune dépense</p>'
-    :Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{
-      const pct=total>0?Math.round(amt/total*100):0;
-      const cls='cat'+cat.replace(/[^a-zA-Z]/g,'');
-      return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span class="cat-badge ${cls}" style="min-width:90px">${cat}</span>
-        <div style="flex:1;margin:0 12px;height:8px;background:#f1f5f9;border-radius:4px">
-          <div style="width:${pct}%;height:100%;background:#ef4444;border-radius:4px"></div>
-        </div>
-        <span style="font-weight:bold;font-size:13px;min-width:80px;text-align:right">${fmt(amt)}</span>
-      </div>`;
+  }
+
+  document.getElementById('totalExp').textContent = fmt(total);
+
+  /* Résumé par catégorie */
+  var sumDiv = document.getElementById('summaryByCat');
+  var entries = Object.entries(byCat);
+  if (!entries.length) {
+    sumDiv.innerHTML = '<p style="color:#94a3b8;font-size:13px">Aucune dépense</p>';
+  } else {
+    sumDiv.innerHTML = entries.sort(function(a,b){ return b[1]-a[1]; }).map(function(entry) {
+      var cat = entry[0]; var amt = entry[1];
+      var pct = total > 0 ? Math.round(amt/total*100) : 0;
+      return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<span class="cat-badge" style="min-width:90px">' + cat + '</span>' +
+        '<div style="flex:1;margin:0 12px;height:8px;background:#f1f5f9;border-radius:4px">' +
+        '<div style="width:' + pct + '%;height:100%;background:#ef4444;border-radius:4px"></div></div>' +
+        '<span style="font-weight:bold;font-size:13px;min-width:80px;text-align:right">' + fmt(amt) + '</span>' +
+        '</div>';
     }).join('');
+  }
 }
 
-async function deleteExpense(id){
-  if(!confirm('Supprimer cette dépense ?')) return;
-  await fetch('/api/expenses/'+id,{method:'DELETE'});
+async function deleteExpense(id) {
+  if (userRole !== 'gerant') { alert('❌ Action réservée au gérant'); return; }
+  if (!confirm('Supprimer cette dépense ?')) return;
+  await fetch('/api/expenses/'+id, {method:'DELETE'});
   loadExpenses();
 }
 
-loadExpenses();
+/* Init */
+loadCategories().then(function(){ loadExpenses(); });
 </script>
 </body>
 </html>
