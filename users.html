@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Utilisateurs — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;min-height:100vh;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h2{margin:0;font-size:17px;}
+button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
+.btn-home{background:#1e40af;color:white;}
+.btn-green{background:#22c55e;color:white;}
+
+.main{max-width:900px;margin:20px auto;padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:700px){.main{grid-template-columns:1fr;}}
+
+.card{background:white;border-radius:14px;padding:20px;box-shadow:0 1px 4px #0001;}
+.card h3{margin:0 0 16px;font-size:15px;color:#0f172a;}
+
+/* User cards */
+.user-item{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #e2e8f0;}
+.user-item.gerant{border-left-color:#3b82f6;}
+.user-item.vendeur{border-left-color:#475569;}
+.ui-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.ui-name{font-size:14px;font-weight:bold;color:#0f172a;}
+.ui-role{font-size:11px;padding:2px 8px;border-radius:8px;font-weight:bold;}
+.rg{background:#dbeafe;color:#1e40af;}.rv{background:#f1f5f9;color:#374151;}
+.ui-meta{font-size:12px;color:#64748b;}
+.ui-btns{display:flex;gap:6px;margin-top:8px;}
+.ui-btn{padding:5px 12px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
+
+/* Catégories */
+.cat-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;font-size:13px;}
+.cat-roles{display:flex;gap:6px;}
+.cat-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:bold;}
+.cb-g{background:#dbeafe;color:#1e40af;}
+.cb-v{background:#dcfce7;color:#166534;}
+
+/* Modal */
+.moverlay{display:none;position:fixed;inset:0;background:#00000075;z-index:1000;align-items:center;justify-content:center;}
+.moverlay.show{display:flex;}
+.modal{background:white;border-radius:14px;padding:22px;width:420px;max-width:95vw;}
+.modal h3{margin:0 0 14px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
+.mfg{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.mfg label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.mfg input,.mfg select{padding:9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:13px;font-family:Arial;width:100%;}
+.mfg input:focus,.mfg select:focus{outline:none;border-color:#3b82f6;}
+.mbtns{display:flex;gap:8px;margin-top:14px;}
+.mbtn{flex:1;padding:11px;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.mbtn-save{background:#22c55e;color:white;}
+.mbtn-cancel{background:#f1f5f9;color:#374151;}
+
+.pin-note{font-size:11px;color:#94a3b8;margin-top:4px;}
+</style>
+<script src="auth.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <h2>👥 Gestion Utilisateurs</h2>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-green" id="btnNewUser">➕ Nouvel utilisateur</button>
+    <button class="btn-home" onclick="location.href='index.html'">🏠 Accueil</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- UTILISATEURS -->
+  <div>
+    <div class="card">
+      <h3>👤 Utilisateurs</h3>
+      <div id="usersList">Chargement...</div>
+    </div>
+  </div>
+
+  <!-- CATÉGORIES DÉPENSES -->
+  <div>
+    <div class="card">
+      <h3>💰 Catégories dépenses autorisées</h3>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Définissez quelles catégories de dépenses le vendeur peut voir et créer.</p>
+      <div id="catList">Chargement...</div>
+      <button id="btnNewCat" style="width:100%;margin-top:10px;padding:9px;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;">➕ Ajouter une catégorie</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL UTILISATEUR -->
+<div class="moverlay" id="mUser">
+  <div class="modal">
+    <h3 id="mUserTitle">➕ Nouvel utilisateur</h3>
+    <div class="mfg"><label>Nom *</label><input id="u_name" placeholder="Ex: Ahmed, Marie..."></div>
+    <div class="mfg"><label>Rôle</label>
+      <select id="u_role">
+        <option value="vendeur">👤 Vendeur</option>
+        <option value="gerant">👑 Gérant</option>
+      </select>
+    </div>
+    <div class="mfg"><label>Type d'authentification</label>
+      <select id="u_auth" onchange="updateAuthFields()">
+        <option value="pin">🔢 PIN 4 chiffres</option>
+        <option value="password">🔑 Mot de passe</option>
+      </select>
+    </div>
+    <div class="mfg" id="pinField">
+      <label>PIN (4 chiffres)</label>
+      <input id="u_pin" type="password" maxlength="4" placeholder="Ex: 1234" pattern="[0-9]{4}">
+      <span class="pin-note">Uniquement des chiffres</span>
+    </div>
+    <div class="mfg" id="pwdField" style="display:none">
+      <label>Mot de passe</label>
+      <input id="u_pwd" type="password" placeholder="Mot de passe">
+    </div>
+    <input type="hidden" id="u_id">
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="btnCancelUser">Annuler</button>
+      <button class="mbtn mbtn-save" id="btnSaveUser">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CATÉGORIE -->
+<div class="moverlay" id="mCat">
+  <div class="modal">
+    <h3>➕ Catégorie de dépense</h3>
+    <div class="mfg"><label>Nom de la catégorie *</label><input id="c_name" placeholder="Ex: Salaires, Entretien..."></div>
+    <div class="mfg"><label>Qui peut l'utiliser ?</label>
+      <select id="c_roles">
+        <option value="gerant">👑 Gérant uniquement</option>
+        <option value="gerant,vendeur">👑 Gérant + 👤 Vendeur</option>
+      </select>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="btnCancelCat">Annuler</button>
+      <button class="mbtn mbtn-save" id="btnSaveCat">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Vérifier accès gérant */
+var currentUser = requireAuth('gerant-settings');
+if (currentUser && currentUser.role !== 'gerant') {
+  alert('Accès réservé au gérant');
+  window.location.href = 'index.html';
+}
+
+/* ── UTILISATEURS ── */
+async function loadUsers() {
+  var res   = await fetch('/api/users');
+  var users = await res.json();
+  var list  = document.getElementById('usersList');
+  if (!users.length) { list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:16px">Aucun utilisateur</div>'; return; }
+  list.innerHTML = users.map(function(u) {
+    var roleCls   = u.role === 'gerant' ? 'gerant' : 'vendeur';
+    var roleLabel = u.role === 'gerant' ? '👑 Gérant' : '👤 Vendeur';
+    var roleBadge = u.role === 'gerant' ? 'rg' : 'rv';
+    var authLabel = u.auth_type === 'pin' ? '🔢 PIN' : '🔑 Mot de passe';
+    return '<div class="user-item ' + roleCls + '">' +
+      '<div class="ui-top">' +
+      '<div class="ui-name">' + u.name + '</div>' +
+      '<span class="ui-role ' + roleBadge + '">' + roleLabel + '</span>' +
+      '</div>' +
+      '<div class="ui-meta">' + authLabel + '</div>' +
+      '<div class="ui-btns">' +
+      '<button class="ui-btn" style="background:#e0f2fe;color:#0369a1" onclick="editUser(' + u.id + ')">✏️ Modifier</button>' +
+      '<button class="ui-btn" style="background:#fee2e2;color:#ef4444" onclick="deleteUser(' + u.id + ',\'' + u.name + '\')">🗑 Supprimer</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function updateAuthFields() {
+  var type = document.getElementById('u_auth').value;
+  document.getElementById('pinField').style.display = type === 'pin' ? 'block' : 'none';
+  document.getElementById('pwdField').style.display = type === 'password' ? 'block' : 'none';
+}
+
+function openUserModal(user) {
+  document.getElementById('u_id').value   = user ? user.id : '';
+  document.getElementById('u_name').value = user ? user.name : '';
+  document.getElementById('u_role').value = user ? user.role : 'vendeur';
+  document.getElementById('u_auth').value = user ? user.auth_type : 'pin';
+  document.getElementById('u_pin').value  = '';
+  document.getElementById('u_pwd').value  = '';
+  document.getElementById('mUserTitle').textContent = user ? '✏️ Modifier utilisateur' : '➕ Nouvel utilisateur';
+  updateAuthFields();
+  document.getElementById('mUser').classList.add('show');
+}
+
+async function editUser(id) {
+  var res  = await fetch('/api/users/' + id);
+  var user = await res.json();
+  openUserModal(user);
+}
+
+async function saveUser() {
+  var id      = document.getElementById('u_id').value;
+  var name    = document.getElementById('u_name').value.trim();
+  var role    = document.getElementById('u_role').value;
+  var auth    = document.getElementById('u_auth').value;
+  var pin     = document.getElementById('u_pin').value;
+  var pwd     = document.getElementById('u_pwd').value;
+  if (!name) { alert('Nom obligatoire'); return; }
+  if (auth === 'pin' && !id && (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin))) {
+    alert('Le PIN doit être 4 chiffres'); return;
+  }
+  var body = { name, role, auth_type: auth };
+  if (auth === 'pin' && pin) body.pin = pin;
+  if (auth === 'password' && pwd) body.password_hash = pwd;
+  var url = id ? '/api/users/' + id : '/api/users';
+  var res = await fetch(url, { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  var d   = await res.json();
+  if (d.error) { alert('Erreur : ' + d.error); return; }
+  document.getElementById('mUser').classList.remove('show');
+  loadUsers();
+}
+
+async function deleteUser(id, name) {
+  if (!confirm('Désactiver "' + name + '" ?')) return;
+  await fetch('/api/users/' + id, { method: 'DELETE' });
+  loadUsers();
+}
+
+/* ── CATÉGORIES ── */
+async function loadCategories() {
+  var res  = await fetch('/api/expense-categories/all');
+  var cats = await res.json();
+  var list = document.getElementById('catList');
+  list.innerHTML = cats.map(function(c) {
+    var canVendeur = c.allowed_roles.indexOf('vendeur') >= 0;
+    return '<div class="cat-item">' +
+      '<span style="font-weight:bold">' + c.category + '</span>' +
+      '<div style="display:flex;align-items:center;gap:6px">' +
+      '<div class="cat-roles">' +
+      '<span class="cat-badge cb-g">👑 Gérant</span>' +
+      (canVendeur ? '<span class="cat-badge cb-v">👤 Vendeur</span>' : '') +
+      '</div>' +
+      '<button onclick="toggleCatVendeur(\'' + c.category + '\',' + canVendeur + ')" style="padding:3px 8px;background:' + (canVendeur?'#fee2e2':'#dcfce7') + ';color:' + (canVendeur?'#ef4444':'#16a34a') + ';border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:bold;font-family:Arial">' +
+      (canVendeur ? '🔒 Restreindre' : '✅ Autoriser vendeur') + '</button>' +
+      '<button onclick="deleteCat(\'' + c.category + '\')" style="padding:3px 8px;background:#fee2e2;color:#ef4444;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-family:Arial">✕</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+async function toggleCatVendeur(category, currentlyAllowed) {
+  var roles = currentlyAllowed ? 'gerant' : 'gerant,vendeur';
+  await fetch('/api/expense-categories/' + encodeURIComponent(category), {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ allowed_roles: roles })
+  });
+  loadCategories();
+}
+
+async function deleteCat(category) {
+  if (!confirm('Supprimer la catégorie "' + category + '" ?')) return;
+  await fetch('/api/expense-categories/' + encodeURIComponent(category), { method: 'DELETE' });
+  loadCategories();
+}
+
+async function saveNewCat() {
+  var name  = document.getElementById('c_name').value.trim();
+  var roles = document.getElementById('c_roles').value;
+  if (!name) { alert('Nom obligatoire'); return; }
+  var res = await fetch('/api/expense-categories', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ category: name, allowed_roles: roles })
+  });
+  var d = await res.json();
+  if (d.error) { alert('Erreur : ' + d.error); return; }
+  document.getElementById('mCat').classList.remove('show');
+  loadCategories();
+}
+
+/* ── EVENTS ── */
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('btnNewUser').addEventListener('click', function(){ openUserModal(null); });
+  document.getElementById('btnSaveUser').addEventListener('click', saveUser);
+  document.getElementById('btnCancelUser').addEventListener('click', function(){ document.getElementById('mUser').classList.remove('show'); });
+  document.getElementById('btnNewCat').addEventListener('click', function(){
+    document.getElementById('c_name').value = '';
+    document.getElementById('c_roles').value = 'gerant';
+    document.getElementById('mCat').classList.add('show');
+  });
+  document.getElementById('btnSaveCat').addEventListener('click', saveNewCat);
+  document.getElementById('btnCancelCat').addEventListener('click', function(){ document.getElementById('mCat').classList.remove('show'); });
+  loadUsers();
+  loadCategories();
+});
+</script>
+</body>
+</html>

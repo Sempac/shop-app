@@ -548,4 +548,113 @@ app.post('/api/print/:id/confirm', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+
+/* =======================================================
+   USERS & AUTH
+======================================================= */
+app.get('/api/users', async(req,res)=>{
+  try{
+    const r=await pool.query(
+      `SELECT id,name,role,auth_type,is_active FROM app_users WHERE is_active=true ORDER BY role DESC,name ASC`);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.post('/api/auth/login', async(req,res)=>{
+  try{
+    const{user_id,type,value}=req.body;
+    const r=await pool.query(`SELECT * FROM app_users WHERE id=$1 AND is_active=true`,[user_id]);
+    if(!r.rows[0])return res.status(401).json({error:'Utilisateur introuvable'});
+    const user=r.rows[0];
+    let ok=false;
+    if(type==='pin'){
+      ok=(user.pin===value);
+    } else {
+      ok=(user.password_hash===value); /* Simple pour l'instant — à hasher en prod */
+    }
+    if(!ok)return res.status(401).json({error:'Invalid credentials'});
+    res.json({user:{id:user.id,name:user.name,role:user.role,auth_type:user.auth_type}});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/users/:id', async(req,res)=>{
+  try{
+    const r=await pool.query(`SELECT id,name,role,auth_type,is_active FROM app_users WHERE id=$1`,[req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.post('/api/users', async(req,res)=>{
+  try{
+    const{name,role,auth_type,pin,password_hash}=req.body;
+    const r=await pool.query(
+      `INSERT INTO app_users(name,role,auth_type,pin,password_hash) VALUES($1,$2,$3,$4,$5) RETURNING id,name,role,auth_type`,
+      [name,role||'vendeur',auth_type||'pin',pin||null,password_hash||null]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.put('/api/users/:id', async(req,res)=>{
+  try{
+    const{name,role,auth_type,pin,password_hash,is_active}=req.body;
+    const r=await pool.query(
+      `UPDATE app_users SET name=$1,role=$2,auth_type=$3,pin=$4,password_hash=$5,is_active=$6,updated_at=NOW() WHERE id=$7 RETURNING id,name,role,auth_type,is_active`,
+      [name,role,auth_type,pin||null,password_hash||null,is_active!==false,req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.delete('/api/users/:id', async(req,res)=>{
+  try{
+    await pool.query(`UPDATE app_users SET is_active=false WHERE id=$1`,[req.params.id]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* Catégories dépenses autorisées */
+app.get('/api/expense-categories', async(req,res)=>{
+  try{
+    const role=req.query.role||'gerant';
+    const r=await pool.query(
+      `SELECT category FROM expense_categories_config WHERE allowed_roles LIKE $1 ORDER BY category`,
+      ['%'+role+'%']);
+    res.json(r.rows.map(r=>r.category));
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/expense-categories/all', async(req,res)=>{
+  try{
+    const r=await pool.query(`SELECT * FROM expense_categories_config ORDER BY category`);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.put('/api/expense-categories/:category', async(req,res)=>{
+  try{
+    const{allowed_roles}=req.body;
+    const r=await pool.query(
+      `INSERT INTO expense_categories_config(category,allowed_roles) VALUES($1,$2)
+       ON CONFLICT(category) DO UPDATE SET allowed_roles=$2 RETURNING *`,
+      [req.params.category,allowed_roles]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.post('/api/expense-categories', async(req,res)=>{
+  try{
+    const{category,allowed_roles}=req.body;
+    const r=await pool.query(
+      `INSERT INTO expense_categories_config(category,allowed_roles) VALUES($1,$2) RETURNING *`,
+      [category,allowed_roles||'gerant']);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.delete('/api/expense-categories/:category', async(req,res)=>{
+  try{
+    await pool.query(`DELETE FROM expense_categories_config WHERE category=$1`,[req.params.category]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
