@@ -150,11 +150,12 @@ async function init() {
 
 function renderDropdown() {
   var dd = document.getElementById('usersDropdown');
-  dd.innerHTML = users.map(function(u) {
+  /* Trier par ordre alphabetique */
+  var sorted = users.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+  dd.innerHTML = sorted.map(function(u) {
     var initial = u.name.charAt(0).toUpperCase();
-    var avCls   = u.role === 'gerant' ? 'av-g' : 'av-v';
     return '<div class="user-opt" onclick="selectUser(' + u.id + ')">' +
-      '<div class="user-avatar ' + avCls + '">' + initial + '</div>' +
+      '<div class="user-avatar" style="background:#1e293b;color:#94a3b8;border:1.5px solid #334155;">' + initial + '</div>' +
       '<div class="user-opt-name">' + u.name + '</div>' +
       '</div>';
   }).join('');
