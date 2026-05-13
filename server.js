@@ -8,9 +8,10 @@ const path=require('path');
 const fs=require('fs');
 
 const app=express();
+app.set('trust proxy', 1);
+app.use(require('helmet')());
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
 
 /* Config base de données depuis .env */
 
