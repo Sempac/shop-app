@@ -336,15 +336,16 @@ function setCond(c){
 }
 
 function filterProducts(){
-  const q=document.getElementById('search').value.toLowerCase().trim();
+  const norm=s=>s?s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''):'';
+  const q=norm(document.getElementById('search').value.trim());
   let filtered=allProducts.filter(p=>{
     const mc=activeCat==='Tous'||p.category===activeCat;
     const md=activeCond==='all'||(p.condition||'NEUF')===activeCond;
-    const mt=!q||(p.name&&p.name.toLowerCase().includes(q))
+    const mt=!q||norm(p.name).includes(q)
                ||(p.barcode&&p.barcode.includes(q))
-               ||(p.color&&p.color.toLowerCase().includes(q))
-               ||(p.grade&&p.grade.toLowerCase().includes(q))
-               ||(p.location_zone&&p.location_zone.toLowerCase().includes(q));
+               ||norm(p.color).includes(q)
+               ||norm(p.grade).includes(q)
+               ||norm(p.location_zone).includes(q);
     return mc&&md&&mt;
   }).sort((a,b)=>{
     const aok=(a.stock_quantity||0)>0,bok=(b.stock_quantity||0)>0;

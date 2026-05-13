@@ -369,13 +369,14 @@ function showAlerts() {
 }
 
 function applyFilters() {
-  var q        = document.getElementById('f_search').value.toLowerCase().trim();
+  var norm = function(s){ return s ? s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') : ''; };
+  var q        = norm(document.getElementById('f_search').value.trim());
   var cat      = document.getElementById('f_cat').value;
   var cond     = document.getElementById('f_cond').value;
   var grade    = document.getElementById('f_grade').value;
   var color    = document.getElementById('f_color').value;
-  var supplier = document.getElementById('f_supplier').value.toLowerCase();
-  var zone     = document.getElementById('f_zone').value.toLowerCase();
+  var supplier = norm(document.getElementById('f_supplier').value);
+  var zone     = norm(document.getElementById('f_zone').value);
   var stock    = document.getElementById('f_stock').value;
 
   filtered = allProducts.filter(function(p) {
@@ -391,11 +392,11 @@ function applyFilters() {
     if (stock === 'low' && (qty <= 0 || qty > alrt)) return false;
     if (stock === 'out' && qty !== 0) return false;
     if (q) {
-      var match = p.name.toLowerCase().indexOf(q) >= 0
-        || (p.color||'').toLowerCase().indexOf(q) >= 0
-        || (p.supplier_name||'').toLowerCase().indexOf(q) >= 0
-        || (p.grade||'').toLowerCase().indexOf(q) >= 0
-        || (p.location_zone||'').toLowerCase().indexOf(q) >= 0;
+      var match = norm(p.name).indexOf(q) >= 0
+        || norm(p.color).indexOf(q) >= 0
+        || norm(p.supplier_name).indexOf(q) >= 0
+        || norm(p.grade).indexOf(q) >= 0
+        || norm(p.location_zone).indexOf(q) >= 0;
       if (!match) return false;
     }
     return true;

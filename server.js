@@ -102,7 +102,7 @@ app.get('/api/orders/search',async(req,res)=>{
     if(date_min){p.push(date_min);q+=` AND DATE(created_at)>=$${p.length}`;}
     if(date_max){p.push(date_max);q+=` AND DATE(created_at)<=$${p.length}`;}
     if(payment){p.push(payment);q+=` AND payment_method=$${p.length}`;}
-    if(customer){p.push('%'+customer+'%');q+=` AND customer_name ILIKE $${p.length}`;}
+    if(customer){p.push('%'+customer+'%');q+=` AND unaccent(customer_name) ILIKE unaccent($${p.length})`;}
     q+=` ORDER BY id DESC LIMIT 200`;
     const r=await pool.query(q,p);res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}
@@ -203,7 +203,7 @@ app.get('/api/rapport-comptable',async(req,res)=>{
    REPAIRS — /search AVANT /:id
 ======================================================= */
 app.get('/api/repairs',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs ORDER BY id DESC`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.get('/api/repairs/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM repairs WHERE CAST(id AS TEXT) ILIKE $1 OR customer_name ILIKE $1 OR phone ILIKE $1 OR brand ILIKE $1 OR model ILIKE $1 ORDER BY id DESC LIMIT 100`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/repairs/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM repairs WHERE CAST(id AS TEXT) ILIKE $1 OR unaccent(customer_name) ILIKE unaccent($1) OR unaccent(phone) ILIKE unaccent($1) OR unaccent(brand) ILIKE unaccent($1) OR unaccent(model) ILIKE unaccent($1) OR unaccent(issue) ILIKE unaccent($1) ORDER BY id DESC LIMIT 100`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs WHERE id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/repairs',async(req,res)=>{try{const r=await pool.query(`INSERT INTO repairs(customer_name,phone,device_type,brand,model,serial_number,issue,estimated_price,comment,status,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'EN_ATTENTE',NOW()) RETURNING *`,
   [req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',req.body.brand||'',req.body.model||'',req.body.serial_number||'',req.body.issue||'',Number(req.body.estimated_price||0),req.body.comment||'']);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
@@ -257,7 +257,7 @@ app.delete('/api/expenses/:id',async(req,res)=>{try{await pool.query(`DELETE FRO
    CREDITS — /search AVANT /:id
 ======================================================= */
 app.get('/api/credits',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM customer_credits WHERE status=$1 ORDER BY created_at DESC`,[req.query.status||'EN_COURS']);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.get('/api/credits/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM customer_credits WHERE customer_name ILIKE $1 OR phone ILIKE $1 ORDER BY created_at DESC`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/credits/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM customer_credits WHERE unaccent(customer_name) ILIKE unaccent($1) OR unaccent(phone) ILIKE unaccent($1) ORDER BY created_at DESC`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/credits/:id/pay',async(req,res)=>{
   const client=await pool.connect();
   try{const{amount,payment_method,notes}=req.body;
@@ -426,7 +426,7 @@ app.get('/api/contacts',async(req,res)=>{
   try{const{category,q}=req.query;
     let sql=`SELECT * FROM contacts WHERE 1=1`;const p=[];
     if(category){p.push(category);sql+=` AND category=$${p.length}`;}
-    if(q){p.push(`%${q}%`);const n=p.length;sql+=` AND (name ILIKE $${n} OR company ILIKE $${n} OR phone ILIKE $${n} OR email ILIKE $${n})`;}
+    if(q){p.push(`%${q}%`);const n=p.length;sql+=` AND (unaccent(name) ILIKE unaccent($${n}) OR unaccent(company) ILIKE unaccent($${n}) OR unaccent(phone) ILIKE unaccent($${n}) OR unaccent(email) ILIKE unaccent($${n}))`;}
     sql+=` ORDER BY is_favorite DESC,category ASC,name ASC`;
     const r=await pool.query(sql,p);res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}
@@ -722,9 +722,9 @@ app.get('/api/repair-prices', async(req,res)=>{
     const{brand,model,type}=req.query;
     let sql='SELECT rp.*,rc.name AS competitor_name,rc.logo_emoji,rc.zone FROM repair_prices rp JOIN repair_competitors rc ON rc.id=rp.competitor_id WHERE 1=1';
     const p=[];
-    if(brand){p.push('%'+brand+'%');sql+=' AND rp.device_brand ILIKE $'+p.length;}
-    if(model){p.push('%'+model+'%');sql+=' AND rp.device_model ILIKE $'+p.length;}
-    if(type) {p.push('%'+type+'%'); sql+=' AND rp.repair_type ILIKE $'+p.length;}
+	if(brand){p.push('%'+brand+'%');sql+=' AND unaccent(rp.device_brand) ILIKE unaccent($'+p.length+')';}
+    if(model){p.push('%'+model+'%');sql+=' AND unaccent(rp.device_model) ILIKE unaccent($'+p.length+')';}
+    if(type) {p.push('%'+type+'%'); sql+=' AND rp.repair_type ILIKE unaccent($'+p.length+')';}
     sql+=' ORDER BY rp.price ASC NULLS LAST';
     const r=await pool.query(sql,p);
     res.json(r.rows);
