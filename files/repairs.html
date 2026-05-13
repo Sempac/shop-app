@@ -34,7 +34,6 @@ table.rl tr.selected td{background:#1e3a8a44;}
 .fg.full{grid-column:1/span 2;}
 .fg label{font-size:11px;color:#94a3b8;font-weight:bold;text-transform:uppercase;}
 .fg input,.fg select,.fg textarea{width:100%;padding:9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:white;font-size:13px;font-family:Arial;}
-.fg select option{background:#1e293b;color:white;}
 .fg textarea{height:65px;resize:vertical;}
 button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
 .btn-green{background:#22c55e;color:white;}
@@ -61,8 +60,6 @@ hr{border:1px solid #334155;margin:12px 0;}
 .cb-call{background:#16a34a;color:white;}
 .cb-sms {background:#2563eb;color:white;}
 .cb-wa  {background:#25d366;color:white;}
-/* Datalist style */
-.fg input[list]{background:#1e293b;color:white;}
 
 /* COMPARATEUR PRIX */
 .comp-panel{display:none;position:fixed;top:0;right:0;width:460px;height:100vh;background:white;box-shadow:-4px 0 24px #0003;z-index:600;flex-direction:column;}
@@ -124,187 +121,11 @@ hr{border:1px solid #334155;margin:12px 0;}
     <div class="form-grid">
       <div class="fg"><label>Nom client</label><input id="n_customer" placeholder="Ex: Jean Dupont"></div>
       <div class="fg"><label>Téléphone</label><input id="n_phone" placeholder="06 XX XX XX XX"></div>
-
-      <!-- Type d'appareil — liste déroulante -->
-      <div class="fg">
-        <label>Type d'appareil</label>
-        <select id="n_device">
-          <option value="">— Sélectionner —</option>
-          <option>Smartphone</option>
-          <option>Tablette</option>
-          <option>PC portable</option>
-          <option>Ordinateur fixe</option>
-          <option>Console de jeux</option>
-          <option>Montre connectée</option>
-          <option>Autre</option>
-        </select>
-      </div>
-
-      <!-- Marque — liste déroulante -->
-      <div class="fg">
-        <label>Marque</label>
-        <select id="n_brand">
-          <option value="">— Sélectionner —</option>
-          <option>Apple</option>
-          <option>Samsung</option>
-          <option>Xiaomi</option>
-          <option>Huawei</option>
-          <option>OnePlus</option>
-          <option>Sony</option>
-          <option>Google</option>
-          <option>Oppo</option>
-          <option>Realme</option>
-          <option>Honor</option>
-          <option>Nokia</option>
-          <option>Motorola</option>
-          <option>Lenovo</option>
-          <option>Asus</option>
-          <option>HP</option>
-          <option>Dell</option>
-          <option>Autre</option>
-        </select>
-      </div>
-
-      <!-- Modèle — champ libre + suggestions (datalist) -->
-      <div class="fg">
-        <label>Modèle</label>
-        <input id="n_model" list="modelsList" placeholder="Ex: iPhone 14, Galaxy S23...">
-        <datalist id="modelsList">
-          <!-- Apple iPhone -->
-          <option>iPhone 16 Pro Max</option><option>iPhone 16 Pro</option><option>iPhone 16 Plus</option><option>iPhone 16</option>
-          <option>iPhone 15 Pro Max</option><option>iPhone 15 Pro</option><option>iPhone 15 Plus</option><option>iPhone 15</option>
-          <option>iPhone 14 Pro Max</option><option>iPhone 14 Pro</option><option>iPhone 14 Plus</option><option>iPhone 14</option>
-          <option>iPhone 13 Pro Max</option><option>iPhone 13 Pro</option><option>iPhone 13 Mini</option><option>iPhone 13</option>
-          <option>iPhone 12 Pro Max</option><option>iPhone 12 Pro</option><option>iPhone 12 Mini</option><option>iPhone 12</option>
-          <option>iPhone 11 Pro Max</option><option>iPhone 11 Pro</option><option>iPhone 11</option>
-          <option>iPhone XS Max</option><option>iPhone XS</option><option>iPhone XR</option><option>iPhone X</option>
-          <option>iPhone SE 2022</option><option>iPhone SE 2020</option><option>iPhone SE 2016</option>
-          <option>iPhone 8 Plus</option><option>iPhone 8</option><option>iPhone 7 Plus</option><option>iPhone 7</option>
-          <!-- Samsung Galaxy S -->
-          <option>Galaxy S25 Ultra</option><option>Galaxy S25+</option><option>Galaxy S25</option>
-          <option>Galaxy S24 Ultra</option><option>Galaxy S24+</option><option>Galaxy S24</option><option>Galaxy S24 FE</option>
-          <option>Galaxy S23 Ultra</option><option>Galaxy S23+</option><option>Galaxy S23</option><option>Galaxy S23 FE</option>
-          <option>Galaxy S22 Ultra</option><option>Galaxy S22+</option><option>Galaxy S22</option>
-          <option>Galaxy S21 Ultra</option><option>Galaxy S21+</option><option>Galaxy S21</option><option>Galaxy S21 FE</option>
-          <option>Galaxy S20 Ultra</option><option>Galaxy S20+</option><option>Galaxy S20</option><option>Galaxy S20 FE</option>
-          <option>Galaxy S10+</option><option>Galaxy S10</option><option>Galaxy S10e</option>
-          <option>Galaxy S9+</option><option>Galaxy S9</option>
-          <!-- Samsung Galaxy A -->
-          <option>Galaxy A55</option><option>Galaxy A54</option><option>Galaxy A53</option><option>Galaxy A52</option>
-          <option>Galaxy A35</option><option>Galaxy A34</option><option>Galaxy A33</option>
-          <option>Galaxy A25</option><option>Galaxy A24</option><option>Galaxy A23</option>
-          <option>Galaxy A15</option><option>Galaxy A14</option><option>Galaxy A13</option>
-          <option>Galaxy A05s</option><option>Galaxy A05</option>
-          <!-- Samsung Galaxy Z -->
-          <option>Galaxy Z Fold 6</option><option>Galaxy Z Fold 5</option><option>Galaxy Z Fold 4</option><option>Galaxy Z Fold 3</option>
-          <option>Galaxy Z Flip 6</option><option>Galaxy Z Flip 5</option><option>Galaxy Z Flip 4</option><option>Galaxy Z Flip 3</option>
-          <!-- Samsung Galaxy M / Note -->
-          <option>Galaxy M55</option><option>Galaxy M54</option><option>Galaxy M34</option><option>Galaxy M14</option>
-          <option>Galaxy Note 20 Ultra</option><option>Galaxy Note 20</option><option>Galaxy Note 10+</option><option>Galaxy Note 10</option>
-          <!-- Xiaomi -->
-          <option>Xiaomi 14 Ultra</option><option>Xiaomi 14 Pro</option><option>Xiaomi 14</option>
-          <option>Xiaomi 13 Ultra</option><option>Xiaomi 13 Pro</option><option>Xiaomi 13</option>
-          <option>Xiaomi 12 Pro</option><option>Xiaomi 12</option>
-          <option>Redmi Note 13 Pro+</option><option>Redmi Note 13 Pro</option><option>Redmi Note 13</option>
-          <option>Redmi Note 12 Pro+</option><option>Redmi Note 12 Pro</option><option>Redmi Note 12</option>
-          <option>Redmi Note 11 Pro</option><option>Redmi Note 11</option>
-          <option>Redmi 13C</option><option>Redmi 12C</option><option>Redmi 12</option>
-          <option>POCO X6 Pro</option><option>POCO X6</option><option>POCO X5 Pro</option><option>POCO M6 Pro</option>
-          <!-- Huawei -->
-          <option>Huawei P60 Pro</option><option>Huawei P50 Pro</option><option>Huawei P40 Pro</option><option>Huawei P40</option>
-          <option>Huawei P30 Pro</option><option>Huawei P30</option>
-          <option>Huawei Mate 50 Pro</option><option>Huawei Mate 40 Pro</option>
-          <option>Huawei Nova 11</option><option>Huawei Nova 10</option>
-          <!-- OnePlus -->
-          <option>OnePlus 12 Pro</option><option>OnePlus 12</option>
-          <option>OnePlus 11</option><option>OnePlus 10 Pro</option>
-          <option>OnePlus Nord 3</option><option>OnePlus Nord CE 3</option>
-          <!-- Google Pixel -->
-          <option>Pixel 9 Pro XL</option><option>Pixel 9 Pro</option><option>Pixel 9</option>
-          <option>Pixel 8 Pro</option><option>Pixel 8</option><option>Pixel 7a</option><option>Pixel 7 Pro</option><option>Pixel 7</option>
-          <option>Pixel 6a</option><option>Pixel 6 Pro</option><option>Pixel 6</option>
-          <!-- Oppo / Realme / Honor -->
-          <option>Oppo Find X7 Pro</option><option>Oppo Reno 11</option><option>Oppo Reno 10</option>
-          <option>Realme 12 Pro+</option><option>Realme 11 Pro</option><option>Realme GT 5</option>
-          <option>Honor 90 Pro</option><option>Honor Magic 6 Pro</option><option>Honor X8</option>
-          <!-- Sony / Nokia / Motorola -->
-          <option>Sony Xperia 1 VI</option><option>Sony Xperia 5 V</option>
-          <option>Nokia G60</option><option>Nokia XR21</option>
-          <option>Motorola Edge 40 Pro</option><option>Motorola Moto G84</option><option>Motorola Moto G54</option>
-        </datalist>
-      </div>
-
+      <div class="fg"><label>Type d'appareil</label><input id="n_device" placeholder="Smartphone, Tablette, PC..."></div>
+      <div class="fg"><label>Marque</label><input id="n_brand" placeholder="Apple, Samsung..."></div>
+      <div class="fg"><label>Modèle</label><input id="n_model" placeholder="iPhone 14, S23..."></div>
       <div class="fg"><label>N° de série</label><input id="n_serial" placeholder="IMEI / S/N"></div>
-
-      <!-- Panne — liste déroulante -->
-      <div class="fg full">
-        <label>Panne / Problème</label>
-        <select id="n_issue">
-          <option value="">— Sélectionner la panne —</option>
-          <optgroup label="🖥 Écran">
-            <option>Écran cassé (dalle + vitre)</option>
-            <option>Vitre avant cassée (sans dalle)</option>
-            <option>Écran noir / ne s'affiche pas</option>
-            <option>Écran tactile ne répond plus</option>
-            <option>Écran avec lignes / taches</option>
-          </optgroup>
-          <optgroup label="🔋 Batterie">
-            <option>Batterie HS / gonflement</option>
-            <option>Batterie décharge vite</option>
-            <option>Ne charge plus</option>
-          </optgroup>
-          <optgroup label="🔌 Connectique">
-            <option>Connecteur de charge</option>
-            <option>Prise jack</option>
-            <option>NFC</option>
-          </optgroup>
-          <optgroup label="📷 Caméra">
-            <option>Caméra avant</option>
-            <option>Caméra arrière</option>
-            <option>Lentille appareil photo</option>
-          </optgroup>
-          <optgroup label="🔊 Audio">
-            <option>Micro</option>
-            <option>Haut-parleur</option>
-            <option>Oreillette</option>
-          </optgroup>
-          <optgroup label="🔘 Boutons / Mécanique">
-            <option>Bouton Power</option>
-            <option>Bouton Volume</option>
-            <option>Bouton Home</option>
-            <option>Vibreur</option>
-            <option>Tiroir carte SIM</option>
-            <option>Façade arrière cassée</option>
-            <option>Coque arrière abîmée</option>
-          </optgroup>
-          <optgroup label="📶 Réseau / Système">
-            <option>Antenne WiFi</option>
-            <option>Antenne 4G / 5G</option>
-            <option>Bluetooth</option>
-            <option>GPS</option>
-            <option>Ne s'allume pas</option>
-            <option>Blocage / freeze</option>
-            <option>Surchauffe</option>
-          </optgroup>
-          <optgroup label="🛠 Services">
-            <option>Diagnostic</option>
-            <option>Réinitialisation / déverrouillage</option>
-            <option>Déblocage compte store</option>
-            <option>Dégeolocalisation</option>
-            <option>Transfert de données</option>
-            <option>Sauvegarde de données</option>
-            <option>Accompagnement sauvegarde iCloud</option>
-            <option>Paramétrage de l'appareil</option>
-            <option>Accompagnement mise à jour</option>
-            <option>Restauration / effacement données</option>
-            <option>Nettoyage complet</option>
-          </optgroup>
-          <optgroup label="❓ Autre">
-            <option>Autre panne</option>
-          </optgroup>
-        </select>
-      </div>
-
+      <div class="fg full"><label>Panne / Problème</label><input id="n_issue" placeholder="Ex: Écran cassé, batterie HS..."></div>
       <div class="fg"><label>Prix estimé (€)</label><input id="n_price" type="number" placeholder="0.00" min="0" step="0.01"></div>
       <div class="fg full"><label>Commentaire interne</label><textarea id="n_comment" placeholder="Notes..."></textarea></div>
     </div>
@@ -321,7 +142,305 @@ hr{border:1px solid #334155;margin:12px 0;}
 </div>
 
 </div>
+<script>
+var currentId = null;
+var selRow    = null;
 
+function showTab(tab) {
+  document.getElementById('secNew').classList.toggle('active',    tab === 'new');
+  document.getElementById('secDetail').classList.toggle('active', tab === 'detail');
+  document.getElementById('tabNew').classList.toggle('active',    tab === 'new');
+  document.getElementById('tabDetail').classList.toggle('active', tab === 'detail');
+}
+
+/* ── LISTE ── */
+async function loadRepairs() {
+  var res  = await fetch('/api/repairs');
+  renderList(await res.json());
+}
+
+async function doSearch() {
+  var q   = document.getElementById('searchInput').value;
+  var res = await fetch('/api/repairs/search?q=' + encodeURIComponent(q));
+  renderList(await res.json());
+}
+
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doSearch();
+});
+
+function renderList(data) {
+  var tbody = document.getElementById('repairList');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px">Aucune réparation</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(function(r) {
+    return '<tr data-id="' + r.id + '" class="' + (r.id === currentId ? 'selected' : '') + '">' +
+      '<td><b>#' + r.id + '</b></td>' +
+      '<td>' + (r.customer_name||'—') + '</td>' +
+      '<td>' + (r.phone||'—') + '</td>' +
+      '<td>' + (r.brand||'—') + '</td>' +
+      '<td>' + (r.model||'—') + '</td>' +
+      '<td><span class="sbadge ' + (r.status||'') + '">' + (r.status||'—') + '</span></td>' +
+      '</tr>';
+  }).join('');
+
+  tbody.querySelectorAll('tr').forEach(function(tr) {
+    tr.addEventListener('click', function() {
+      if (selRow) selRow.classList.remove('selected');
+      tr.classList.add('selected');
+      selRow = tr;
+      showRepair(Number(tr.dataset.id));
+    });
+  });
+}
+
+/* ── DÉTAIL ── */
+async function showRepair(id) {
+  currentId = id;
+  var r     = await fetch('/api/repairs/' + id).then(function(x){ return x.json(); });
+  document.getElementById('tabDetail').style.display = 'inline-block';
+  showTab('detail');
+
+  var fp   = Number(r.final_price||r.estimated_price||0);
+  var cb   = Number(r.amount_cb||0);
+  var cash = Number(r.amount_cash||0);
+  var cred = Number(r.amount_credit||0);
+  var phone = r.phone||'';
+
+  var contactHtml = '';
+  if (phone) {
+    var intl = phone.replace(/[\s\.\-]/g,'').replace(/^0/,'33');
+    var msg  = encodeURIComponent('Bonjour ' + (r.customer_name||'') + ', c\'est The SMARTPHONE. ');
+    contactHtml =
+      '<a class="cb-btn cb-call" href="tel:' + phone.replace(/\s/g,'') + '">📞 Appeler</a>' +
+      '<a class="cb-btn cb-sms"  href="sms:' + phone.replace(/\s/g,'') + '&body=' + msg + '">💬 SMS</a>' +
+      '<a class="cb-btn cb-wa"   href="https://wa.me/' + intl + '?text=' + msg + '" target="_blank">WhatsApp</a>';
+  }
+
+  document.getElementById('detailView').innerHTML =
+    '<h3 style="margin-top:0;margin-bottom:10px;color:white">🔧 Réparation #' + r.id +
+      ' <span class="sbadge ' + r.status + '" style="margin-left:8px">' + r.status + '</span></h3>' +
+
+    '<div class="contact-bar">' +
+      '<div><div class="cname">👤 ' + (r.customer_name||'—') + '</div>' +
+      '<div class="cphone">' + (phone||'Pas de numéro') + '</div></div>' +
+      contactHtml +
+      (r.status === 'TERMINE' ? '<span class="ready-badge">✅ Prêt — Prévenez le client !</span>' : '') +
+    '</div>' +
+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
+      '<div class="dbox"><div class="lbl">Marque / Modèle</div>' + (r.brand||'—') + ' ' + (r.model||'') + '</div>' +
+      '<div class="dbox"><div class="lbl">Type</div>' + (r.device_type||'—') + '</div>' +
+      '<div class="dbox"><div class="lbl">N° série</div>' + (r.serial_number||'—') + '</div>' +
+      '<div class="dbox"><div class="lbl">Prix estimé</div>' + Number(r.estimated_price||0).toFixed(2) + ' €</div>' +
+      '<div class="dbox" style="grid-column:1/span 2"><div class="lbl">Panne</div>' + (r.issue||'—') + '</div>' +
+      (r.comment ? '<div class="dbox" style="grid-column:1/span 2"><div class="lbl">Commentaire</div>' + r.comment + '</div>' : '') +
+    '</div>' +
+
+    '<hr><h4 style="margin:0 0 12px;color:white">✏️ Modifier</h4>' +
+
+    '<div class="form-grid">' +
+      '<div class="fg"><label>Nom client</label><input id="e_customer" value="' + (r.customer_name||'') + '"></div>' +
+      '<div class="fg"><label>Téléphone</label><input id="e_phone" value="' + (r.phone||'') + '"></div>' +
+      '<div class="fg"><label>Type d\'appareil</label><input id="e_device" value="' + (r.device_type||'') + '"></div>' +
+      '<div class="fg"><label>Marque</label><input id="e_brand" value="' + (r.brand||'') + '"></div>' +
+      '<div class="fg"><label>Modèle</label><input id="e_model" value="' + (r.model||'') + '"></div>' +
+      '<div class="fg"><label>N° de série</label><input id="e_serial" value="' + (r.serial_number||'') + '"></div>' +
+      '<div class="fg full"><label>Panne / Problème</label><input id="e_issue" value="' + (r.issue||'') + '"></div>' +
+      '<div class="fg full"><label>Commentaire interne</label><textarea id="e_comment">' + (r.comment||'') + '</textarea></div>' +
+      '<div class="fg"><label>Statut</label><select id="e_status">' +
+        '<option value="EN_ATTENTE"' + (r.status==='EN_ATTENTE'?' selected':'') + '>EN_ATTENTE</option>' +
+        '<option value="EN_COURS"'   + (r.status==='EN_COURS'  ?' selected':'') + '>EN_COURS</option>' +
+        '<option value="TERMINE"'    + (r.status==='TERMINE'   ?' selected':'') + '>TERMINE</option>' +
+        '<option value="LIVRE"'      + (r.status==='LIVRE'     ?' selected':'') + '>LIVRE</option>' +
+      '</select></div>' +
+      '<div class="fg"><label>Prix estimé (€)</label><input id="e_estimated" type="number" value="' + Number(r.estimated_price||0) + '" min="0" step="0.01"></div>' +
+      '<div class="fg"><label>Prix final (€)</label><input id="e_final" type="number" value="' + fp + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
+    '</div>' +
+
+    '<div class="pay-section"><h4>💰 Règlement client</h4>' +
+      '<div class="pay-grid">' +
+        '<div class="pf"><label>💳 CB (€)</label><input type="number" id="e_cb"   value="' + cb   + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
+        '<div class="pf"><label>💵 Espèces (€)</label><input type="number" id="e_cash" value="' + cash + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
+        '<div class="pf credit"><label>⏳ Crédit (reste)</label><input type="number" id="e_credit" value="' + cred + '" min="0" readonly></div>' +
+      '</div>' +
+      '<div class="pay-recap">' +
+        '<span>Prix : <b id="rp_tot">' + fp.toFixed(2) + ' €</b></span>' +
+        '<span>Encaissé : <b id="rp_paid" style="color:#22c55e">' + (cb+cash).toFixed(2) + ' €</b></span>' +
+        '<span>Crédit : <b id="rp_cred" style="color:#f59e0b">' + cred.toFixed(2) + ' €</b></span>' +
+      '</div>' +
+      '<div class="pay-err" id="rp_err">⚠️ CB + Espèces dépasse le prix !</div>' +
+    '</div>' +
+
+    '<div class="btn-row">' +
+      '<button class="btn-blue"   id="btnSaveRepair">💾 Enregistrer</button>' +
+      '<button class="btn-orange" id="btnPrintSAV">🧾 Ticket SAV</button>' +
+      '<button class="btn-red"    id="btnDeleteRepair">🗑 Supprimer</button>' +
+    '</div>';
+
+  /* Attacher les événements */
+  setTimeout(function() {
+    var btnSave   = document.getElementById('btnSaveRepair');
+    var btnPrint  = document.getElementById('btnPrintSAV');
+    var btnDelete = document.getElementById('btnDeleteRepair');
+    if (btnSave)   btnSave.addEventListener('click',   function(){ updateRepair(id); });
+    if (btnPrint)  btnPrint.addEventListener('click',  function(){ printSAV(r); });
+    if (btnDelete) btnDelete.addEventListener('click', function(){ deleteRepair(id); });
+  }, 0);
+}
+
+function calcRepPay() {
+  var total = Number(document.getElementById('e_final')?.value||0);
+  var cb    = Number(document.getElementById('e_cb')?.value||0);
+  var cash  = Number(document.getElementById('e_cash')?.value||0);
+  var paid  = cb + cash;
+  var rest  = Math.max(0, total - paid);
+  if (document.getElementById('e_credit')) document.getElementById('e_credit').value = rest.toFixed(2);
+  if (document.getElementById('rp_tot'))   document.getElementById('rp_tot').textContent   = total.toFixed(2) + ' €';
+  if (document.getElementById('rp_paid'))  document.getElementById('rp_paid').textContent  = paid.toFixed(2)  + ' €';
+  if (document.getElementById('rp_cred'))  document.getElementById('rp_cred').textContent  = rest.toFixed(2)  + ' €';
+  var errEl = document.getElementById('rp_err');
+  if (errEl) errEl.style.display = paid > total + 0.01 ? 'block' : 'none';
+}
+
+async function updateRepair(id) {
+  var fp   = Number(document.getElementById('e_final').value||0);
+  var cb   = Number(document.getElementById('e_cb').value||0);
+  var cash = Number(document.getElementById('e_cash').value||0);
+  if (cb + cash > fp + 0.01) { alert('⚠️ CB + Espèces dépasse le prix !'); return; }
+  var credit = Math.max(0, fp - cb - cash);
+  var status = document.getElementById('e_status').value;
+  var res = await fetch('/api/repairs/' + id, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      status,
+      final_price:     fp,
+      estimated_price: Number(document.getElementById('e_estimated')?.value||0),
+      customer_name:   document.getElementById('e_customer')?.value||'',
+      phone:           document.getElementById('e_phone')?.value||'',
+      device_type:     document.getElementById('e_device')?.value||'',
+      brand:           document.getElementById('e_brand')?.value||'',
+      model:           document.getElementById('e_model')?.value||'',
+      serial_number:   document.getElementById('e_serial')?.value||'',
+      issue:           document.getElementById('e_issue')?.value||'',
+      comment:         document.getElementById('e_comment')?.value||'',
+      amount_cb: cb, amount_cash: cash, amount_credit: credit
+    })
+  });
+  var d = await res.json();
+  if (d.error) { alert('❌ ' + d.error); return; }
+  alert('✅ Réparation #' + id + ' mise à jour !');
+  loadRepairs();
+  showRepair(id);
+}
+
+async function deleteRepair(id) {
+  if (!confirm('Supprimer la réparation #' + id + ' ?')) return;
+  await fetch('/api/repairs/' + id, {method:'DELETE'});
+  currentId = null;
+  document.getElementById('detailView').innerHTML = '';
+  document.getElementById('tabDetail').style.display = 'none';
+  showTab('new');
+  loadRepairs();
+}
+
+async function createRepair() {
+  var customer = document.getElementById('n_customer').value.trim();
+  if (!customer) { alert('⚠️ Nom du client obligatoire'); return; }
+  var res = await fetch('/api/repairs', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      customer_name:   customer,
+      phone:           document.getElementById('n_phone').value,
+      device_type:     document.getElementById('n_device').value,
+      brand:           document.getElementById('n_brand').value,
+      model:           document.getElementById('n_model').value,
+      serial_number:   document.getElementById('n_serial').value,
+      issue:           document.getElementById('n_issue').value,
+      estimated_price: document.getElementById('n_price').value||0,
+      comment:         document.getElementById('n_comment').value,
+    })
+  });
+  var d = await res.json();
+  if (d.error) { alert('❌ ' + d.error); return; }
+  alert('✅ Réparation #' + d.id + ' créée !');
+  resetForm();
+  loadRepairs();
+  showRepair(d.id);
+}
+
+function resetForm() {
+  ['n_customer','n_phone','n_device','n_brand','n_model','n_serial','n_issue','n_price','n_comment']
+    .forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+}
+
+function printSAV(r) {
+  var cb   = Number(r.amount_cb||0);
+  var cash = Number(r.amount_cash||0);
+  var cred = Number(r.amount_credit||0);
+  var fp   = Number(r.final_price||r.estimated_price||0);
+  var w    = window.open('','_blank');
+  w.document.write('<html><head><meta charset="UTF-8"><style>' +
+    '@page{size:80mm auto;margin:5mm;}body{font-family:Arial;width:72mm;font-size:12px;}' +
+    '.c{text-align:center;}.b{font-weight:bold;}hr{border:none;border-top:1px dashed #999;margin:5px 0;}' +
+    '.row{display:flex;justify-content:space-between;margin:3px 0;font-size:11px;}' +
+    '.credit{font-weight:bold;text-align:center;border:2px solid #000;padding:4px;margin:6px 0;}' +
+    '
+/* COMPARATEUR PRIX */
+.comp-panel{display:none;position:fixed;top:0;right:0;width:460px;height:100vh;background:white;box-shadow:-4px 0 24px #0003;z-index:600;flex-direction:column;}
+.comp-panel.show{display:flex;flex-direction:column;}
+.comp-header{background:#0f172a;color:white;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.comp-header h3{margin:0;font-size:14px;}
+.comp-close{background:#334155;color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:Arial;}
+.comp-body{flex:1;overflow-y:auto;padding:16px;}
+.comp-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.cf label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;display:block;margin-bottom:3px;}
+.cf select,.cf input{width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;}
+.comp-search-btns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.csb{padding:6px 12px;border-radius:6px;text-decoration:none;font-size:11px;font-weight:bold;font-family:Arial;display:inline-block;background:#0f172a;color:white;}
+.comp-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}
+.comp-table th{background:#0f172a;color:white;padding:7px 10px;text-align:left;font-size:11px;}
+.comp-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.comp-table tr:hover td{background:#f8fafc;}
+.comp-table tr.notre-prix td{background:#f0fdf4;font-weight:bold;}
+.comp-table tr.best td{background:#fef3c7;}
+.stars{color:#f59e0b;}
+.add-price-form{background:#f8fafc;border-radius:8px;padding:12px;border:1.5px dashed #e2e8f0;margin-top:10px;}
+.add-price-form h4{margin:0 0 10px;font-size:12px;color:#374151;}
+.apf-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;}
+.apf-grid input,.apf-grid select{padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;}
+.apf-grid.full{grid-template-columns:1fr;}
+.apf-btn{width:100%;padding:8px;background:#22c55e;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;}
+.badge-zone{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold;background:#dbeafe;color:#1e40af;}
+.badge-local{background:#dcfce7;color:#166534;}
+</style></head><body>' +
+    '<div class="c b" style="font-size:15px">The SMARTPHONE</div>' +
+    '<div class="c" style="font-size:10px">1 Avenue d\'Italie, 75013 Paris</div>' +
+    '<div class="c" style="font-size:10px">01 47 07 18 66</div><hr>' +
+    '<div class="c b">BON DE REPARATION N° ' + r.id + '</div>' +
+    '<div class="c">' + new Date().toLocaleString('fr-FR') + '</div><hr>' +
+    '<div class="row"><span>Client :</span><b>' + (r.customer_name||'—') + '</b></div>' +
+    '<div class="row"><span>Tel :</span><b>' + (r.phone||'—') + '</b></div><hr>' +
+    '<div class="row"><span>Appareil :</span><b>' + (r.brand||'') + ' ' + (r.model||'') + '</b></div>' +
+    '<div class="row"><span>Type :</span><b>' + (r.device_type||'—') + '</b></div>' +
+    '<div class="row"><span>N serie :</span><b>' + (r.serial_number||'—') + '</b></div>' +
+    '<div class="row"><span>Panne :</span><b>' + (r.issue||'—') + '</b></div>' +
+    '<div class="row"><span>Prix estime :</span><b>' + Number(r.estimated_price||0).toFixed(2) + ' EUR</b></div>' +
+    (fp > 0 ? '<div class="row"><span>Prix final :</span><b>' + fp.toFixed(2) + ' EUR</b></div>' : '') +
+    '<hr>' +
+    (cb   > 0 ? '<div class="row"><span>CB :</span><b>' + cb.toFixed(2) + ' EUR</b></div>' : '') +
+    (cash > 0 ? '<div class="row"><span>Especes :</span><b>' + cash.toFixed(2) + ' EUR</b></div>' : '') +
+    (cred > 0 ? '<div class="credit">RESTE A PAYER : ' + cred.toFixed(2) + ' EUR</div>' : '') +
+    '<hr><div class="c" style="font-size:10px">Merci de votre confiance !</div>' +
+    '<script>window.onload=function(){window.print();}<\/script>' +
+    '
 <!-- PANNEAU COMPARATEUR PRIX RÉPARATIONS -->
 <div class="comp-panel" id="compPanel">
   <div class="comp-header">
@@ -342,34 +461,7 @@ hr{border:1px solid #334155;margin:12px 0;}
       </div>
       <div class="cf">
         <label>Modèle</label>
-        <input id="comp_model" list="compModelsList" placeholder="Ex: iPhone 12" oninput="loadCompPrices()">
-        <datalist id="compModelsList">
-          <option>iPhone 16 Pro Max</option><option>iPhone 16 Pro</option><option>iPhone 16</option>
-          <option>iPhone 15 Pro Max</option><option>iPhone 15 Pro</option><option>iPhone 15</option>
-          <option>iPhone 14 Pro Max</option><option>iPhone 14 Pro</option><option>iPhone 14</option>
-          <option>iPhone 13 Pro Max</option><option>iPhone 13 Pro</option><option>iPhone 13</option>
-          <option>iPhone 12 Pro Max</option><option>iPhone 12 Pro</option><option>iPhone 12</option>
-          <option>iPhone 12 Mini</option><option>iPhone 11 Pro Max</option><option>iPhone 11</option>
-          <option>iPhone SE 2022</option><option>iPhone SE 2020</option>
-          <option>iPhone XS Max</option><option>iPhone XR</option><option>iPhone X</option>
-          <option>Galaxy S25 Ultra</option><option>Galaxy S25+</option><option>Galaxy S25</option>
-          <option>Galaxy S24 Ultra</option><option>Galaxy S24+</option><option>Galaxy S24</option><option>Galaxy S24 FE</option>
-          <option>Galaxy S23 Ultra</option><option>Galaxy S23+</option><option>Galaxy S23</option><option>Galaxy S23 FE</option>
-          <option>Galaxy S22 Ultra</option><option>Galaxy S22+</option><option>Galaxy S22</option>
-          <option>Galaxy S21 Ultra</option><option>Galaxy S21+</option><option>Galaxy S21</option>
-          <option>Galaxy A55</option><option>Galaxy A54</option><option>Galaxy A53</option>
-          <option>Galaxy A35</option><option>Galaxy A34</option><option>Galaxy A15</option>
-          <option>Galaxy Z Fold 6</option><option>Galaxy Z Fold 5</option>
-          <option>Galaxy Z Flip 6</option><option>Galaxy Z Flip 5</option>
-          <option>Galaxy Note 20 Ultra</option><option>Galaxy Note 20</option>
-          <option>Redmi Note 13 Pro+</option><option>Redmi Note 13 Pro</option><option>Redmi Note 13</option>
-          <option>Redmi Note 12 Pro</option><option>Redmi Note 12</option>
-          <option>Xiaomi 14 Pro</option><option>Xiaomi 14</option><option>Xiaomi 13</option>
-          <option>POCO X6 Pro</option><option>POCO X6</option>
-          <option>Pixel 9 Pro</option><option>Pixel 8 Pro</option><option>Pixel 8</option><option>Pixel 7a</option>
-          <option>Huawei P60 Pro</option><option>Huawei P50 Pro</option><option>Huawei P40 Pro</option>
-          <option>OnePlus 12</option><option>OnePlus 11</option><option>OnePlus Nord 3</option>
-        </datalist>
+        <input id="comp_model" placeholder="Ex: iPhone 12" oninput="loadCompPrices()">
       </div>
       <div class="cf">
         <label>Type de panne</label>
@@ -397,11 +489,18 @@ hr{border:1px solid #334155;margin:12px 0;}
     <table class="comp-table">
       <thead>
         <tr>
-          <th>Concurrent</th><th>Réparation</th><th>Prix</th><th>Délai</th><th>Note</th><th></th>
+          <th>Concurrent</th>
+          <th>Réparation</th>
+          <th>Prix</th>
+          <th>Délai</th>
+          <th>Note</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="compBody">
-        <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:16px">Sélectionnez un appareil et un type de panne</td></tr>
+        <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:16px">
+          Sélectionnez un appareil et un type de panne
+        </td></tr>
       </tbody>
     </table>
 
@@ -492,345 +591,22 @@ hr{border:1px solid #334155;margin:12px 0;}
     </div>
   </div>
 </div>
-
-<!-- ═══════════════════════════════════════════════
-     SCRIPTS
-═══════════════════════════════════════════════ -->
-<script>
-var currentId = null;
-var selRow    = null;
-
-function showTab(tab) {
-  document.getElementById('secNew').classList.toggle('active',    tab === 'new');
-  document.getElementById('secDetail').classList.toggle('active', tab === 'detail');
-  document.getElementById('tabNew').classList.toggle('active',    tab === 'new');
-  document.getElementById('tabDetail').classList.toggle('active', tab === 'detail');
-}
-
-/* ── LISTE ── */
-async function loadRepairs() {
-  var res = await fetch('/api/repairs');
-  renderList(await res.json());
-}
-
-async function doSearch() {
-  var q   = document.getElementById('searchInput').value;
-  var res = await fetch('/api/repairs/search?q=' + encodeURIComponent(q));
-  renderList(await res.json());
-}
-
-document.getElementById('searchInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') doSearch();
-});
-
-function renderList(data) {
-  var tbody = document.getElementById('repairList');
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px">Aucune réparation</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.map(function(r) {
-    return '<tr data-id="' + r.id + '" class="' + (r.id === currentId ? 'selected' : '') + '">' +
-      '<td><b>#' + r.id + '</b></td>' +
-      '<td>' + (r.customer_name||'—') + '</td>' +
-      '<td>' + (r.phone||'—') + '</td>' +
-      '<td>' + (r.brand||'—') + '</td>' +
-      '<td>' + (r.model||'—') + '</td>' +
-      '<td><span class="sbadge ' + (r.status||'') + '">' + (r.status||'—') + '</span></td>' +
-      '</tr>';
-  }).join('');
-
-  tbody.querySelectorAll('tr').forEach(function(tr) {
-    tr.addEventListener('click', function() {
-      if (selRow) selRow.classList.remove('selected');
-      tr.classList.add('selected');
-      selRow = tr;
-      showRepair(Number(tr.dataset.id));
-    });
-  });
-}
-
-/* ── DÉTAIL ── */
-async function showRepair(id) {
-  currentId = id;
-  var r     = await fetch('/api/repairs/' + id).then(function(x){ return x.json(); });
-  document.getElementById('tabDetail').style.display = 'inline-block';
-  showTab('detail');
-
-  var fp   = Number(r.final_price||r.estimated_price||0);
-  var cb   = Number(r.amount_cb||0);
-  var cash = Number(r.amount_cash||0);
-  var cred = Number(r.amount_credit||0);
-  var phone = r.phone||'';
-
-  var contactHtml = '';
-  if (phone) {
-    var intl = phone.replace(/[\s\.\-]/g,'').replace(/^0/,'33');
-    var msg  = encodeURIComponent('Bonjour ' + (r.customer_name||'') + ', c\'est The SMARTPHONE. ');
-    contactHtml =
-      '<a class="cb-btn cb-call" href="tel:' + phone.replace(/\s/g,'') + '">📞 Appeler</a>' +
-      '<a class="cb-btn cb-sms"  href="sms:' + phone.replace(/\s/g,'') + '&body=' + msg + '">💬 SMS</a>' +
-      '<a class="cb-btn cb-wa"   href="https://wa.me/' + intl + '?text=' + msg + '" target="_blank">WhatsApp</a>';
-  }
-
-  /* Options statut */
-  var statusOpts = ['EN_ATTENTE','EN_COURS','TERMINE','LIVRE'].map(function(s) {
-    return '<option value="' + s + '"' + (r.status === s ? ' selected' : '') + '>' + s + '</option>';
-  }).join('');
-
-  document.getElementById('detailView').innerHTML =
-    '<h3 style="margin-top:0;margin-bottom:10px;color:white">🔧 Réparation #' + r.id +
-      ' <span class="sbadge ' + r.status + '" style="margin-left:8px">' + r.status + '</span></h3>' +
-
-    '<div class="contact-bar">' +
-      '<div><div class="cname">👤 ' + (r.customer_name||'—') + '</div>' +
-      '<div class="cphone">' + (phone||'Pas de numéro') + '</div></div>' +
-      contactHtml +
-      (r.status === 'TERMINE' ? '<span class="ready-badge">✅ Prêt — Prévenez le client !</span>' : '') +
-    '</div>' +
-
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
-      '<div class="dbox"><div class="lbl">Marque / Modèle</div>' + (r.brand||'—') + ' ' + (r.model||'') + '</div>' +
-      '<div class="dbox"><div class="lbl">Type</div>' + (r.device_type||'—') + '</div>' +
-      '<div class="dbox"><div class="lbl">N° série</div>' + (r.serial_number||'—') + '</div>' +
-      '<div class="dbox"><div class="lbl">Prix estimé</div>' + Number(r.estimated_price||0).toFixed(2) + ' €</div>' +
-      '<div class="dbox" style="grid-column:1/span 2"><div class="lbl">Panne</div>' + (r.issue||'—') + '</div>' +
-      (r.comment ? '<div class="dbox" style="grid-column:1/span 2"><div class="lbl">Commentaire</div>' + r.comment + '</div>' : '') +
-    '</div>' +
-
-    '<hr><h4 style="margin:0 0 12px;color:white">✏️ Modifier</h4>' +
-
-    '<div class="form-grid">' +
-      '<div class="fg"><label>Nom client</label><input id="e_customer" value="' + (r.customer_name||'') + '"></div>' +
-      '<div class="fg"><label>Téléphone</label><input id="e_phone" value="' + (r.phone||'') + '"></div>' +
-      '<div class="fg"><label>Type d\'appareil</label><input id="e_device" value="' + (r.device_type||'') + '"></div>' +
-      '<div class="fg"><label>Marque</label><input id="e_brand" value="' + (r.brand||'') + '"></div>' +
-      '<div class="fg"><label>Modèle</label><input id="e_model" value="' + (r.model||'') + '"></div>' +
-      '<div class="fg"><label>N° de série</label><input id="e_serial" value="' + (r.serial_number||'') + '"></div>' +
-      '<div class="fg full"><label>Panne / Problème</label><input id="e_issue" value="' + (r.issue||'') + '"></div>' +
-      '<div class="fg full"><label>Commentaire interne</label><textarea id="e_comment">' + (r.comment||'') + '</textarea></div>' +
-      '<div class="fg"><label>Statut</label><select id="e_status">' + statusOpts + '</select></div>' +
-      '<div class="fg"><label>Prix estimé (€)</label><input id="e_estimated" type="number" value="' + Number(r.estimated_price||0) + '" min="0" step="0.01"></div>' +
-      '<div class="fg"><label>Prix final (€)</label><input id="e_final" type="number" value="' + fp + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
-    '</div>' +
-
-    '<div class="pay-section"><h4>💰 Règlement client</h4>' +
-      '<div class="pay-grid">' +
-        '<div class="pf"><label>💳 CB (€)</label><input type="number" id="e_cb"   value="' + cb   + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
-        '<div class="pf"><label>💵 Espèces (€)</label><input type="number" id="e_cash" value="' + cash + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
-        '<div class="pf credit"><label>⏳ Crédit (reste)</label><input type="number" id="e_credit" value="' + cred + '" min="0" readonly></div>' +
-      '</div>' +
-      '<div class="pay-recap">' +
-        '<span>Prix : <b id="rp_tot">' + fp.toFixed(2) + ' €</b></span>' +
-        '<span>Encaissé : <b id="rp_paid" style="color:#22c55e">' + (cb+cash).toFixed(2) + ' €</b></span>' +
-        '<span>Crédit : <b id="rp_cred" style="color:#f59e0b">' + cred.toFixed(2) + ' €</b></span>' +
-      '</div>' +
-      '<div class="pay-err" id="rp_err">⚠️ CB + Espèces dépasse le prix !</div>' +
-    '</div>' +
-
-    '<div class="btn-row">' +
-      '<button class="btn-blue"   id="btnSaveRepair">💾 Enregistrer</button>' +
-      '<button class="btn-orange" id="btnPrintSAV">🧾 Ticket SAV</button>' +
-      '<button class="btn-red"    id="btnDeleteRepair">🗑 Supprimer</button>' +
-    '</div>';
-
-  /* Attacher les événements */
-  setTimeout(function() {
-    var btnSave   = document.getElementById('btnSaveRepair');
-    var btnPrint  = document.getElementById('btnPrintSAV');
-    var btnDelete = document.getElementById('btnDeleteRepair');
-    if (btnSave)   btnSave.addEventListener('click',   function(){ updateRepair(id); });
-    if (btnPrint)  btnPrint.addEventListener('click',  function(){ printSAV(r); });
-    if (btnDelete) btnDelete.addEventListener('click', function(){ deleteRepair(id); });
-  }, 0);
-}
-
-function calcRepPay() {
-  var total = Number(document.getElementById('e_final')?.value||0);
-  var cb    = Number(document.getElementById('e_cb')?.value||0);
-  var cash  = Number(document.getElementById('e_cash')?.value||0);
-  var paid  = cb + cash;
-  var rest  = Math.max(0, total - paid);
-  if (document.getElementById('e_credit')) document.getElementById('e_credit').value = rest.toFixed(2);
-  if (document.getElementById('rp_tot'))   document.getElementById('rp_tot').textContent   = total.toFixed(2) + ' €';
-  if (document.getElementById('rp_paid'))  document.getElementById('rp_paid').textContent  = paid.toFixed(2)  + ' €';
-  if (document.getElementById('rp_cred'))  document.getElementById('rp_cred').textContent  = rest.toFixed(2)  + ' €';
-  var errEl = document.getElementById('rp_err');
-  if (errEl) errEl.style.display = paid > total + 0.01 ? 'block' : 'none';
-}
-
-async function updateRepair(id) {
-  var fp   = Number(document.getElementById('e_final').value||0);
-  var cb   = Number(document.getElementById('e_cb').value||0);
-  var cash = Number(document.getElementById('e_cash').value||0);
-  if (cb + cash > fp + 0.01) { alert('⚠️ CB + Espèces dépasse le prix !'); return; }
-  var credit = Math.max(0, fp - cb - cash);
-  var status = document.getElementById('e_status').value;
-  var res = await fetch('/api/repairs/' + id, {
-    method: 'PUT',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      status:          status,
-      final_price:     fp,
-      estimated_price: Number(document.getElementById('e_estimated')?.value||0),
-      customer_name:   document.getElementById('e_customer')?.value||'',
-      phone:           document.getElementById('e_phone')?.value||'',
-      device_type:     document.getElementById('e_device')?.value||'',
-      brand:           document.getElementById('e_brand')?.value||'',
-      model:           document.getElementById('e_model')?.value||'',
-      serial_number:   document.getElementById('e_serial')?.value||'',
-      issue:           document.getElementById('e_issue')?.value||'',
-      comment:         document.getElementById('e_comment')?.value||'',
-      amount_cb: cb, amount_cash: cash, amount_credit: credit
-    })
-  });
-  var d = await res.json();
-  if (d.error) { alert('❌ ' + d.error); return; }
-  alert('✅ Réparation #' + id + ' mise à jour !');
-  loadRepairs();
-  showRepair(id);
-}
-
-async function deleteRepair(id) {
-  if (!confirm('Supprimer la réparation #' + id + ' ?')) return;
-  await fetch('/api/repairs/' + id, {method:'DELETE'});
-  currentId = null;
-  document.getElementById('detailView').innerHTML = '';
-  document.getElementById('tabDetail').style.display = 'none';
-  showTab('new');
-  loadRepairs();
-}
-
-async function createRepair() {
-  var customer = document.getElementById('n_customer').value.trim();
-  if (!customer) { alert('⚠️ Nom du client obligatoire'); return; }
-  var res = await fetch('/api/repairs', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      customer_name:   customer,
-      phone:           document.getElementById('n_phone').value,
-      device_type:     document.getElementById('n_device').value,
-      brand:           document.getElementById('n_brand').value,
-      model:           document.getElementById('n_model').value,
-      serial_number:   document.getElementById('n_serial').value,
-      issue:           document.getElementById('n_issue').value,
-      estimated_price: document.getElementById('n_price').value||0,
-      comment:         document.getElementById('n_comment').value
-    })
-  });
-  var d = await res.json();
-  if (d.error) { alert('❌ ' + d.error); return; }
-  alert('✅ Réparation #' + d.id + ' créée !');
-  resetForm();
-  loadRepairs();
-  showRepair(d.id);
-}
-
-function resetForm() {
-  ['n_customer','n_phone','n_serial','n_price','n_comment'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  ['n_device','n_brand','n_issue'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.selectedIndex = 0;
-  });
-  document.getElementById('n_model').value = '';
-}
-
-/* ── IMPRESSION SAV ── */
-function printSAV(r) {
-  var cb   = Number(r.amount_cb||0);
-  var cash = Number(r.amount_cash||0);
-  var cred = Number(r.amount_credit||0);
-  var fp   = Number(r.final_price||r.estimated_price||0);
-  var w    = window.open('','_blank');
-  var css  = '@page{size:80mm auto;margin:5mm;}' +
-             'body{font-family:Arial;width:72mm;font-size:12px;}' +
-             '.c{text-align:center;}.b{font-weight:bold;}' +
-             'hr{border:none;border-top:1px dashed #999;margin:5px 0;}' +
-             '.row{display:flex;justify-content:space-between;margin:3px 0;font-size:11px;}' +
-             '.credit{font-weight:bold;text-align:center;border:2px solid #000;padding:4px;margin:6px 0;}';
-  var body =
-    '<div class="c b" style="font-size:15px">The SMARTPHONE</div>' +
-    '<div class="c" style="font-size:10px">1 Avenue d\'Italie, 75013 Paris</div>' +
-    '<div class="c" style="font-size:10px">01 47 07 18 66</div><hr>' +
-    '<div class="c b">BON DE REPARATION N\u00B0 ' + r.id + '</div>' +
-    '<div class="c">' + new Date().toLocaleString('fr-FR') + '</div><hr>' +
-    '<div class="row"><span>Client :</span><b>' + (r.customer_name||'—') + '</b></div>' +
-    '<div class="row"><span>Tel :</span><b>' + (r.phone||'—') + '</b></div><hr>' +
-    '<div class="row"><span>Appareil :</span><b>' + (r.brand||'') + ' ' + (r.model||'') + '</b></div>' +
-    '<div class="row"><span>Type :</span><b>' + (r.device_type||'—') + '</b></div>' +
-    '<div class="row"><span>N serie :</span><b>' + (r.serial_number||'—') + '</b></div>' +
-    '<div class="row"><span>Panne :</span><b>' + (r.issue||'—') + '</b></div>' +
-    '<div class="row"><span>Prix estime :</span><b>' + Number(r.estimated_price||0).toFixed(2) + ' EUR</b></div>' +
-    (fp > 0 ? '<div class="row"><span>Prix final :</span><b>' + fp.toFixed(2) + ' EUR</b></div>' : '') +
-    '<hr>' +
-    (cb   > 0 ? '<div class="row"><span>CB :</span><b>' + cb.toFixed(2) + ' EUR</b></div>' : '') +
-    (cash > 0 ? '<div class="row"><span>Especes :</span><b>' + cash.toFixed(2) + ' EUR</b></div>' : '') +
-    (cred > 0 ? '<div class="credit">RESTE A PAYER : ' + cred.toFixed(2) + ' EUR</div>' : '') +
-    '<hr><div class="c" style="font-size:10px">Merci de votre confiance !</div>' +
-    '<div class="c" style="font-size:10px">Conservez ce bon jusqu\'a la restitution</div>';
-
-  w.document.write(
-    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<style>' + css + '</style>' +
-    '<script>window.onload=function(){window.print();}<\/script>' +
-    '</head><body>' + body + '</body></html>'
-  );
+</body></html>');
   w.document.close();
 }
 
 loadRepairs();
 </script>
 
-<!-- ═══════════════════════════════
-     COMPARATEUR PRIX RÉPARATIONS
-═══════════════════════════════ -->
 <script>
+/* ═══════════════════════════════
+   COMPARATEUR PRIX RÉPARATIONS
+═══════════════════════════════ */
 var allCompetitors = [];
 var showAddPriceForm = false;
 
 async function openCompetitor() {
   document.getElementById('compPanel').classList.add('show');
-
-  /* Pré-remplir depuis le formulaire nouvelle réparation si vides */
-  var compBrand = document.getElementById('comp_brand');
-  var compModel = document.getElementById('comp_model');
-  var compType  = document.getElementById('comp_type');
-
-  if (!compBrand.value) {
-    var fBrand = (document.getElementById('n_brand')||{}).value || '';
-    if (fBrand) {
-      var opts = compBrand.options;
-      for (var i = 0; i < opts.length; i++) {
-        if (opts[i].text.toLowerCase() === fBrand.toLowerCase()) { compBrand.value = opts[i].value; break; }
-      }
-    }
-  }
-  if (!compModel.value) {
-    var fModel = (document.getElementById('n_model')||{}).value || '';
-    if (fModel) compModel.value = fModel;
-  }
-  if (!compType.value) {
-    var fIssue = (document.getElementById('n_issue')||{}).value || '';
-    var issueMap = {
-      'Ecran casse (dalle + vitre)':'Ecran casse','Vitre avant cassee (sans dalle)':'Ecran casse',
-      'Batterie HS / gonflement':'Batterie','Batterie decharge vite':'Batterie',
-      'Ne charge plus':'Connecteur charge','Connecteur de charge':'Connecteur charge',
-      'Camera avant':'Camera','Camera arriere':'Camera',
-      'Micro':'Micro / Haut-parleur','Haut-parleur':'Micro / Haut-parleur',
-      'Bouton Power':'Bouton power',
-      'Facade arriere cassee':'Vitre arriere','Coque arriere abimee':'Vitre arriere',
-      'Diagnostic':'Diagnostic'
-    };
-    /* normaliser pour la comparaison */
-    var norm = function(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,''); };
-    var mapped = issueMap[norm(fIssue)];
-    if (mapped) compType.value = mapped;
-  }
-
   await loadCompetitors();
   loadCompPrices();
 }
@@ -863,22 +639,11 @@ function renderSearchBtns() {
   var model = document.getElementById('comp_model').value;
   var type  = document.getElementById('comp_type').value;
   var query = [brand, model, type].filter(Boolean).join(' ');
-  var slug  = function(s) {
-    return s.toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-      .replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
-  };
-  var div = document.getElementById('compSearchBtns');
+  var div   = document.getElementById('compSearchBtns');
   div.innerHTML = allCompetitors.map(function(comp) {
-    var url;
-    if (comp.search_url) {
-      url = comp.search_url
-        .replace('{query}', encodeURIComponent(query || 'reparation smartphone'))
-        .replace('{brand}', slug(brand || 'apple'))
-        .replace('{model}', slug(model || 'iphone'));
-    } else {
-      url = comp.website || '#';
-    }
+    var url = comp.search_url
+      ? comp.search_url.replace('{query}', encodeURIComponent(query || 'reparation smartphone'))
+      : (comp.website || '#');
     return '<a href="' + url + '" target="_blank" class="csb" title="' + (comp.notes||'') + '">' +
       (comp.logo_emoji||'🔧') + ' ' + comp.name + '</a>';
   }).join('');
@@ -911,6 +676,7 @@ async function loadCompPrices() {
     return;
   }
 
+  /* Trouver le meilleur prix concurrent */
   var bestPrice = Infinity;
   prices.forEach(function(p){ if (Number(p.price) < bestPrice) bestPrice = Number(p.price); });
 
@@ -921,17 +687,19 @@ async function loadCompPrices() {
     var zone = p.zone === 'Paris 13' ?
       '<span class="badge-zone badge-local">📍 Local</span>' :
       '<span class="badge-zone">🌍 National</span>';
+
     return '<tr' + (isBest ? ' class="best"' : '') + '>' +
       '<td>' + (p.logo_emoji||'🔧') + ' <b>' + (p.competitor_name||'—') + '</b><br>' + zone + '</td>' +
       '<td style="font-size:11px;color:#64748b">' + (p.repair_type||'—') + '</td>' +
       '<td style="font-weight:bold;color:' + (isBest?'#d97706':'#0f172a') + '">' +
-        Number(p.price||0).toFixed(2) + ' \u20AC' + (isBest?' 🏆':'') + '</td>' +
+        Number(p.price||0).toFixed(2) + ' €' + (isBest?' 🏆':'') + '</td>' +
       '<td style="font-size:11px">' + (p.delay||'—') + '</td>' +
       '<td><span style="color:#f59e0b">' + stars + '</span></td>' +
-      '<td><button onclick="deleteCompPrice(' + p.id + ')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:10px;font-family:Arial;">\u2715</button></td>' +
+      '<td><button onclick="deleteCompPrice(' + p.id + ')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:10px;font-family:Arial;">✕</button></td>' +
       '</tr>';
   }).join('');
 
+  /* Ajouter notre prix si renseigné */
   var notreP = Number(document.getElementById('notre_prix').value||0);
   if (notreP > 0) {
     var notreD = document.getElementById('notre_delai').value || '—';
@@ -939,7 +707,7 @@ async function loadCompPrices() {
     html += '<tr class="notre-prix">' +
       '<td>🏠 <b>The SMARTPHONE</b><br><span class="badge-zone badge-local">📍 Nous</span></td>' +
       '<td style="font-size:11px;color:#64748b">' + (type||'—') + '</td>' +
-      '<td style="font-weight:bold;color:#16a34a">' + notreP.toFixed(2) + ' \u20AC' + (isBestNous?' 🏆':'') + '</td>' +
+      '<td style="font-weight:bold;color:#16a34a">' + notreP.toFixed(2) + ' €' + (isBestNous?' 🏆':'') + '</td>' +
       '<td style="font-size:11px">' + notreD + '</td>' +
       '<td><span style="color:#f59e0b">★★★★★</span></td>' +
       '<td></td></tr>';
@@ -980,6 +748,7 @@ async function saveCompPrice() {
   if (d.error) { alert('Erreur: ' + d.error); return; }
   showAddPriceForm = false;
   document.getElementById('addPriceForm').style.display = 'none';
+  /* Mettre à jour les filtres et recharger */
   document.getElementById('comp_brand').value = brand;
   document.getElementById('comp_model').value = model;
   document.getElementById('comp_type').value  = type;
@@ -998,8 +767,7 @@ function renderCompetitorsList() {
     return '<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">' +
       '<div>' +
         '<div style="font-size:13px;font-weight:bold">' + (comp.logo_emoji||'🔧') + ' ' + comp.name + '</div>' +
-        '<div style="font-size:11px;color:#64748b">' + (comp.zone||'National') +
-          (comp.notes ? ' \u2014 ' + comp.notes.slice(0,40) + '...' : '') + '</div>' +
+        '<div style="font-size:11px;color:#64748b">' + (comp.zone||'National') + (comp.notes ? ' — ' + comp.notes.slice(0,40) + '...' : '') + '</div>' +
       '</div>' +
       '<div style="display:flex;gap:4px;">' +
         '<a href="' + (comp.website||'#') + '" target="_blank" style="padding:4px 9px;background:#0f172a;color:white;border-radius:5px;text-decoration:none;font-size:11px;font-weight:bold;font-family:Arial;">🌐</a>' +
@@ -1014,11 +782,11 @@ async function addCompetitor() {
   if (!name) return;
   var website = prompt('Site web (ex: https://www.wefix.fr) :') || '';
   var zone    = prompt('Zone (National / Paris 13 / etc.) :') || 'National';
-  var emoji   = prompt('Emoji logo (ex: 🔧, 📱, 🛠) :') || '🔧';
+  var emoji   = prompt('Emoji (ex: W, i, M, F...) :') || '🔧';
   var res = await fetch('/api/repair-competitors', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({name: name, website: website, logo_emoji: emoji, zone: zone})
+    body: JSON.stringify({name, website, logo_emoji:emoji, zone})
   });
   var d = await res.json();
   if (d.error) { alert('Erreur: ' + d.error); return; }
@@ -1027,14 +795,14 @@ async function addCompetitor() {
 
 async function deleteCompetitor(id) {
   var comp = allCompetitors.find(function(c){ return c.id === id; });
-  if (!confirm('Supprimer "' + (comp ? comp.name : id) + '" ?')) return;
+  if (!confirm('Supprimer "' + (comp?comp.name:id) + '" ?')) return;
   await fetch('/api/repair-competitors/' + id, {method:'DELETE'});
   loadCompetitors();
 }
 
-document.getElementById('notre_prix').addEventListener('input', loadCompPrices);
+/* Mettre à jour notre prix en temps réel */
+document.getElementById('notre_prix') && document.getElementById('notre_prix').addEventListener('input', loadCompPrices);
 </script>
-
 <script src="input-tools.js"></script>
 <script>
 (function() {
@@ -1042,7 +810,7 @@ document.getElementById('notre_prix').addEventListener('input', loadCompPrices);
     if (document.getElementById('searchInput')) {
       InputTools.addBoth('searchInput', function() { doSearch(); });
     }
-    var voiceFields = ['n_customer','n_phone','n_model'];
+    var voiceFields = ['n_customer','n_phone','n_brand','n_model','n_issue'];
     voiceFields.forEach(function(id) {
       if (document.getElementById(id)) InputTools.addVoice(id);
     });
@@ -1055,5 +823,155 @@ document.getElementById('notre_prix').addEventListener('input', loadCompPrices);
 })();
 </script>
 
+<!-- PANNEAU COMPARATEUR PRIX RÉPARATIONS -->
+<div class="comp-panel" id="compPanel">
+  <div class="comp-header">
+    <h3>💰 Comparateur prix réparations</h3>
+    <button class="comp-close" onclick="closeCompetitor()">✕ Fermer</button>
+  </div>
+  <div class="comp-body">
+    <!-- FILTRES -->
+    <div class="comp-filters">
+      <div class="cf" style="grid-column:1/span 2">
+        <label>Marque</label>
+        <select id="comp_brand" onchange="loadCompPrices()">
+          <option value="">Toutes marques</option>
+          <option>Apple</option><option>Samsung</option><option>Huawei</option>
+          <option>Xiaomi</option><option>OnePlus</option><option>Sony</option>
+          <option>Google</option><option>Oppo</option><option>Autre</option>
+        </select>
+      </div>
+      <div class="cf">
+        <label>Modèle</label>
+        <input id="comp_model" placeholder="Ex: iPhone 12" oninput="loadCompPrices()">
+      </div>
+      <div class="cf">
+        <label>Type de panne</label>
+        <select id="comp_type" onchange="loadCompPrices()">
+          <option value="">Tous types</option>
+          <option>Écran cassé</option>
+          <option>Batterie</option>
+          <option>Connecteur charge</option>
+          <option>Caméra</option>
+          <option>Bouton power</option>
+          <option>Micro / Haut-parleur</option>
+          <option>Vitre arrière</option>
+          <option>Diagnostic</option>
+          <option>Autre</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LIENS RECHERCHE DIRECTE -->
+    <div style="font-size:11px;font-weight:bold;color:#64748b;margin-bottom:6px;text-transform:uppercase;">🔗 Rechercher chez les concurrents</div>
+    <div class="comp-search-btns" id="compSearchBtns"></div>
+
+    <!-- TABLEAU COMPARATIF -->
+    <div style="font-size:11px;font-weight:bold;color:#64748b;margin:12px 0 6px;text-transform:uppercase;">📊 Prix enregistrés <span id="compCount" style="font-weight:normal"></span></div>
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Concurrent</th>
+          <th>Réparation</th>
+          <th>Prix</th>
+          <th>Délai</th>
+          <th>Note</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="compBody">
+        <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:16px">
+          Sélectionnez un appareil et un type de panne
+        </td></tr>
+      </tbody>
+    </table>
+
+    <!-- NOTRE PRIX -->
+    <div style="background:#f0fdf4;border:1.5px solid #22c55e;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:bold;color:#166534;margin-bottom:8px;">🏆 Notre prix (The SMARTPHONE)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:10px;color:#64748b;margin-bottom:3px;">NOTRE PRIX (€)</div>
+          <input type="number" id="notre_prix" placeholder="Ex: 65.00" min="0" step="0.01"
+            style="width:100%;padding:8px;border:1.5px solid #22c55e;border-radius:6px;font-size:13px;font-family:Arial;font-weight:bold;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:#64748b;margin-bottom:3px;">DÉLAI</div>
+          <input type="text" id="notre_delai" placeholder="Ex: 30 min"
+            style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:Arial;">
+        </div>
+      </div>
+    </div>
+
+    <!-- AJOUTER PRIX CONCURRENT -->
+    <button onclick="toggleAddPrice()" style="width:100%;padding:9px;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;margin-bottom:8px;">
+      ➕ Ajouter un prix concurrent
+    </button>
+    <div id="addPriceForm" style="display:none;">
+      <div class="add-price-form">
+        <h4>📝 Nouveau prix concurrent</h4>
+        <div class="apf-grid full">
+          <div>
+            <label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;">CONCURRENT *</label>
+            <select id="ap_comp" style="width:100%;padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;">
+              <option value="">— Choisir —</option>
+            </select>
+          </div>
+        </div>
+        <div class="apf-grid">
+          <div>
+            <label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;">MARQUE *</label>
+            <input id="ap_brand" placeholder="Apple, Samsung..." style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;">
+          </div>
+          <div>
+            <label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;">MODÈLE *</label>
+            <input id="ap_model" placeholder="iPhone 12..." style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;">
+          </div>
+        </div>
+        <div class="apf-grid">
+          <div>
+            <label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;">TYPE DE PANNE *</label>
+            <select id="ap_type" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;">
+              <option>Écran cassé</option><option>Batterie</option>
+              <option>Connecteur charge</option><option>Caméra</option>
+              <option>Bouton power</option><option>Micro / Haut-parleur</option>
+              <option>Vitre arrière</option><option>Diagnostic</option><option>Autre</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;">PRIX (€) *</label>
+            <input type="number" id="ap_price" placeholder="0.00" min="0" step="0.01" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;">
+          </div>
+        </div>
+        <div class="apf-grid">
+          <div>
+            <label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;">DÉLAI</label>
+            <input id="ap_delay" placeholder="Ex: 1h, 24h..." style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;">
+          </div>
+          <div>
+            <label style="font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;">QUALITÉ (/5)</label>
+            <select id="ap_qual" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;width:100%;">
+              <option value="5">⭐⭐⭐⭐⭐</option>
+              <option value="4">⭐⭐⭐⭐</option>
+              <option value="3" selected>⭐⭐⭐</option>
+              <option value="2">⭐⭐</option>
+              <option value="1">⭐</option>
+            </select>
+          </div>
+        </div>
+        <button class="apf-btn" onclick="saveCompPrice()">✅ Enregistrer</button>
+      </div>
+    </div>
+
+    <!-- GÉRER CONCURRENTS -->
+    <div style="margin-top:16px;border-top:2px solid #f1f5f9;padding-top:14px;">
+      <div style="font-size:11px;font-weight:bold;color:#64748b;margin-bottom:8px;text-transform:uppercase;">⚙️ Concurrents</div>
+      <div id="competitorsList"></div>
+      <button onclick="addCompetitor()" style="width:100%;padding:9px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;margin-top:8px;">
+        ➕ Ajouter un concurrent
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
