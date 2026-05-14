@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Devis — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;display:flex;flex-direction:column;}
+.topbar{background:#111827;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar h2{margin:0;font-size:17px;}
+button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
+.btn-home{background:#1e40af;color:white;}
+.btn-green{background:#22c55e;color:white;}
+.btn-blue{background:#3b82f6;color:white;}
+.btn-red{background:#ef4444;color:white;}
+.btn-orange{background:#f59e0b;color:white;}
+.btn-sm{padding:5px 10px;font-size:11px;}
+
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* LISTE */
+.list-panel{width:320px;background:#111827;padding:10px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:6px;}
+.search-bar{display:flex;gap:6px;margin-bottom:4px;}
+.search-bar input{flex:1;padding:8px 10px;border-radius:6px;border:none;background:#1e293b;color:white;font-size:12px;font-family:Arial;}
+.devis-card{background:#1e293b;border-radius:8px;padding:12px;cursor:pointer;border-left:4px solid #334155;transition:0.15s;}
+.devis-card:hover{border-left-color:#3b82f6;}
+.devis-card.active{border-left-color:#22c55e;background:#0f2d1a;}
+.dc-num{font-size:12px;font-weight:bold;color:white;}
+.dc-client{font-size:11px;color:#94a3b8;margin-top:2px;}
+.dc-total{font-size:14px;font-weight:bold;color:#22c55e;margin-top:4px;}
+.dc-status{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:bold;display:inline-block;margin-top:4px;}
+.EN_ATTENTE{background:#1e3a8a;color:#93c5fd;}
+.ACCEPTE{background:#166534;color:#86efac;}
+.REFUSE{background:#7f1d1d;color:#fca5a5;}
+.EXPIRE{background:#374151;color:#9ca3af;}
+.CONVERTI{background:#4c1d95;color:#c4b5fd;}
+
+/* DETAIL */
+.detail-panel{flex:1;padding:20px;overflow-y:auto;background:#0f172a;}
+.empty-detail{text-align:center;color:#475569;padding:60px 20px;font-size:14px;}
+
+/* FORMULAIRE DEVIS */
+.dform{background:#1e293b;border-radius:12px;padding:20px;}
+.dform h3{margin:0 0 16px;font-size:15px;color:white;display:flex;justify-content:space-between;align-items:center;}
+.dform-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.fg{display:flex;flex-direction:column;gap:3px;}
+.fg.full{grid-column:1/span 2;}
+.fg label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{padding:9px;border:1.5px solid #334155;border-radius:7px;font-size:13px;font-family:Arial;background:#0f172a;color:white;width:100%;}
+.fg input:focus,.fg select:focus{outline:none;border-color:#3b82f6;}
+
+/* Lignes devis */
+.items-section{margin-bottom:14px;}
+.items-section h4{margin:0 0 10px;font-size:12px;color:#94a3b8;text-transform:uppercase;}
+.item-row{display:grid;grid-template-columns:1fr 60px 80px 70px 32px;gap:6px;margin-bottom:6px;align-items:center;}
+.item-row input{padding:7px;border:1.5px solid #334155;border-radius:6px;font-size:12px;font-family:Arial;background:#0f172a;color:white;width:100%;}
+.item-row input:focus{outline:none;border-color:#3b82f6;}
+.ir-del{background:#fee2e2;color:#ef4444;border:none;border-radius:5px;padding:5px;cursor:pointer;font-size:12px;font-family:Arial;width:32px;height:32px;}
+.item-header{display:grid;grid-template-columns:1fr 60px 80px 70px 32px;gap:6px;margin-bottom:4px;}
+.item-header span{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.btn-add-line{background:#1e293b;color:#94a3b8;border:1.5px dashed #334155;border-radius:6px;padding:8px;width:100%;font-size:12px;cursor:pointer;font-family:Arial;margin-bottom:14px;}
+.btn-add-line:hover{border-color:#3b82f6;color:white;}
+
+/* Total */
+.devis-total{text-align:right;font-size:18px;font-weight:bold;color:#22c55e;padding:10px 0;border-top:1px solid #334155;margin-bottom:14px;}
+
+/* Actions */
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* Vue devis existant */
+.dview{background:#1e293b;border-radius:12px;padding:20px;}
+.dview-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.dview-num{font-size:20px;font-weight:bold;color:white;}
+.dview-date{font-size:12px;color:#64748b;margin-top:3px;}
+.dview-client{background:#0f172a;border-radius:8px;padding:12px;margin-bottom:14px;}
+.dview-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;}
+.dview-table th{background:#0f172a;color:#94a3b8;padding:7px 10px;text-align:left;font-size:11px;}
+.dview-table td{padding:7px 10px;border-bottom:1px solid #0f172a;}
+.dview-total{text-align:right;font-size:18px;font-weight:bold;color:#22c55e;padding:8px 0;}
+.validity-bar{background:#0f172a;border-radius:6px;padding:8px 12px;font-size:12px;color:#94a3b8;margin-bottom:14px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h2>📋 Devis</h2>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-green" onclick="newDevis()">➕ Nouveau devis</button>
+    <button class="btn-home"  onclick="location.href='index.html'">🏠 Accueil</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- LISTE -->
+  <div class="list-panel">
+    <div class="search-bar">
+      <input id="searchDev" placeholder="Rechercher..." oninput="filterDevis()">
+    </div>
+    <div id="devisList">
+      <div style="text-align:center;color:#475569;padding:20px;font-size:12px">Chargement...</div>
+    </div>
+  </div>
+
+  <!-- DÉTAIL -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="empty-detail">← Sélectionnez un devis ou créez-en un nouveau</div>
+  </div>
+</div>
+
+<script>
+var allDevis = [];
+var currentDevis = null;
+var devisItems = [{desc:'',qty:1,price:0,discount:0}];
+var editMode = false;
+
+/* ── INIT ── */
+async function init() {
+  try {
+    var res = await fetch('/api/devis');
+    allDevis = await res.json();
+    renderList();
+  } catch(e) {
+    document.getElementById('devisList').innerHTML = '<div style="color:#ef4444;padding:12px;font-size:12px">Erreur: ' + e.message + '</div>';
+  }
+}
+
+function filterDevis() {
+  var q = document.getElementById('searchDev').value.toLowerCase();
+  renderList(q);
+}
+
+function renderList(q) {
+  var list = document.getElementById('devisList');
+  var filtered = q ? allDevis.filter(function(d){
+    return (d.numero_dev||'').toLowerCase().includes(q) ||
+           (d.customer_name||'').toLowerCase().includes(q);
+  }) : allDevis;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">Aucun devis</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(function(d) {
+    var isActive = currentDevis && currentDevis.id === d.id;
+    var expDate = new Date(d.created_at);
+    expDate.setDate(expDate.getDate() + (d.validite||30));
+    var isExpired = new Date() > expDate && d.status === 'EN_ATTENTE';
+    var status = isExpired ? 'EXPIRE' : d.status;
+    var statusLabel = {EN_ATTENTE:'⏳ En attente',ACCEPTE:'✅ Accepté',REFUSE:'❌ Refusé',EXPIRE:'⌛ Expiré',CONVERTI:'🔄 Converti'}[status]||status;
+    return '<div class="devis-card' + (isActive?' active':'') + '" onclick="selectDevis(' + d.id + ')">' +
+      '<div class="dc-num">' + (d.numero_dev||'DEV-???') + '</div>' +
+      '<div class="dc-client">👤 ' + (d.customer_name||'—') + (d.phone?' · '+d.phone:'') + '</div>' +
+      '<div class="dc-total">' + Number(d.total||0).toFixed(2) + ' €</div>' +
+      '<span class="dc-status ' + status + '">' + statusLabel + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── SÉLECTIONNER ── */
+function selectDevis(id) {
+  currentDevis = allDevis.find(function(d){ return d.id === id; });
+  if (!currentDevis) return;
+  editMode = false;
+  renderDevisView();
+}
+
+function renderDevisView() {
+  var d = currentDevis;
+  var items = d.items || [];
+  var expDate = new Date(d.created_at);
+  expDate.setDate(expDate.getDate() + (d.validite||30));
+  var daysLeft = Math.ceil((expDate - new Date()) / 86400000);
+  var isExpired = daysLeft < 0;
+  var status = isExpired && d.status==='EN_ATTENTE' ? 'EXPIRE' : d.status;
+
+  var rows = items.map(function(it) {
+    var line = (Number(it.price)*Number(it.quantity)) - (Number(it.discount||0)*Number(it.quantity));
+    return '<tr>' +
+      '<td>' + (it.description||'—') + '</td>' +
+      '<td style="text-align:center">' + it.quantity + '</td>' +
+      '<td style="text-align:right">' + Number(it.price||0).toFixed(2) + ' €</td>' +
+      '<td style="text-align:right">' + Number(it.discount||0).toFixed(2) + ' €</td>' +
+      '<td style="text-align:right;font-weight:bold;color:#22c55e">' + line.toFixed(2) + ' €</td>' +
+    '</tr>';
+  }).join('');
+
+  var html = '<div class="dview">';
+  html += '<div class="dview-header">';
+  html += '<div><div class="dview-num">📋 ' + (d.numero_dev||'—') + '</div>';
+  html += '<div class="dview-date">Créé le ' + new Date(d.created_at).toLocaleDateString('fr-FR') + '</div>';
+  html += '<span class="dc-status ' + status + ' " style="margin-top:6px;display:inline-block">' + ({EN_ATTENTE:'⏳ En attente',ACCEPTE:'✅ Accepté',REFUSE:'❌ Refusé',EXPIRE:'⌛ Expiré',CONVERTI:'🔄 Converti'}[status]||status) + '</span>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+  html += '<button class="btn-blue btn-sm" onclick="editDevis()">✏️ Modifier</button>';
+  html += '<button class="btn-sm" style="background:#334155;color:white;" onclick="printDevis()">🖨️ Imprimer</button>';
+  if (status === 'EN_ATTENTE' || status === 'ACCEPTE') {
+    html += '<button class="btn-sm" style="background:#22c55e;color:white;" onclick="convertDevis(\'order\')">⚡ → Vente</button>';
+    html += '<button class="btn-sm" style="background:#0f766e;color:white;" onclick="convertDevis(\'repair\')">🔧 → Répar.</button>';
+  }
+  if (status === 'EN_ATTENTE') {
+    html += '<button class="btn-red btn-sm" onclick="updateStatus(\'REFUSE\')">❌ Refuser</button>';
+  }
+  html += '<button class="btn-red btn-sm" onclick="deleteDevis()">🗑</button>';
+  html += '</div></div>';
+
+  html += '<div class="dview-client">';
+  html += '<div style="font-size:13px;font-weight:bold;color:white;">👤 ' + (d.customer_name||'—') + '</div>';
+  if (d.phone) html += '<div style="font-size:12px;color:#94a3b8;margin-top:3px;">📞 ' + d.phone + '</div>';
+  if (d.email) html += '<div style="font-size:12px;color:#94a3b8;">✉️ ' + d.email + '</div>';
+  html += '</div>';
+
+  html += '<div class="validity-bar">';
+  html += '⏳ Validité : ' + (d.validite||30) + ' jours';
+  if (!isExpired && status==='EN_ATTENTE') html += ' — <b style="color:#22c55e">' + daysLeft + ' jour(s) restant(s)</b>';
+  else if (isExpired) html += ' — <b style="color:#ef4444">Expiré</b>';
+  html += '</div>';
+
+  html += '<table class="dview-table">';
+  html += '<thead><tr><th>Description</th><th style="text-align:center">Qté</th><th style="text-align:right">Prix</th><th style="text-align:right">Remise</th><th style="text-align:right">Total</th></tr></thead>';
+  html += '<tbody>' + rows + '</tbody>';
+  html += '</table>';
+
+  html += '<div class="dview-total">TOTAL : ' + Number(d.total||0).toFixed(2) + ' €</div>';
+
+  if (d.notes) {
+    html += '<div style="background:#0f172a;border-radius:6px;padding:10px;font-size:12px;color:#94a3b8;">💬 ' + d.notes + '</div>';
+  }
+  html += '</div>';
+
+  document.getElementById('detailPanel').innerHTML = html;
+  renderList(document.getElementById('searchDev').value);
+}
+
+/* ── NOUVEAU DEVIS ── */
+function newDevis() {
+  currentDevis = null;
+  editMode = false;
+  devisItems = [{desc:'',qty:1,price:0,discount:0}];
+  renderForm(null);
+}
+
+function editDevis() {
+  if (!currentDevis) return;
+  devisItems = (currentDevis.items||[]).map(function(it){
+    return {desc:it.description,qty:it.quantity,price:it.price,discount:it.discount||0};
+  });
+  if (!devisItems.length) devisItems = [{desc:'',qty:1,price:0,discount:0}];
+  renderForm(currentDevis);
+}
+
+function renderForm(d) {
+  var html = '<div class="dform">';
+  html += '<h3>' + (d ? '✏️ Modifier ' + d.numero_dev : '➕ Nouveau devis') + '</h3>';
+
+  html += '<div class="dform-grid">';
+  html += '<div class="fg full"><label>Nom client *</label><input id="f_name" value="' + (d?d.customer_name||'':'') + '" placeholder="Nom du client"></div>';
+  html += '<div class="fg"><label>Téléphone</label><input id="f_phone" value="' + (d?d.phone||'':'') + '" placeholder="06 XX XX XX XX"></div>';
+  html += '<div class="fg"><label>Email</label><input id="f_email" type="email" value="' + (d?d.email||'':'') + '" placeholder="client@email.com"></div>';
+  html += '<div class="fg"><label>Validité (jours)</label>';
+  html += '<select id="f_validite">';
+  [15,30,60,90].forEach(function(v){
+    html += '<option value="' + v + '"' + (d&&d.validite===v?' selected':'') + '>' + v + ' jours</option>';
+  });
+  html += '</select></div>';
+  html += '<div class="fg full"><label>Notes</label><textarea id="f_notes" placeholder="Remarques...">' + (d?d.notes||'':'') + '</textarea></div>';
+  html += '</div>';
+
+  html += '<div class="items-section">';
+  html += '<h4>Lignes du devis</h4>';
+  html += '<div class="item-header"><span>Description</span><span>Qté</span><span>Prix (€)</span><span>Remise (€)</span><span></span></div>';
+  html += '<div id="itemsContainer">' + renderItemRows() + '</div>';
+  html += '<button class="btn-add-line" onclick="addItemRow()">➕ Ajouter une ligne</button>';
+  html += '</div>';
+
+  html += '<div class="devis-total" id="formTotal">TOTAL : 0.00 €</div>';
+
+  html += '<div class="action-bar">';
+  html += '<button class="btn-green" onclick="saveDevis(' + (d?d.id:'null') + ')">✅ ' + (d?'Enregistrer':'Créer le devis') + '</button>';
+  html += '<button style="background:#334155;color:#94a3b8;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;" onclick="cancelForm()">Annuler</button>';
+  html += '</div>';
+  html += '</div>';
+
+  document.getElementById('detailPanel').innerHTML = html;
+  updateTotal();
+}
+
+function renderItemRows() {
+  return devisItems.map(function(it, i) {
+    return '<div class="item-row" id="irow_' + i + '">' +
+      '<input value="' + (it.desc||'') + '" placeholder="Description..." oninput="updateItem(' + i + ',\'desc\',this.value)">' +
+      '<input type="number" value="' + (it.qty||1) + '" min="1" oninput="updateItem(' + i + ',\'qty\',this.value)">' +
+      '<input type="number" value="' + (it.price||0) + '" min="0" step="0.01" oninput="updateItem(' + i + ',\'price\',this.value)">' +
+      '<input type="number" value="' + (it.discount||0) + '" min="0" step="0.01" oninput="updateItem(' + i + ',\'discount\',this.value)">' +
+      '<button class="ir-del" onclick="removeItem(' + i + ')">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function addItemRow() {
+  devisItems.push({desc:'',qty:1,price:0,discount:0});
+  document.getElementById('itemsContainer').innerHTML = renderItemRows();
+  updateTotal();
+}
+
+function removeItem(i) {
+  if (devisItems.length <= 1) return;
+  devisItems.splice(i, 1);
+  document.getElementById('itemsContainer').innerHTML = renderItemRows();
+  updateTotal();
+}
+
+function updateItem(i, field, val) {
+  if (field === 'qty' || field === 'price' || field === 'discount') {
+    devisItems[i][field] = Number(val||0);
+  } else {
+    devisItems[i][field] = val;
+  }
+  updateTotal();
+}
+
+function updateTotal() {
+  var total = devisItems.reduce(function(s,it){
+    return s + (Number(it.price)*Number(it.qty||1)) - (Number(it.discount||0)*Number(it.qty||1));
+  }, 0);
+  var el = document.getElementById('formTotal');
+  if (el) el.textContent = 'TOTAL : ' + total.toFixed(2) + ' €';
+}
+
+/* ── SAUVEGARDER ── */
+async function saveDevis(id) {
+  var name = document.getElementById('f_name').value.trim();
+  if (!name) { alert('Nom client obligatoire'); return; }
+  var body = {
+    customer_name: name,
+    phone:    document.getElementById('f_phone').value || null,
+    email:    document.getElementById('f_email').value || null,
+    validite: Number(document.getElementById('f_validite').value||30),
+    notes:    document.getElementById('f_notes').value || null,
+    items: devisItems.filter(function(it){ return it.desc; }).map(function(it){
+      return {description:it.desc, quantity:it.qty||1, price:it.price||0, discount:it.discount||0};
+    })
+  };
+  try {
+    var url = id ? '/api/devis/'+id : '/api/devis';
+    var res = await fetch(url, {method:id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    var d   = await res.json();
+    if (d.error) throw new Error(d.error);
+    await init();
+    currentDevis = allDevis.find(function(x){ return x.id === (id||d.id); });
+    if (currentDevis) renderDevisView();
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+function cancelForm() {
+  if (currentDevis) renderDevisView();
+  else document.getElementById('detailPanel').innerHTML = '<div class="empty-detail">← Sélectionnez un devis ou créez-en un nouveau</div>';
+}
+
+/* ── ACTIONS ── */
+async function updateStatus(status) {
+  if (!currentDevis) return;
+  var body = Object.assign({}, currentDevis, {status:status, items:currentDevis.items||[]});
+  var res  = await fetch('/api/devis/'+currentDevis.id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  await init();
+  currentDevis = allDevis.find(function(x){ return x.id === currentDevis.id; });
+  if (currentDevis) renderDevisView();
+}
+
+async function convertDevis(type) {
+  if (!currentDevis) return;
+  var label = type==='order' ? 'une vente' : 'une réparation';
+  if (!confirm('Convertir ce devis en ' + label + ' ?')) return;
+  try {
+    var res = await fetch('/api/devis/'+currentDevis.id+'/convert-'+type, {method:'POST'});
+    var d   = await res.json();
+    if (d.error) throw new Error(d.error);
+    alert('✅ Converti ! ' + (type==='order' ? 'Vente #'+d.order_id : 'Réparation #'+d.repair_id));
+    await init();
+    currentDevis = allDevis.find(function(x){ return x.id === currentDevis.id; });
+    if (currentDevis) renderDevisView();
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+async function deleteDevis() {
+  if (!currentDevis || !confirm('Supprimer ce devis ?')) return;
+  await fetch('/api/devis/'+currentDevis.id, {method:'DELETE'});
+  currentDevis = null;
+  await init();
+  document.getElementById('detailPanel').innerHTML = '<div class="empty-detail">← Sélectionnez un devis ou créez-en un nouveau</div>';
+}
+
+function printDevis() {
+  if (!currentDevis) return;
+  var d     = currentDevis;
+  var items = d.items||[];
+  var expDate = new Date(d.created_at);
+  expDate.setDate(expDate.getDate() + (d.validite||30));
+
+  var rows = items.map(function(it){
+    var line = (Number(it.price)*Number(it.quantity))-(Number(it.discount||0)*Number(it.quantity));
+    return '<tr><td>' + it.description + '</td>' +
+      '<td style="text-align:center">' + it.quantity + '</td>' +
+      '<td style="text-align:right">' + Number(it.price).toFixed(2) + ' EUR</td>' +
+      '<td style="text-align:right">' + Number(it.discount||0).toFixed(2) + ' EUR</td>' +
+      '<td style="text-align:right;font-weight:bold">' + line.toFixed(2) + ' EUR</td></tr>';
+  }).join('');
+
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<style>body{font-family:Arial;font-size:12px;color:#111;margin:20px;}' +
+    '.header{display:flex;justify-content:space-between;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #111;}' +
+    '.shop{font-size:18px;font-weight:bold;}.shop-info{font-size:11px;color:#555;margin-top:4px;}' +
+    '.dev-title{text-align:right;font-size:16px;font-weight:bold;text-transform:uppercase;}' +
+    '.dev-num{color:#1e40af;font-size:14px;margin-top:4px;}' +
+    '.client-box{background:#f8fafc;padding:12px;border-radius:6px;margin-bottom:16px;}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:14px;}' +
+    'th{background:#111;color:white;padding:7px 10px;text-align:left;font-size:11px;}' +
+    'td{padding:7px 10px;border-bottom:1px solid #f0f0f0;}' +
+    '.total{text-align:right;font-size:16px;font-weight:bold;color:#16a34a;padding:8px 0;}' +
+    '.validity{background:#fef3c7;padding:8px 12px;border-radius:6px;font-size:11px;margin-bottom:14px;}' +
+    '.footer{text-align:center;font-size:10px;color:#aaa;margin-top:20px;border-top:1px solid #eee;padding-top:10px;}' +
+    '</style></head><body>' +
+    '<div class="header">' +
+      '<div><div class="shop">The SMARTPHONE</div>' +
+      '<div class="shop-info">1 Avenue d\'Italie, 75013 Paris<br>01 47 07 18 66 | smartphonesatelier4@gmail.com</div></div>' +
+      '<div><div class="dev-title">DEVIS</div><div class="dev-num">' + (d.numero_dev||'—') + '</div>' +
+      '<div style="font-size:11px;color:#555;margin-top:4px;">Le ' + new Date(d.created_at).toLocaleDateString('fr-FR') + '</div></div>' +
+    '</div>' +
+    '<div class="client-box">' +
+      '<div style="font-weight:bold">' + (d.customer_name||'—') + '</div>' +
+      (d.phone ? '<div style="color:#555">' + d.phone + '</div>' : '') +
+      (d.email ? '<div style="color:#555">' + d.email + '</div>' : '') +
+    '</div>' +
+    '<div class="validity">⏳ Ce devis est valable ' + (d.validite||30) + ' jours — jusqu\'au ' + expDate.toLocaleDateString('fr-FR') + '</div>' +
+    '<table><thead><tr><th>Description</th><th>Qté</th><th style="text-align:right">Prix HT</th><th style="text-align:right">Remise</th><th style="text-align:right">Total</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table>' +
+    '<div class="total">TOTAL : ' + Number(d.total||0).toFixed(2) + ' EUR</div>' +
+    (d.notes ? '<div style="font-size:11px;color:#555;margin-bottom:14px;">Note : ' + d.notes + '</div>' : '') +
+    '<div class="footer">The SMARTPHONE — 1 Avenue d\'Italie, 75013 Paris — Devis non contractuel</div>' +
+    '<script>window.onload=function(){window.print();}<\/script>' +
+    '</body></html>');
+  w.document.close();
+}
+
+init();
+</script>
+</body>
+</html>

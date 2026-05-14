@@ -122,6 +122,27 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 .pay-btn:hover{background:#16a34a;}
 .pay-btn:disabled{background:#94a3b8;cursor:not-allowed;}
 .empty-cart{text-align:center;color:#94a3b8;padding:20px;font-size:12px;}
+.main-tabs{display:flex;gap:0;background:#f1f5f9;border-bottom:2px solid #e2e8f0;flex-shrink:0;}
+.main-tab{flex:1;padding:12px;border:none;background:transparent;font-size:13px;font-weight:bold;cursor:pointer;color:#64748b;font-family:Arial;border-bottom:3px solid transparent;transition:0.15s;}
+.main-tab.active{color:#1e40af;border-bottom-color:#1e40af;background:white;}
+.tab-content{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.tab-content.active{display:flex;}
+.histo-filters{display:flex;gap:8px;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;flex-shrink:0;}
+.histo-filters input,.histo-filters select{padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;}
+.histo-list{flex:1;overflow-y:auto;padding:10px 16px;}
+.histo-item{background:white;border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;border-left:4px solid #e2e8f0;box-shadow:0 1px 3px #0001;transition:0.15s;}
+.histo-item:hover{border-left-color:#3b82f6;}
+.hi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+.hi-id{font-size:11px;color:#94a3b8;font-weight:bold;}
+.hi-total{font-size:16px;font-weight:bold;color:#16a34a;}
+.hi-client{font-size:13px;color:#0f172a;font-weight:bold;}
+.hi-meta{font-size:11px;color:#64748b;margin-top:2px;}
+.hi-pay{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:bold;background:#dbeafe;color:#1e40af;}
+.sale-detail-panel{flex:1;overflow-y:auto;padding:16px;}
+.sd-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
+.sd-table th{background:#0f172a;color:white;padding:7px 10px;text-align:left;font-size:11px;}
+.sd-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+.garantie-badge{font-size:11px;padding:3px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;font-weight:bold;display:inline-block;margin-top:4px;}
 
 /* Modal ajout rapide */
 .moverlay{display:none;position:fixed;inset:0;background:#00000080;z-index:200;align-items:center;justify-content:center;}
@@ -167,55 +188,110 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 </div>
 
 <!-- ══ RIGHT ══ -->
-<div class="right">
-  <h2>🛒 Panier</h2>
-  <table>
-    <thead><tr><th>Produit</th><th>Prix</th><th>Qté</th><th>Remise€</th><th>Total</th><th></th></tr></thead>
-    <tbody id="cartBody">
-      <tr><td colspan="6"><div class="empty-cart">Panier vide — sélectionnez un produit à gauche</div></td></tr>
-    </tbody>
-  </table>
-  <div class="total-bar" id="totalBar">TOTAL : 0.00 €</div>
+<div class="right" style="display:flex;flex-direction:column;overflow:hidden;">
 
-  <div class="bottom-section">
-    <div class="fl">Client (optionnel)</div>
-    <input class="fi" id="customer" placeholder="Nom du client">
-
-    <div class="fl">Mode de paiement</div>
-    <select class="fs" id="payment" onchange="onPaymentChange()">
-      <option value="card">💳 Carte bancaire</option>
-      <option value="cash">💵 Espèces</option>
-      <option value="mixed">🔀 Mixte (CB + Espèces)</option>
-      <option value="credit">📋 Avec crédit (partiel ou total)</option>
-    </select>
-
-    <div class="mixed-box" id="mixedBox">
-      <div class="mixed-title">💰 Détail du règlement</div>
-      <div class="mixed-grid">
-        <div class="mf"><label>💳 CB (€)</label><input type="number" id="amt_cb" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()"></div>
-        <div class="mf"><label>💵 Espèces (€)</label><input type="number" id="amt_cash" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()"></div>
-        <div class="mf credit"><label>⏳ Crédit (reste)</label><input type="number" id="amt_credit" placeholder="0.00" readonly></div>
-      </div>
-      <div class="mixed-recap">
-        <span>Total : <b id="mx_total">0.00 €</b></span>
-        <span>Encaissé : <b id="mx_paid" style="color:#22c55e">0.00 €</b></span>
-        <span>Crédit : <b id="mx_rest" style="color:#f59e0b">0.00 €</b></span>
-      </div>
-      <div class="mixed-err" id="mixedErr">⚠️ CB + Espèces dépasse le total !</div>
-    </div>
-
-    <div class="comment-box">
-      <div class="fl">💬 Commentaire (optionnel)</div>
-      <textarea id="comment" placeholder="Note sur la vente, remarque client..."></textarea>
-    </div>
-
-    <div class="print-box">
-      <label><input type="checkbox" id="print_ticket"  onclick="togglePrint('ticket')"> 🧾 Ticket 80mm</label>
-      <label><input type="checkbox" id="print_invoice" onclick="togglePrint('invoice')"> 📄 Facture A4</label>
-    </div>
-
-    <button class="pay-btn" id="payBtn" onclick="checkout()" disabled>✅ VALIDER LA VENTE</button>
+  <!-- TABS -->
+  <div class="main-tabs">
+    <button class="main-tab active" id="tabCaisse"  onclick="switchMainTab('caisse')">⚡ Caisse</button>
+    <button class="main-tab"        id="tabHisto"   onclick="switchMainTab('histo')">🧾 Historique</button>
   </div>
+
+  <!-- TAB CAISSE -->
+  <div class="tab-content active" id="tcCaisse" style="overflow-y:auto;">
+    <div style="padding:0 16px 16px;">
+      <h2 style="margin:12px 0 8px;">🛒 Panier</h2>
+      <table>
+        <thead><tr><th>Produit</th><th>Prix</th><th>Qté</th><th>Remise€</th><th>Total</th><th></th></tr></thead>
+        <tbody id="cartBody">
+          <tr><td colspan="6"><div class="empty-cart">Panier vide — sélectionnez un produit à gauche</div></td></tr>
+        </tbody>
+      </table>
+      <div class="total-bar" id="totalBar">TOTAL : 0.00 €</div>
+
+      <div class="bottom-section">
+        <div class="fl">Client (optionnel)</div>
+        <input class="fi" id="customer" placeholder="Nom du client">
+
+        <div class="fl">Mode de paiement</div>
+        <select class="fs" id="payment" onchange="onPaymentChange()">
+          <option value="card">💳 Carte bancaire</option>
+          <option value="cash">💵 Espèces</option>
+          <option value="mixed">🔀 Mixte (CB + Espèces)</option>
+          <option value="credit">📋 Avec crédit (partiel ou total)</option>
+        </select>
+
+        <div class="mixed-box" id="mixedBox">
+          <div class="mixed-title">💰 Détail du règlement</div>
+          <div class="mixed-grid">
+            <div class="mf"><label>💳 CB (€)</label><input type="number" id="amt_cb" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()"></div>
+            <div class="mf"><label>💵 Espèces (€)</label><input type="number" id="amt_cash" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()"></div>
+            <div class="mf credit"><label>⏳ Crédit (reste)</label><input type="number" id="amt_credit" placeholder="0.00" readonly></div>
+          </div>
+          <div class="mixed-recap">
+            <span>Total : <b id="mx_total">0.00 €</b></span>
+            <span>Encaissé : <b id="mx_paid" style="color:#22c55e">0.00 €</b></span>
+            <span>Crédit : <b id="mx_rest" style="color:#f59e0b">0.00 €</b></span>
+          </div>
+          <div class="mixed-err" id="mixedErr">⚠️ CB + Espèces dépasse le total !</div>
+        </div>
+
+        <div class="comment-box">
+          <div class="fl">💬 Commentaire (optionnel)</div>
+          <textarea id="comment" placeholder="Note sur la vente, remarque client..."></textarea>
+        </div>
+
+        <div class="comment-box" style="background:#eff6ff;border-color:#bfdbfe;">
+          <div class="fl" style="color:#1e40af;">🛡️ Garantie</div>
+          <select class="fs" id="garantie" style="margin-bottom:0;">
+            <option value="">Sans garantie</option>
+            <option value="1">1 mois</option>
+            <option value="2">2 mois</option>
+            <option value="3">3 mois</option>
+            <option value="6">6 mois</option>
+            <option value="9">9 mois</option>
+            <option value="12">12 mois</option>
+          </select>
+        </div>
+
+        <div class="print-box">
+          <label><input type="checkbox" id="print_ticket"  onclick="togglePrint('ticket')"> 🧾 Ticket 80mm</label>
+          <label><input type="checkbox" id="print_invoice" onclick="togglePrint('invoice')"> 📄 Facture A4</label>
+        </div>
+
+        <button class="pay-btn" id="payBtn" onclick="checkout()" disabled>✅ VALIDER LA VENTE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB HISTORIQUE -->
+  <div class="tab-content" id="tcHisto">
+    <div class="histo-filters">
+      <input type="date" id="hf_from">
+      <input type="date" id="hf_to">
+      <input type="text" id="hf_q" placeholder="Client, N° vente..." style="flex:1;min-width:120px;">
+      <select id="hf_pay">
+        <option value="">Tous paiements</option>
+        <option value="card">💳 CB</option>
+        <option value="cash">💵 Espèces</option>
+        <option value="mixed">🔀 Mixte</option>
+        <option value="credit">📋 Crédit</option>
+      </select>
+      <button onclick="loadHisto()" style="padding:8px 14px;background:#1e40af;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🔍 Filtrer</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden;">
+      <!-- Liste ventes -->
+      <div class="histo-list" id="histoList" style="width:45%;border-right:1px solid #e2e8f0;">
+        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:12px;">Chargement...</div>
+      </div>
+      <!-- Détail vente -->
+      <div class="sale-detail-panel" id="saleDetail">
+        <div style="text-align:center;color:#94a3b8;padding:40px 20px;font-size:13px;">
+          ← Sélectionnez une vente pour voir le détail
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- FICHE DÉTAIL PRODUIT -->
@@ -529,7 +605,7 @@ async function checkout(){
     credit=Math.max(0,total-cb-cash);
   }
   const res=await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cart,payment,customer,comment,amount_cb:cb,amount_cash:cash,amount_credit:credit})});
+    body:JSON.stringify({cart,payment,customer,comment,garantie:document.getElementById('garantie')?.value?Number(document.getElementById('garantie').value):null,amount_cb:cb,amount_cash:cash,amount_credit:credit})});
   const d=await res.json();
   if(!d.success){alert('❌ '+d.error);return;}
   let msg=`✅ Vente N° ${d.orderId} enregistrée`;
@@ -539,6 +615,7 @@ async function checkout(){
   cart=[];
   document.getElementById('customer').value='';
   document.getElementById('comment').value='';
+  if(document.getElementById('garantie'))document.getElementById('garantie').value='';
   document.getElementById('payment').value='card';
   document.getElementById('mixedBox').classList.remove('show');
   if(document.getElementById('amt_cb'))  document.getElementById('amt_cb').value='';
@@ -590,6 +667,7 @@ async function printOrder(id,type,cb,cash,credit){
     ${cash>0?`<div class="c" style="font-size:11px">💵 Espèces : ${cash.toFixed(2)} €</div>`:''}
     ${credit>0?`<div class="credit">⚠️ RESTE À PAYER : ${credit.toFixed(2)} €</div>`:''}
     ${comm?`<hr><div class="c" style="font-size:10px">${comm}</div>`:''}
+    ${data.order.garantie?`<div class="c" style="font-size:11px;font-weight:bold;">🛡️ Garantie : ${data.order.garantie} mois</div>`:''}
     <hr><div class="c" style="font-size:10px">Merci !</div>
     `);
     w.document.close();
@@ -600,6 +678,7 @@ async function printOrder(id,type,cb,cash,credit){
     <p><b>Client :</b> ${data.order.customer_name||'CLIENT'}</p>
     <table><tr><th>Produit</th><th>Qté</th><th>Prix unit.</th><th>Remise</th><th>Total</th></tr>${rows}</table>
     <div class="tb">TOTAL : ${Number(data.order.total).toFixed(2)} €</div>
+    ${data.order.garantie?`<div style="margin-top:8px;font-size:13px;"><b>🛡️ Garantie :</b> ${data.order.garantie} mois</div>`:''}
     ${cb>0?`<div class="pd">💳 Payé CB : ${cb.toFixed(2)} €</div>`:''}
     ${cash>0?`<div class="pd">💵 Payé Espèces : ${cash.toFixed(2)} €</div>`:''}
     ${credit>0?`<div class="cb-box">⚠️ RESTE À PAYER : ${credit.toFixed(2)} €</div>`:''}
@@ -613,6 +692,292 @@ async function printOrder(id,type,cb,cash,credit){
 /* Attacher boutons fermer fiche produit */
 document.getElementById('pdpCloseBtn').addEventListener('click', closeProductDetail);
 document.getElementById('pdpOverlay').addEventListener('click', closeProductDetail);
+
+/* ══ TABS PRINCIPAL ══ */
+function switchMainTab(tab) {
+  document.getElementById('tcCaisse').classList.toggle('active', tab === 'caisse');
+  document.getElementById('tcHisto').classList.toggle('active',  tab === 'histo');
+  document.getElementById('tabCaisse').classList.toggle('active', tab === 'caisse');
+  document.getElementById('tabHisto').classList.toggle('active',  tab === 'histo');
+  if (tab === 'histo') loadHisto();
+}
+
+/* ══ HISTORIQUE VENTES ══ */
+var histoOrders = [];
+var selectedOrderId = null;
+
+async function loadHisto() {
+  var from = document.getElementById('hf_from').value;
+  var to   = document.getElementById('hf_to').value;
+  var q    = document.getElementById('hf_q').value.trim();
+  var pay  = document.getElementById('hf_pay').value;
+
+  var url = '/api/orders/search?';
+  if (from) url += 'date_min=' + from + '&';
+  if (to)   url += 'date_max=' + to   + '&';
+  if (q)    url += (isNaN(q) ? 'customer=' + encodeURIComponent(q) : 'id=' + q) + '&';
+  if (pay)  url += 'payment=' + pay + '&';
+
+  try {
+    var res = await fetch(url);
+    histoOrders = await res.json();
+    renderHistoList();
+  } catch(e) {
+    document.getElementById('histoList').innerHTML = '<div style="color:#ef4444;padding:12px">Erreur chargement</div>';
+  }
+}
+
+function renderHistoList() {
+  var list = document.getElementById('histoList');
+  if (!histoOrders.length) {
+    list.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:12px">Aucune vente trouvée</div>';
+    return;
+  }
+  var PAY_LABELS = {card:'💳 CB', cash:'💵 Esp.', mixed:'🔀 Mixte', credit:'📋 Crédit'};
+  list.innerHTML = histoOrders.map(function(o) {
+    var date = new Date(o.created_at).toLocaleDateString('fr-FR');
+    var time = new Date(o.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    var isSel = o.id === selectedOrderId;
+    return '<div class="histo-item' + (o.status==='cancelled'?' hi-cancelled':'') + '" onclick="showOrderDetail(' + o.id + ')" style="' + (isSel?'border-left-color:#1e40af;background:#eff6ff;':'') + '">' +
+      '<div class="hi-top">' +
+        '<div>' +
+          '<div class="hi-id">#' + o.id + ' — ' + date + ' ' + time + '</div>' +
+          '<div class="hi-client">' + (o.customer_name || 'Client anonyme') + '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div class="hi-total">' + Number(o.total||0).toFixed(2) + ' €</div>' +
+          '<span class="hi-pay">' + (PAY_LABELS[o.payment_method]||o.payment_method) + '</span>' +
+        '</div>' +
+      '</div>' +
+      (o.garantie ? '<div><span class="garantie-badge">🛡️ ' + o.garantie + ' mois</span></div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+async function showOrderDetail(id) {
+  selectedOrderId = id;
+  renderHistoList(); /* Mettre à jour la sélection */
+
+  var panel = document.getElementById('saleDetail');
+  panel.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;">Chargement...</div>';
+
+  try {
+    var res  = await fetch('/api/orders/' + id);
+    var data = await res.json();
+    if (!data.order) { panel.innerHTML = '<div style="color:#ef4444;padding:12px">Erreur</div>'; return; }
+
+    var o    = data.order;
+    var items= data.items || [];
+    var date = new Date(o.created_at).toLocaleString('fr-FR');
+    var cb   = Number(o.amount_cb||0);
+    var cash = Number(o.amount_cash||0);
+    var cred = Number(o.amount_credit||0);
+
+    var PAY_LABELS = {card:'💳 CB', cash:'💵 Espèces', mixed:'🔀 Mixte CB+Espèces', credit:'📋 Crédit'};
+
+    var rows = items.map(function(it) {
+      var line = (Number(it.price)*Number(it.quantity)) - (Number(it.discount||0)*Number(it.quantity));
+      return '<tr>' +
+        '<td>' + (it.name||'—') + '</td>' +
+        '<td style="text-align:center">' + it.quantity + '</td>' +
+        '<td style="text-align:right">' + Number(it.price||0).toFixed(2) + ' €</td>' +
+        '<td style="text-align:right">' + Number(it.discount||0).toFixed(2) + ' €</td>' +
+        '<td style="text-align:right;font-weight:bold">' + line.toFixed(2) + ' €</td>' +
+      '</tr>';
+    }).join('');
+
+    panel.innerHTML =
+      '<div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:12px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+          '<div>' +
+            '<div style="font-size:16px;font-weight:bold;color:#0f172a;">Vente #' + o.id + '</div>' +
+            '<div style="font-size:12px;color:#64748b;margin-top:3px;">' + date + '</div>' +
+            '<div style="font-size:13px;font-weight:bold;color:#374151;margin-top:4px;">👤 ' + (o.customer_name||'Client anonyme') + '</div>' +
+            (o.garantie ? '<div><span class="garantie-badge">🛡️ Garantie ' + o.garantie + ' mois</span></div>' : '') +
+            (o.comment ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">💬 ' + o.comment + '</div>' : '') +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div style="font-size:20px;font-weight:bold;color:#16a34a;">' + Number(o.total||0).toFixed(2) + ' €</div>' +
+            '<div style="font-size:12px;color:#64748b;">' + (PAY_LABELS[o.payment_method]||o.payment_method) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<table class="sd-table">' +
+        '<thead><tr><th>Produit</th><th style="text-align:center">Qté</th><th style="text-align:right">Prix</th><th style="text-align:right">Remise</th><th style="text-align:right">Total</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+
+      '<div style="text-align:right;font-size:16px;font-weight:bold;color:#16a34a;padding:8px 0;border-top:2px solid #f1f5f9;">' +
+        'TOTAL : ' + Number(o.total||0).toFixed(2) + ' €' +
+      '</div>' +
+
+      (cb   > 0 ? '<div style="font-size:12px;color:#374151;">💳 CB : ' + cb.toFixed(2) + ' €</div>' : '') +
+      (cash > 0 ? '<div style="font-size:12px;color:#374151;">💵 Espèces : ' + cash.toFixed(2) + ' €</div>' : '') +
+      (cred > 0 ? '<div style="font-size:12px;font-weight:bold;color:#f59e0b;">⏳ Reste à payer : ' + cred.toFixed(2) + ' €</div>' : '') +
+
+      '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">' +
+        '<button onclick="printOrder(' + o.id + ',\'ticket\',' + cb + ',' + cash + ',' + cred + ')" style="padding:8px 14px;background:#475569;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🧾 Ticket</button>' +
+        '<button onclick="printOrder(' + o.id + ',\'facture\',' + cb + ',' + cash + ',' + cred + ')" style="padding:8px 14px;background:#1e40af;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📄 Facture</button>' +
+        (o.status !== 'cancelled' ? '<button onclick="editOrder(' + o.id + ')" style="padding:8px 14px;background:#f59e0b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">✏️ Modifier</button>' : '') +
+        (o.status !== 'cancelled' ? '<button onclick="cancelOrder(' + o.id + ')" style="padding:8px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🗑 Annuler</button>' : '<span style="font-size:12px;color:#ef4444;font-weight:bold;align-self:center;">❌ Annulée</span>') +
+      '</div>';
+
+  } catch(e) {
+    panel.innerHTML = '<div style="color:#ef4444;padding:12px">Erreur : ' + e.message + '</div>';
+  }
+}
+
+async function editOrder(id) {
+  /* Charger la vente complète */
+  var res  = await fetch('/api/orders/' + id);
+  var data = await res.json();
+  if (!data.order) { alert('Vente introuvable'); return; }
+
+  var o     = data.order;
+  var items = data.items || [];
+
+  /* Stocker l'ID en cours d'édition */
+  window._editingOrderId = id;
+
+  /* Basculer sur l'onglet Caisse */
+  switchMainTab('caisse');
+
+  /* Vider le panier actuel */
+  cart = [];
+
+  /* Pré-remplir le panier avec les produits de la vente */
+  items.forEach(function(it) {
+    cart.push({
+      id:       it.product_id,
+      name:     it.name,
+      price:    Number(it.price),
+      qty:      Number(it.quantity),
+      discount: Number(it.discount||0)
+    });
+  });
+
+  /* Pré-remplir les champs */
+  document.getElementById('customer').value = o.customer_name || '';
+  document.getElementById('comment').value  = o.comment || '';
+  if (document.getElementById('garantie')) {
+    document.getElementById('garantie').value = o.garantie || '';
+  }
+
+  /* Mode paiement */
+  var pm = o.payment_method || 'card';
+  document.getElementById('payment').value = pm;
+  onPaymentChange();
+
+  if (pm === 'mixed' || pm === 'credit') {
+    if (document.getElementById('amt_cb'))   document.getElementById('amt_cb').value   = Number(o.amount_cb||0).toFixed(2);
+    if (document.getElementById('amt_cash')) document.getElementById('amt_cash').value = Number(o.amount_cash||0).toFixed(2);
+    calcMixed();
+  }
+
+  /* Changer le bouton en mode édition */
+  var payBtn = document.getElementById('payBtn');
+  payBtn.textContent = '💾 MODIFIER LA VENTE #' + id;
+  payBtn.style.background = '#f59e0b';
+  payBtn.onclick = function() { saveModifiedOrder(id); };
+
+  /* Ajouter bandeau informatif */
+  var existing = document.getElementById('editBanner');
+  if (existing) existing.remove();
+  var banner = document.createElement('div');
+  banner.id = 'editBanner';
+  banner.style.cssText = 'background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#92400e;display:flex;justify-content:space-between;align-items:center;';
+  banner.innerHTML = '<span>✏️ Modification de la vente <b>#' + id + '</b> — Modifiez le panier et validez</span>' +
+    '<button onclick="cancelEditMode()" style="padding:4px 10px;background:#92400e;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">✕ Annuler</button>';
+  var cartEl = document.querySelector('#tcCaisse h2');
+  if (cartEl) cartEl.parentNode.insertBefore(banner, cartEl);
+
+  renderCart();
+  renderCart();
+}
+
+function cancelEditMode() {
+  window._editingOrderId = null;
+  /* Remettre le bouton normal */
+  var payBtn = document.getElementById('payBtn');
+  payBtn.textContent = '✅ VALIDER LA VENTE';
+  payBtn.style.background = '';
+  payBtn.onclick = function() { checkout(); };
+  /* Retirer le bandeau */
+  var banner = document.getElementById('editBanner');
+  if (banner) banner.remove();
+  /* Vider le panier */
+  cart = [];
+  document.getElementById('customer').value = '';
+  document.getElementById('comment').value  = '';
+  renderCart();
+  renderCart();
+  /* Retourner à l'historique */
+  switchMainTab('histo');
+}
+
+async function saveModifiedOrder(id) {
+  if (!cart.length) { alert('Le panier est vide'); return; }
+  var customer = document.getElementById('customer').value.trim();
+  var comment  = document.getElementById('comment').value;
+  var garantie = document.getElementById('garantie')?.value ? Number(document.getElementById('garantie').value) : null;
+  var pm       = document.getElementById('payment').value;
+  var cb       = Number(document.getElementById('amt_cb')?.value||0);
+  var cash     = Number(document.getElementById('amt_cash')?.value||0);
+  var credit   = Number(document.getElementById('amt_credit')?.value||0);
+
+  var items = cart.map(function(it) {
+    return {product_id:it.id, id:it.id, name:it.name, qty:it.qty, quantity:it.qty, price:it.price, discount:it.discount||0};
+  });
+
+  try {
+    var res = await fetch('/api/orders/' + id, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        customer_name:  customer,
+        comment:        comment || null,
+        garantie:       garantie,
+        payment_method: pm,
+        amount_cb:      cb,
+        amount_cash:    cash,
+        amount_credit:  credit,
+        items:          items
+      })
+    });
+    var d = await res.json();
+    if (d.error) throw new Error(d.error);
+    alert('✅ Vente #' + id + ' modifiée !');
+    cancelEditMode();
+    await loadHisto();
+    switchMainTab('histo');
+    showOrderDetail(id);
+  } catch(e) {
+    alert('❌ ' + e.message);
+  }
+}
+
+async function cancelOrder(id) {
+  if (!confirm('Annuler cette vente ? Le stock sera remis à jour.')) return;
+  var res = await fetch('/api/orders/' + id, {method:'DELETE'});
+  var d   = await res.json();
+  if (d.error) { alert('Erreur : ' + d.error); return; }
+  alert('Vente #' + id + ' annulée');
+  selectedOrderId = null;
+  document.getElementById('saleDetail').innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 20px;font-size:13px;">← Sélectionnez une vente</div>';
+  loadHisto();
+  init(); /* Recharger le stock */
+}
+
+/* Init dates histo */
+(function() {
+  var now   = new Date();
+  var today = now.toISOString().slice(0,10);
+  var first = today.slice(0,8) + '01';
+  document.getElementById('hf_from').value = first;
+  document.getElementById('hf_to').value   = today;
+})();
+
 init();
 </script>
 <script src="input-tools.js"></script>

@@ -8,10 +8,9 @@ const path=require('path');
 const fs=require('fs');
 
 const app=express();
-app.set('trust proxy', 1);
-app.use(require('helmet')());
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
 /* Config base de données depuis .env */
 
@@ -71,14 +70,14 @@ app.delete('/api/products/:id',async(req,res)=>{
 app.post('/api/orders',async(req,res)=>{
   const client=await pool.connect();
   try{
-    const{cart,payment,customer,comment,amount_cb,amount_cash,amount_credit}=req.body;
+    const{cart,payment,customer,comment,garantie,amount_cb,amount_cash,amount_credit}=req.body;
     if(!cart||!cart.length)return res.status(400).json({success:false,error:'Panier vide'});
     const total=cart.reduce((s,i)=>s+(Number(i.price)*Number(i.qty))-(Number(i.discount||0)*Number(i.qty)),0);
     const cb=Number(amount_cb||0),cash=Number(amount_cash||0),credit=Number(amount_credit||0);
     let pm=payment||'cash';if(!['card','cash','mixed','credit'].includes(pm))pm='cash';
     await client.query('BEGIN');
-    const or=await client.query(`INSERT INTO orders(total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,created_at) VALUES($1,$2,$3,$4,'completed',$5,$6,$7,NOW()) RETURNING id`,
-      [total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit]);
+    const or=await client.query(`INSERT INTO orders(total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,garantie,created_at) VALUES($1,$2,$3,$4,'completed',$5,$6,$7,$8,NOW()) RETURNING id`,
+      [total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit,garantie||null]);
     const orderId=or.rows[0].id;
     for(const item of cart){
       await client.query(`INSERT INTO order_items(order_id,product_id,quantity,price,discount) VALUES($1,$2,$3,$4,$5)`,[orderId,item.id,item.qty,Number(item.price),Number(item.discount||0)]);
@@ -103,7 +102,7 @@ app.get('/api/orders/search',async(req,res)=>{
     if(date_min){p.push(date_min);q+=` AND DATE(created_at)>=$${p.length}`;}
     if(date_max){p.push(date_max);q+=` AND DATE(created_at)<=$${p.length}`;}
     if(payment){p.push(payment);q+=` AND payment_method=$${p.length}`;}
-    if(customer){p.push('%'+customer+'%');q+=` AND unaccent(customer_name) ILIKE unaccent($${p.length})`;}
+    if(customer){p.push('%'+customer+'%');q+=` AND customer_name ILIKE $${p.length}`;}
     q+=` ORDER BY id DESC LIMIT 200`;
     const r=await pool.query(q,p);res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}
@@ -171,8 +170,10 @@ app.get('/api/daily-report',async(req,res)=>{
 app.get('/api/rapport-comptable',async(req,res)=>{
   try{const date=req.query.date||new Date().toISOString().split('T')[0];
     const ventes=await pool.query(`
-      SELECT p.name AS nom,oi.quantity AS qty,oi.price AS prix_unit,
-        (oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity) AS total_ligne,o.payment_method,o.id AS order_id
+      SELECT p.name AS nom, COALESCE(p.supplier_name,'—') AS fournisseur,
+        oi.quantity AS qty, oi.price AS prix_unit,
+        (oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity) AS total_ligne,
+        o.payment_method, o.id AS order_id
       FROM orders o JOIN order_items oi ON oi.order_id=o.id JOIN products p ON p.id=oi.product_id
       WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
       ORDER BY o.id DESC,oi.id ASC`,[date]);
@@ -180,12 +181,25 @@ app.get('/api/rapport-comptable',async(req,res)=>{
       SELECT TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')||' '||COALESCE(device_type,'')) AS nom,
         1 AS qty,COALESCE(final_price,estimated_price,0) AS total_ligne,payment_method
       FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
-    const totV=await pool.query(`
-      SELECT COALESCE(SUM((oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity)),0) AS total_ventes,
-        COALESCE(SUM(CASE WHEN COALESCE(o.amount_cb,0)>0 OR COALESCE(o.amount_cash,0)>0 THEN COALESCE(o.amount_cb,0) WHEN o.payment_method='card' THEN o.total ELSE 0 END),0) AS total_cb,
-        COALESCE(SUM(CASE WHEN COALESCE(o.amount_cb,0)>0 OR COALESCE(o.amount_cash,0)>0 THEN COALESCE(o.amount_cash,0) WHEN o.payment_method='cash' THEN o.total ELSE 0 END),0) AS total_esp
+    const totVentes=await pool.query(`
+      SELECT COALESCE(SUM((oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity)),0) AS total_ventes
       FROM orders o JOIN order_items oi ON oi.order_id=o.id
       WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'`,[date]);
+    const totVPay=await pool.query(`
+      SELECT
+        COALESCE(SUM(CASE
+          WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0)
+          WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
+        COALESCE(SUM(CASE
+          WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0)
+          WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp
+      FROM orders
+      WHERE DATE(created_at)=$1 AND (status IS NULL OR status!='cancelled') AND payment_method!='credit'`,[date]);
+    const totV={rows:[{
+      total_ventes: totVentes.rows[0].total_ventes,
+      total_cb:     totVPay.rows[0].total_cb,
+      total_esp:    totVPay.rows[0].total_esp
+    }]};
     const totR=await pool.query(`
       SELECT COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS total_reps,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 THEN amount_cb WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_cb,
@@ -204,10 +218,10 @@ app.get('/api/rapport-comptable',async(req,res)=>{
    REPAIRS — /search AVANT /:id
 ======================================================= */
 app.get('/api/repairs',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs ORDER BY id DESC`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.get('/api/repairs/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM repairs WHERE CAST(id AS TEXT) ILIKE $1 OR unaccent(customer_name) ILIKE unaccent($1) OR unaccent(phone) ILIKE unaccent($1) OR unaccent(brand) ILIKE unaccent($1) OR unaccent(model) ILIKE unaccent($1) OR unaccent(issue) ILIKE unaccent($1) ORDER BY id DESC LIMIT 100`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/repairs/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM repairs WHERE CAST(id AS TEXT) ILIKE $1 OR customer_name ILIKE $1 OR phone ILIKE $1 OR brand ILIKE $1 OR model ILIKE $1 ORDER BY id DESC LIMIT 100`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs WHERE id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
-app.post('/api/repairs',async(req,res)=>{try{const r=await pool.query(`INSERT INTO repairs(customer_name,phone,device_type,brand,model,serial_number,issue,estimated_price,comment,status,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'EN_ATTENTE',NOW()) RETURNING *`,
-  [req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',req.body.brand||'',req.body.model||'',req.body.serial_number||'',req.body.issue||'',Number(req.body.estimated_price||0),req.body.comment||'']);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+app.post('/api/repairs',async(req,res)=>{try{const r=await pool.query(`INSERT INTO repairs(customer_name,phone,device_type,brand,model,serial_number,issue,estimated_price,comment,garantie,status,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'EN_ATTENTE',NOW()) RETURNING *`,
+  [req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',req.body.brand||'',req.body.model||'',req.body.serial_number||'',req.body.issue||'',Number(req.body.estimated_price||0),req.body.comment||'',req.body.garantie||null]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/repairs/:id',async(req,res)=>{
   const client=await pool.connect();
   try{
@@ -258,7 +272,7 @@ app.delete('/api/expenses/:id',async(req,res)=>{try{await pool.query(`DELETE FRO
    CREDITS — /search AVANT /:id
 ======================================================= */
 app.get('/api/credits',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM customer_credits WHERE status=$1 ORDER BY created_at DESC`,[req.query.status||'EN_COURS']);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.get('/api/credits/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM customer_credits WHERE unaccent(customer_name) ILIKE unaccent($1) OR unaccent(phone) ILIKE unaccent($1) ORDER BY created_at DESC`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/credits/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM customer_credits WHERE customer_name ILIKE $1 OR phone ILIKE $1 ORDER BY created_at DESC`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/credits/:id/pay',async(req,res)=>{
   const client=await pool.connect();
   try{const{amount,payment_method,notes}=req.body;
@@ -427,7 +441,7 @@ app.get('/api/contacts',async(req,res)=>{
   try{const{category,q}=req.query;
     let sql=`SELECT * FROM contacts WHERE 1=1`;const p=[];
     if(category){p.push(category);sql+=` AND category=$${p.length}`;}
-    if(q){p.push(`%${q}%`);const n=p.length;sql+=` AND (unaccent(name) ILIKE unaccent($${n}) OR unaccent(company) ILIKE unaccent($${n}) OR unaccent(phone) ILIKE unaccent($${n}) OR unaccent(email) ILIKE unaccent($${n}))`;}
+    if(q){p.push(`%${q}%`);const n=p.length;sql+=` AND (name ILIKE $${n} OR company ILIKE $${n} OR phone ILIKE $${n} OR email ILIKE $${n})`;}
     sql+=` ORDER BY is_favorite DESC,category ASC,name ASC`;
     const r=await pool.query(sql,p);res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}
@@ -723,9 +737,9 @@ app.get('/api/repair-prices', async(req,res)=>{
     const{brand,model,type}=req.query;
     let sql='SELECT rp.*,rc.name AS competitor_name,rc.logo_emoji,rc.zone FROM repair_prices rp JOIN repair_competitors rc ON rc.id=rp.competitor_id WHERE 1=1';
     const p=[];
-	if(brand){p.push('%'+brand+'%');sql+=' AND unaccent(rp.device_brand) ILIKE unaccent($'+p.length+')';}
-    if(model){p.push('%'+model+'%');sql+=' AND unaccent(rp.device_model) ILIKE unaccent($'+p.length+')';}
-    if(type) {p.push('%'+type+'%'); sql+=' AND rp.repair_type ILIKE unaccent($'+p.length+')';}
+    if(brand){p.push('%'+brand+'%');sql+=' AND rp.device_brand ILIKE $'+p.length;}
+    if(model){p.push('%'+model+'%');sql+=' AND rp.device_model ILIKE $'+p.length;}
+    if(type) {p.push('%'+type+'%'); sql+=' AND rp.repair_type ILIKE $'+p.length;}
     sql+=' ORDER BY rp.price ASC NULLS LAST';
     const r=await pool.query(sql,p);
     res.json(r.rows);
@@ -747,6 +761,167 @@ app.delete('/api/repair-prices/:id', async(req,res)=>{
     await pool.query('DELETE FROM repair_prices WHERE id=$1',[req.params.id]);
     res.json({success:true});
   }catch(e){res.status(500).json({error:e.message});}
+});
+
+
+/* =======================================================
+   DEVIS
+======================================================= */
+app.get('/api/devis', async(req,res)=>{
+  try{
+    const r=await pool.query(`
+      SELECT d.*, 
+        COALESCE(json_agg(di ORDER BY di.id) FILTER (WHERE di.id IS NOT NULL), '[]') AS items
+      FROM devis d
+      LEFT JOIN devis_items di ON di.devis_id=d.id
+      GROUP BY d.id ORDER BY d.created_at DESC`);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.post('/api/devis', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{customer_name,phone,email,validite,notes,items}=req.body;
+    const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const numRes=await client.query("SELECT next_numero('DEV',$1,'devis','numero_dev') AS num",[dateStr]);
+    const numDev=numRes.rows[0].num;
+    const total=(items||[]).reduce((s,i)=>(s+(Number(i.price)*Number(i.quantity||1))-(Number(i.discount||0)*Number(i.quantity||1))),0);
+    await client.query('BEGIN');
+    const d=await client.query(
+      `INSERT INTO devis(numero_dev,customer_name,phone,email,validite,notes,total) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [numDev,customer_name||'',phone||null,email||null,Number(validite||30),notes||null,total.toFixed(2)]);
+    const devisId=d.rows[0].id;
+    for(const it of (items||[])){
+      await client.query(
+        `INSERT INTO devis_items(devis_id,description,quantity,price,discount) VALUES($1,$2,$3,$4,$5)`,
+        [devisId,it.description,Number(it.quantity||1),Number(it.price||0),Number(it.discount||0)]);
+    }
+    await client.query('COMMIT');
+    res.json(d.rows[0]);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+app.put('/api/devis/:id', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{customer_name,phone,email,validite,notes,status,items}=req.body;
+    const total=(items||[]).reduce((s,i)=>(s+(Number(i.price)*Number(i.quantity||1))-(Number(i.discount||0)*Number(i.quantity||1))),0);
+    await client.query('BEGIN');
+    const d=await client.query(
+      `UPDATE devis SET customer_name=$1,phone=$2,email=$3,validite=$4,notes=$5,status=$6,total=$7,updated_at=NOW() WHERE id=$8 RETURNING *`,
+      [customer_name||'',phone||null,email||null,Number(validite||30),notes||null,status||'EN_ATTENTE',total.toFixed(2),req.params.id]);
+    await client.query(`DELETE FROM devis_items WHERE devis_id=$1`,[req.params.id]);
+    for(const it of (items||[])){
+      await client.query(
+        `INSERT INTO devis_items(devis_id,description,quantity,price,discount) VALUES($1,$2,$3,$4,$5)`,
+        [req.params.id,it.description,Number(it.quantity||1),Number(it.price||0),Number(it.discount||0)]);
+    }
+    await client.query('COMMIT');
+    res.json(d.rows[0]);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* Convertir devis en vente */
+app.post('/api/devis/:id/convert-order', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const d=await client.query(`SELECT d.*,json_agg(di ORDER BY di.id) AS items FROM devis d JOIN devis_items di ON di.devis_id=d.id WHERE d.id=$1 GROUP BY d.id`,[req.params.id]);
+    if(!d.rows[0])return res.status(404).json({error:'Devis introuvable'});
+    const dev=d.rows[0];
+    await client.query('BEGIN');
+    const or=await client.query(
+      `INSERT INTO orders(total,payment_method,customer_name,comment,status,created_at) VALUES($1,'card',$2,$3,'completed',NOW()) RETURNING id`,
+      [dev.total,dev.customer_name,'Converti depuis '+dev.numero_dev]);
+    await client.query(`UPDATE devis SET status='CONVERTI',converted_to='order',converted_id=$1,updated_at=NOW() WHERE id=$2`,[or.rows[0].id,req.params.id]);
+    await client.query('COMMIT');
+    res.json({order_id:or.rows[0].id});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* Convertir devis en réparation */
+app.post('/api/devis/:id/convert-repair', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const d=await client.query(`SELECT * FROM devis WHERE id=$1`,[req.params.id]);
+    if(!d.rows[0])return res.status(404).json({error:'Devis introuvable'});
+    const dev=d.rows[0];
+    await client.query('BEGIN');
+    const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const numRes=await client.query("SELECT next_numero('REP',$1,'repairs','numero_rep') AS num",[dateStr]);
+    const r=await client.query(
+      `INSERT INTO repairs(customer_name,phone,estimated_price,comment,numero_rep,status,created_at) VALUES($1,$2,$3,$4,$5,'EN_ATTENTE',NOW()) RETURNING id`,
+      [dev.customer_name,dev.phone,dev.total,'Converti depuis '+dev.numero_dev,numRes.rows[0].num]);
+    await client.query(`UPDATE devis SET status='CONVERTI',converted_to='repair',converted_id=$1,updated_at=NOW() WHERE id=$2`,[r.rows[0].id,req.params.id]);
+    await client.query('COMMIT');
+    res.json({repair_id:r.rows[0].id});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+app.delete('/api/devis/:id', async(req,res)=>{
+  try{
+    await pool.query(`DELETE FROM devis WHERE id=$1`,[req.params.id]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+
+/* =======================================================
+   MODIFIER UNE VENTE
+======================================================= */
+app.put('/api/orders/:id', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{customer_name,comment,garantie,payment_method,amount_cb,amount_cash,amount_credit,items}=req.body;
+    await client.query('BEGIN');
+
+    /* Récupérer les anciens items pour ajuster le stock */
+    const oldItems=await client.query('SELECT * FROM order_items WHERE order_id=$1',[req.params.id]);
+
+    /* Remettre l'ancien stock */
+    for(const oi of oldItems.rows){
+      await client.query('UPDATE products SET stock_quantity=stock_quantity+$1 WHERE id=$2',[oi.quantity,oi.product_id]);
+    }
+
+    /* Supprimer les anciens items */
+    await client.query('DELETE FROM order_items WHERE order_id=$1',[req.params.id]);
+
+    /* Recalculer le total */
+    const total=(items||[]).reduce((s,it)=>(s+(Number(it.price)*Number(it.qty||it.quantity||1))-(Number(it.discount||0)*Number(it.qty||it.quantity||1))),0);
+
+    /* Déterminer le mode de paiement */
+    const cb=Number(amount_cb||0),cash=Number(amount_cash||0),credit=Number(amount_credit||0);
+    let pm=payment_method||'cash';
+    if(cb>0&&cash>0)pm='mixed';
+    else if(cb>0)pm='card';
+    else if(cash>0)pm='cash';
+    else if(credit>0)pm='credit';
+
+    /* Mettre à jour la commande */
+    const r=await client.query(
+      `UPDATE orders SET customer_name=$1,comment=$2,garantie=$3,payment_method=$4,
+       amount_cb=$5,amount_cash=$6,amount_credit=$7,total=$8,updated_at=NOW()
+       WHERE id=$9 RETURNING *`,
+      [customer_name||'',comment||null,garantie||null,pm,cb,cash,credit,total.toFixed(2),req.params.id]);
+
+    /* Réinsérer les nouveaux items et décrémenter le stock */
+    for(const it of (items||[])){
+      await client.query(
+        'INSERT INTO order_items(order_id,product_id,quantity,price,discount) VALUES($1,$2,$3,$4,$5)',
+        [req.params.id,it.product_id||it.id,Number(it.qty||it.quantity||1),Number(it.price),Number(it.discount||0)]);
+      await client.query(
+        'UPDATE products SET stock_quantity=stock_quantity-$1 WHERE id=$2',
+        [Number(it.qty||it.quantity||1),it.product_id||it.id]);
+    }
+
+    await client.query('COMMIT');
+    res.json(r.rows[0]);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
 });
 
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
