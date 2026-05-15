@@ -391,7 +391,10 @@ if (isClient) {
    MODE GÉRANT
 ════════════════ */
 function initManager() {
-  var clientUrl = window.location.origin + '/printshop.html?client=1';
+  /* URL fixe Tailscale pour accès depuis mobile/externe */
+  var clientUrl = (window.location.hostname === 'localhost' || window.location.hostname === 'smartphone.local')
+    ? 'https://desktop-dpd7qn6.taild4a8c6.ts.net/printshop.html?client=1'
+    : window.location.origin + '/printshop.html?client=1';
   document.getElementById('qrUrl').textContent = clientUrl;
   new QRCode(document.getElementById('qrcode'), {
     text: clientUrl, width: 160, height: 160,
