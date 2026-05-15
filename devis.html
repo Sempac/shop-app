@@ -194,16 +194,15 @@ function renderDevisView() {
   html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
   html += '<button class="btn-blue btn-sm" onclick="editDevis()">✏️ Modifier</button>';
   html += '<button class="btn-sm" style="background:#334155;color:white;" onclick="printDevis()">🖨️ Imprimer</button>';
+  html += '<button class="btn-sm" style="background:#0891b2;color:white;" onclick="sendEmailDevis()">✉️ Email</button>';
   if (status === 'EN_ATTENTE' || status === 'ACCEPTE') {
     html += '<button class="btn-sm" style="background:#22c55e;color:white;" onclick="convertDevis(\'order\')">⚡ → Vente</button>';
     html += '<button class="btn-sm" style="background:#0f766e;color:white;" onclick="convertDevis(\'repair\')">🔧 → Répar.</button>';
   }
-  html += '<button class="btn-sm" style="background:#25d366;color:white;" onclick="sendWhatsAppDevis()">💬 WA</button>';
-  html += '<button class="btn-sm" style="background:#0891b2;color:white;" onclick="sendEmailDevis()">✉️ Email</button>';
   if (status === 'EN_ATTENTE') {
     html += '<button class="btn-red btn-sm" onclick="updateStatus(\'REFUSE\')">❌ Refuser</button>';
   }
-  html += '<button class="btn-red btn-sm" onclick="deleteDevis()">🗑</button>';
+  html += '<button class="btn-red btn-sm" onclick="deleteDevis()">🗑 Supprimer</button>';
   html += '</div></div>';
 
   html += '<div class="dview-client">';
@@ -446,6 +445,11 @@ function printDevis() {
 }
 
 
+function savePDFDevis() {
+  alert('Dans la boite d impression qui va s ouvrir :\n\n1. Choisissez "Enregistrer en PDF"\n2. Cliquez sur Enregistrer');
+  window.print();
+}
+
 function sendWhatsAppDevis() {
   if (!currentDevis) return;
   var d     = currentDevis;
@@ -473,42 +477,28 @@ function sendWhatsAppDevis() {
 
 function sendEmailDevis() {
   if (!currentDevis) return;
-  var d     = currentDevis;
-  var items = d.items || [];
+  var d       = currentDevis;
+  var items   = d.items || [];
   var expDate = new Date(d.created_at);
   expDate.setDate(expDate.getDate() + (d.validite||30));
 
   var lignes = items.map(function(it) {
     var line = (Number(it.price)*Number(it.quantity)) - (Number(it.discount||0)*Number(it.quantity));
     return '  - ' + it.description + ' x' + it.quantity + ' = ' + line.toFixed(2) + ' EUR';
-  }).join('
-');
+  }).join('\n');
 
-  var subject = encodeURIComponent('Devis ' + (d.numero_dev||'') + ' - The SMARTPHONE');
-  var body = encodeURIComponent(
-    'Bonjour ' + (d.customer_name||'') + ',
-
-' +
-    'Voici votre devis de The SMARTPHONE.
-
-' +
-    'Devis : ' + (d.numero_dev||'—') + '
-' +
-    lignes + '
-' +
-    'TOTAL : ' + Number(d.total||0).toFixed(2) + ' EUR
-' +
-    'Valable jusqu au : ' + expDate.toLocaleDateString('fr-FR') + '
-
-' +
-    'The SMARTPHONE
-01 47 07 18 66
-1 Avenue d'Italie, 75013 Paris'
-  );
+  var subject  = encodeURIComponent('Devis ' + (d.numero_dev||'') + ' - The SMARTPHONE');
+  var bodyText = 'Bonjour ' + (d.customer_name||'') + ',\n\n' +
+    'Voici votre devis de The SMARTPHONE.\n\n' +
+    'Devis : ' + (d.numero_dev||'—') + '\n' +
+    lignes + '\n' +
+    'TOTAL : ' + Number(d.total||0).toFixed(2) + ' EUR\n' +
+    'Valable jusqu au : ' + expDate.toLocaleDateString('fr-FR') + '\n\n' +
+    'The SMARTPHONE\n01 47 07 18 66\n1 Avenue d\'Italie, 75013 Paris';
 
   var email = d.email || (prompt('Email du client :') || '');
   if (!email) return;
-  window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
+  window.open('mailto:' + email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText));
 }
 
 init();
