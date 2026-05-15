@@ -149,6 +149,7 @@ app.get('/api/daily-report',async(req,res)=>{
       FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
     const totV=await pool.query(`
       SELECT COUNT(*) AS nb_ventes,
+        COALESCE(SUM(total),0) AS grand_total,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0) WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0) WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0)+COALESCE(amount_cash,0) WHEN payment_method IN ('card','cash','mixed') THEN total ELSE 0 END),0) AS total_encaisse,
