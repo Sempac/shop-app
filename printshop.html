@@ -115,6 +115,10 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 <!-- ════════════════════════════
      VUE GÉRANT
 ════════════════════════════ -->
+<div id="printNotifBar" style="display:none;background:#1e40af;color:white;padding:12px 20px;border-radius:8px;margin-bottom:12px;align-items:center;justify-content:space-between;gap:10px;">
+  <span style="font-size:14px;font-weight:bold;">🔔 <span id="notifCount"></span></span>
+  <span style="font-size:12px;color:#93c5fd;">Faites défiler la file ci-dessous</span>
+</div>
 <div id="managerView">
 <div class="topbar">
   <h2>🖨️ Module Impression</h2>
@@ -506,10 +510,30 @@ async function loadQueue() {
     var data = await res.json();
     var list = document.getElementById('queueList');
     var waiting = data.filter(function(d){ return d.status === 'EN_ATTENTE'; });
+    /* Notification bandeau */
+    var notifBar = document.getElementById('printNotifBar');
+    if (notifBar) {
+      if (waiting.length > 0) {
+        notifBar.style.display = 'flex';
+        notifBar.querySelector('#notifCount').textContent = waiting.length + ' impression(s) en attente !';
+      } else {
+        notifBar.style.display = 'none';
+      }
+    }
     if (waiting.length > lastCount) {
       var nb = document.getElementById('newBadge');
-      nb.style.display = 'inline-block';
-      setTimeout(function(){ nb.style.display='none'; }, 6000);
+      if (nb) { nb.style.display = 'inline-block'; setTimeout(function(){ nb.style.display='none'; }, 6000); }
+      /* Son de notification */
+      try {
+        var ac = new AudioContext();
+        var osc = ac.createOscillator();
+        var g = ac.createGain();
+        osc.connect(g); g.connect(ac.destination);
+        osc.frequency.value = 880;
+        g.gain.setValueAtTime(0.3, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, ac.currentTime + 0.3);
+        osc.start(); osc.stop(ac.currentTime + 0.3);
+      } catch(e) {}
     }
     lastCount = waiting.length;
     if (!data.length) {
@@ -530,7 +554,7 @@ async function loadQueue() {
       html += '</div>';
       if (it.status === 'EN_ATTENTE') {
         html += '<div class="qi-btns">';
-        html += '<button class="qi-btn" style="background:#dcfce7;color:#166534" onclick="markDone(' + it.id + ')">✅ Imprimé</button>';
+        html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="printAndDone(' + it.id + ')">🖨️ Imprimer</button>';
         html += '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + it.id + ')">✕ Annuler</button>';
         html += '</div>';
       }
@@ -540,6 +564,23 @@ async function loadQueue() {
   } catch(e) {
     document.getElementById('queueList').innerHTML = '<div style="color:#ef4444;padding:12px">Erreur chargement</div>';
   }
+}
+
+async function printAndDone(id) {
+  /* Ouvrir le fichier pour impression */
+  try {
+    var res  = await fetch('/api/print/queue');
+    var data = await res.json();
+    var item = data.find(function(d){ return d.id === id; });
+    if (item && item.file_url) {
+      var w = window.open(item.file_url, '_blank');
+      if (w) {
+        setTimeout(function(){ w.print(); }, 1000);
+      }
+    }
+  } catch(e) {}
+  /* Marquer comme imprimé */
+  await markDone(id);
 }
 
 async function markDone(id) {
