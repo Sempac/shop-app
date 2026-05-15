@@ -223,8 +223,9 @@ function exportExcelRapport() {
     }
   });
 
+  /* Délimiteur point-virgule = standard Excel français */
   var csv = rows.map(function(r){
-    return r.map(function(v){ return '"'+(v||'')+'"'; }).join(',');
+    return r.map(function(v){ return (v||'').toString().replace(/;/g,' '); }).join(';');
   }).join('\n');
 
   var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
