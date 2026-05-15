@@ -948,4 +948,33 @@ app.put('/api/orders/:id', async(req,res)=>{
   finally{client.release();}
 });
 
+
+/* ── LOT ITEMS ── */
+app.get('/api/lot-items/:id', async(req,res)=>{
+  try{
+    const r=await pool.query('SELECT * FROM lot_items WHERE id=$1',[req.params.id]);
+    if(!r.rows[0])return res.status(404).json({error:'Item introuvable'});
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.put('/api/lot-items/:id', async(req,res)=>{
+  try{
+    const{status,name,notes,purchase_price,sale_price}=req.body;
+    const r=await pool.query(
+      `UPDATE lot_items SET
+        status=COALESCE($1,status),
+        name=COALESCE($2,name),
+        notes=COALESCE($3,notes),
+        purchase_price=COALESCE($4,purchase_price),
+        sale_price=COALESCE($5,sale_price)
+       WHERE id=$6 RETURNING *`,
+      [status||null,name||null,notes||null,
+       purchase_price!==undefined?Number(purchase_price):null,
+       sale_price!==undefined?Number(sale_price):null,
+       req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));

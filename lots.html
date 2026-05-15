@@ -466,6 +466,11 @@ function renderDetail(data){
                   </select>
                   <button class="btn-orange btn-sm" style="margin-top:4px" onclick="openModalCost(${it.id})">💸</button>
                   <button onclick="editNote(${it.id})" style="margin-top:4px;padding:4px 8px;background:#f1f5f9;color:#374151;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:Arial">✏️</button>
+                  ${it.status!=='VENDU'?`<div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;">
+                    <button onclick="lotItemToStock(${it.id},'vente')" style="padding:4px 7px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:bold;font-family:Arial;">⚡ Stock</button>
+                    <button onclick="lotItemToRepair(${it.id})" style="padding:4px 7px;background:#0f766e;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:bold;font-family:Arial;">🔧 Atelier</button>
+                    <button onclick="lotItemToStock(${it.id},'pieces')" style="padding:4px 7px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:bold;font-family:Arial;">🔩 Pièces</button>
+                  </div>`:''}
                 </td>
               </tr>`;
             }).join('')}
@@ -720,6 +725,113 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('btnCancelCost').addEventListener('click',()=>closeModal('mCost'));
   init();
 });
+
+/* ══ TRANSFERT LOT → STOCK / ATELIER ══ */
+async function lotItemToStock(itemId, mode) {
+  /* Récupérer les infos de l'item */
+  var item = null;
+  try {
+    var res  = await fetch('/api/lot-items/' + itemId);
+    item = await res.json();
+  } catch(e) {
+    alert('Erreur chargement item'); return;
+  }
+
+  var name = item.name || '';
+  var cat  = mode === 'pieces' ? 'Pièce détachée' : 'Smartphone';
+  var cond = mode === 'pieces' ? 'OCCASION' : 'RECONDITIONNE';
+
+  /* Modal de saisie */
+  var sellPrice = prompt('Transfert → Stock (' + (mode==='pieces'?'Pièces':'Vente directe') + ')\nProduit : ' + name + '\nPrix de vente (€) ?');
+  if (sellPrice === null) return;
+  sellPrice = parseFloat(sellPrice) || 0;
+
+  var qty = parseInt(prompt('Quantité ?', '1') || '1');
+  if (qty < 1) qty = 1;
+
+  try {
+    /* Créer dans le stock */
+    var res2 = await fetch('/api/products/quick', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name:           name,
+        category:       cat,
+        condition:      cond,
+        purchase_price: item.purchase_price || 0,
+        sale_price:     sellPrice,
+        stock_quantity: qty,
+        stock_alert:    2,
+        supplier_name:  'Lot #' + (item.lot_id || (currentLot?currentLot.id:'')),
+        notes:          'Issu du lot #' + (item.lot_id || (currentLot?currentLot.id:''))
+      })
+    });
+    var d2 = await res2.json();
+    if (d2.error) throw new Error(d2.error);
+
+    /* Mettre à jour le statut de l'item */
+    await fetch('/api/lot-items/' + itemId, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status: mode === 'pieces' ? 'EN_STOCK' : 'EN_STOCK'})
+    });
+
+    alert('✅ ' + name + ' ajouté au stock !');
+    /* Recharger le lot */
+    var lotId = document.querySelector('[data-active-lot]');
+    if (currentLot) loadLot(currentLot.id);
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+}
+
+async function lotItemToRepair(itemId) {
+  var item = null;
+  try {
+    var res  = await fetch('/api/lot-items/' + itemId);
+    item = await res.json();
+  } catch(e) {
+    alert('Erreur chargement item'); return;
+  }
+
+  var panne = prompt('Envoyer en atelier\nProduit : ' + (item.name||'') + '\nPanne / réparation à faire ?');
+  if (!panne) return;
+
+  var prixEstime = parseFloat(prompt('Prix estimé réparation (€) ?', '0') || '0');
+
+  try {
+    /* Créer la réparation */
+    var res2 = await fetch('/api/repairs', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        customer_name:   'LOT #' + (item.lot_id || itemId),
+        phone:           '',
+        device_type:     'Smartphone',
+        brand:           (item.name || '').split(' ')[0] || '',
+        model:           (item.name || '').split(' ').slice(1).join(' ') || item.name || '',
+        issue:           panne,
+        estimated_price: prixEstime,
+        comment:         'Issu du lot #' + (item.lot_id || (currentLot?currentLot.id:'')) + ' — item #' + itemId,
+        status:          'EN_ATTENTE'
+      })
+    });
+    var d2 = await res2.json();
+    if (d2.error) throw new Error(d2.error);
+
+    /* Mettre à jour statut item */
+    await fetch('/api/lot-items/' + itemId, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status: 'EN_REPARATION'})
+    });
+
+    alert('✅ Réparation créée ! REP#' + (d2.numero_rep || d2.id) + '\nStatut : EN_ATTENTE');
+    if (currentLot) loadLot(currentLot.id);
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+}
 </script>
 </body>
 </html>
