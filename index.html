@@ -66,6 +66,12 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .switch-btn{padding:5px 12px;background:#1e3a8a;color:#93c5fd;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
 
 .footer{background:#111827;padding:6px;text-align:center;color:#475569;font-size:11px;}
+/* NOTIF IMPRESSION */
+.print-notif{display:none;background:#1e40af;color:white;padding:10px 20px;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;animation:pulse-notif 2s infinite;}
+.print-notif.show{display:flex;}
+@keyframes pulse-notif{0%,100%{background:#1e40af;}50%{background:#2563eb;}}
+.print-notif-text{font-size:13px;font-weight:bold;}
+.print-notif-badge{background:white;color:#1e40af;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold;}
 </style>
 <script src="auth.js"></script>
 </head>
@@ -82,6 +88,12 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
     <button class="switch-btn" onclick="window.location.href='login.html'">🔄 Changer</button>
     <button class="logout-btn" onclick="doLogout()">🔓 Déco.</button>
   </div>
+</div>
+
+<!-- NOTIFICATION IMPRESSION -->
+<div class="print-notif" id="printNotifIndex" onclick="location.href='printshop.html'">
+  <span class="print-notif-text">🖨️ Impression en attente !</span>
+  <span class="print-notif-badge" id="printNotifCount">0</span>
 </div>
 
 <div class="header">
@@ -283,6 +295,29 @@ function calNext() {
 }
 
 renderCalendar();
+
+/* ── NOTIFICATION IMPRESSION ── */
+(function() {
+  function checkPrintQueue() {
+    fetch('/api/print/queue')
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        var waiting = data.filter(function(d){ return d.status === 'EN_ATTENTE'; });
+        var bar = document.getElementById('printNotifIndex');
+        var badge = document.getElementById('printNotifCount');
+        if (waiting.length > 0) {
+          bar.classList.add('show');
+          badge.textContent = waiting.length;
+        } else {
+          bar.classList.remove('show');
+        }
+      })
+      .catch(function(){});
+  }
+  /* Vérifier toutes les 10 secondes */
+  checkPrintQueue();
+  setInterval(checkPrintQueue, 5000);
+})();
 </script>
 </body>
 </html>
