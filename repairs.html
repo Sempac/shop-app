@@ -100,7 +100,7 @@ hr{border:1px solid #334155;margin:12px 0;}
 <div class="left">
   <div style="display:flex;gap:6px;margin-bottom:8px;">
     <button class="home-btn" style="flex:1;margin-bottom:0;" onclick="location.href='index.html'">🏠 Accueil</button>
-    <button onclick="location.href='rapport-comptable.html'" style="padding:10px 10px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📊</button>
+    <button onclick="location.href='rapport-comptable.html'" style="padding:10px 14px;background:#1e40af;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">📊 Rapport Comptable</button>
   </div>
 
   <!-- Recherche rapide -->
@@ -149,7 +149,7 @@ hr{border:1px solid #334155;margin:12px 0;}
   <div style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#0f172a;border-bottom:2px solid #1e293b;">
     <div style="display:flex;gap:0;">
       <button id="tabNew"    onclick="showTab('new')"    style="background:#134e4a;color:white;border-bottom:3px solid #0d9488;border:none;padding:13px 18px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">➕ Nouvelle réparation</button>
-      <button id="tabDetail" onclick="showTab('detail')" style="display:none;background:#1e3a8a;color:white;border:none;border-bottom:3px solid #3b82f6;padding:13px 18px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">📋 Modifier</button>
+
     </div>
     <button onclick="openCompetitor()" style="padding:7px 14px;background:#f59e0b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;margin-right:12px;">💰 Comparer</button>
   </div>
@@ -720,7 +720,7 @@ async function showRepair(id) {
       '<button class="btn-orange" id="btnPrintSAV">🧾 Bon dépôt</button>' +
       '<button onclick="sendWhatsAppRepair(' + id + ')" style="background:#25d366;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">💬 WA</button>' +
       '<button onclick="sendEmailRepair(' + id + ')"   style="background:#0891b2;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">✉️ Email</button>' +
-      '<button onclick="editRepairInForm(' + id + ')"  style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">✏️ Modifier</button>' +
+
       '<button class="btn-red"    id="btnDeleteRepair">🗑 Supprimer</button>' +
     '</div>';
 
