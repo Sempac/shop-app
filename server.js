@@ -219,7 +219,30 @@ app.get('/api/rapport-comptable',async(req,res)=>{
    REPAIRS — /search AVANT /:id
 ======================================================= */
 app.get('/api/repairs',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs ORDER BY id DESC`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.get('/api/repairs/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM repairs WHERE CAST(id AS TEXT) ILIKE $1 OR customer_name ILIKE $1 OR phone ILIKE $1 OR brand ILIKE $1 OR model ILIKE $1 ORDER BY id DESC LIMIT 100`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/repairs/search',async(req,res)=>{
+  try{
+    const q=req.query.q||'';
+    const{date_min,date_max,status,brand,model,issue,price_min,price_max}=req.query;
+    let sql='SELECT * FROM repairs WHERE 1=1';
+    const params=[];
+    if(q){
+      params.push('%'+q+'%');
+      const n=params.length;
+      sql+=` AND (CAST(id AS TEXT) ILIKE $${n} OR customer_name ILIKE $${n} OR phone ILIKE $${n} OR brand ILIKE $${n} OR model ILIKE $${n} OR COALESCE(numero_rep,'') ILIKE $${n})`;
+    }
+    if(date_min){params.push(date_min);sql+=` AND DATE(created_at)>=$${params.length}`;}
+    if(date_max){params.push(date_max);sql+=` AND DATE(created_at)<=$${params.length}`;}
+    if(status){params.push(status);sql+=` AND status=$${params.length}`;}
+    if(brand){params.push('%'+brand+'%');sql+=` AND brand ILIKE $${params.length}`;}
+    if(model){params.push('%'+model+'%');sql+=` AND model ILIKE $${params.length}`;}
+    if(issue){params.push('%'+issue+'%');sql+=` AND issue ILIKE $${params.length}`;}
+    if(price_min){params.push(Number(price_min));sql+=` AND COALESCE(final_price,estimated_price,0)>=$${params.length}`;}
+    if(price_max){params.push(Number(price_max));sql+=` AND COALESCE(final_price,estimated_price,0)<=$${params.length}`;}
+    sql+=' ORDER BY id DESC LIMIT 200';
+    const r=await pool.query(sql,params);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
 app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs WHERE id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/repairs',async(req,res)=>{try{const r=await pool.query(`INSERT INTO repairs(customer_name,phone,device_type,brand,model,serial_number,issue,estimated_price,comment,garantie,status,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'EN_ATTENTE',NOW()) RETURNING *`,
   [req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',req.body.brand||'',req.body.model||'',req.body.serial_number||'',req.body.issue||'',Number(req.body.estimated_price||0),req.body.comment||'',req.body.garantie||null]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
