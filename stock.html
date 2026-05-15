@@ -1032,6 +1032,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadAll();
 });
+
+/* ══ AUTO-OPEN MODAL depuis sales.html (produit en rupture) ══ */
+(function() {
+  var params   = new URLSearchParams(window.location.search);
+  var targetId = params.get('id');
+  if (!targetId) return;
+
+  /* Attendre que loadAll() ait fini de charger les produits */
+  var tries    = 0;
+  var interval = setInterval(function() {
+    tries++;
+    /* openModal est disponible et les produits sont chargés */
+    if (typeof openModal === 'function' && document.getElementById('p_name')) {
+      clearInterval(interval);
+      openModal(Number(targetId));
+    }
+    if (tries > 30) clearInterval(interval);
+  }, 300);
+})();
+
 </script>
 
 <!-- PANEL COMPARATEUR FOURNISSEURS -->
