@@ -98,25 +98,60 @@ hr{border:1px solid #334155;margin:12px 0;}
 
 <!-- LEFT -->
 <div class="left">
-  <button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+  <div style="display:flex;gap:6px;margin-bottom:8px;">
+    <button class="home-btn" style="flex:1;margin-bottom:0;" onclick="location.href='index.html'">🏠 Accueil</button>
+    <button onclick="location.href='rapport-comptable.html'" style="padding:10px 10px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📊</button>
+  </div>
+
+  <!-- Recherche rapide -->
   <div class="search-row">
-    <input id="searchInput" placeholder="Client, tél, ID, marque, modèle...">
+    <input id="searchInput" placeholder="🔍 Client, tél, ID, marque...">
     <button class="search-btn" onclick="doSearch()">🔎</button>
   </div>
+
+  <!-- Filtres avancés -->
+  <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;">
+    <div style="display:flex;gap:5px;">
+      <input type="date" id="f_from" style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;" title="Date début">
+      <input type="date" id="f_to"   style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;" title="Date fin">
+    </div>
+    <select id="f_status" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+      <option value="">Tous statuts</option>
+      <option value="EN_ATTENTE">⏳ En attente</option>
+      <option value="EN_COURS">🔧 En cours</option>
+      <option value="TERMINE">✅ Terminé</option>
+      <option value="LIVRE">📦 Livré</option>
+    </select>
+    <select id="f_brand" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+      <option value="">Toutes marques</option>
+      <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
+      <option>Huawei</option><option>OnePlus</option><option>Sony</option>
+      <option>Google</option><option>Oppo</option><option>Motorola</option><option>Autre</option>
+    </select>
+    <input id="f_model" placeholder="Modèle (ex: iPhone 12)" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+    <input id="f_issue" placeholder="Panne (ex: écran)" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+    <div style="display:flex;gap:5px;">
+      <input type="number" id="f_price_min" placeholder="Prix min €" style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+      <input type="number" id="f_price_max" placeholder="Prix max €" style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+    </div>
+    <button onclick="applyFilters()" style="padding:7px;background:#0f766e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🔍 Filtrer</button>
+    <button onclick="resetFilters()" style="padding:5px;background:#1e293b;color:#64748b;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:11px;font-family:Arial;">✕ Réinitialiser</button>
+  </div>
+
   <table class="rl">
-    <thead><tr><th>#</th><th>Client</th><th>Tél</th><th>Marque</th><th>Modèle</th><th>Statut</th></tr></thead>
+    <thead><tr><th>#</th><th>Client</th><th>Marque</th><th>Modèle</th><th>Statut</th></tr></thead>
     <tbody id="repairList"></tbody>
   </table>
 </div>
 
 <!-- RIGHT -->
 <div class="right">
-  <div class="tabs" style="display:flex;justify-content:space-between;align-items:center;">
-    <div style="display:flex;gap:6px;">
-      <button class="tab-btn active" id="tabNew"    onclick="showTab('new')">➕ Nouvelle réparation</button>
-      <button class="tab-btn"        id="tabDetail" onclick="showTab('detail')" style="display:none">📋 Détail / Modifier</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#0f172a;border-bottom:2px solid #1e293b;">
+    <div style="display:flex;gap:0;">
+      <button id="tabNew"    onclick="showTab('new')"    style="background:#134e4a;color:white;border-bottom:3px solid #0d9488;border:none;padding:13px 18px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">➕ Nouvelle réparation</button>
+      <button id="tabDetail" onclick="showTab('detail')" style="display:none;background:#1e3a8a;color:white;border:none;border-bottom:3px solid #3b82f6;padding:13px 18px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">📋 Modifier</button>
     </div>
-    <button onclick="openCompetitor()" style="padding:8px 14px;background:#f59e0b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">💰 Comparer prix</button>
+    <button onclick="openCompetitor()" style="padding:7px 14px;background:#f59e0b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;margin-right:12px;">💰 Comparer</button>
   </div>
 
   <!-- NOUVELLE RÉPA -->
@@ -306,6 +341,17 @@ hr{border:1px solid #334155;margin:12px 0;}
       </div>
 
       <div class="fg"><label>Prix estimé (€)</label><input id="n_price" type="number" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg"><label>🛡️ Garantie</label>
+        <select id="n_garantie">
+          <option value="">Sans garantie</option>
+          <option value="1">1 mois</option>
+          <option value="2">2 mois</option>
+          <option value="3">3 mois</option>
+          <option value="6">6 mois</option>
+          <option value="9">9 mois</option>
+          <option value="12">12 mois</option>
+        </select>
+      </div>
       <div class="fg full"><label>Commentaire interne</label><textarea id="n_comment" placeholder="Notes..."></textarea></div>
     </div>
     <div class="btn-row">
@@ -503,8 +549,51 @@ var selRow    = null;
 function showTab(tab) {
   document.getElementById('secNew').classList.toggle('active',    tab === 'new');
   document.getElementById('secDetail').classList.toggle('active', tab === 'detail');
-  document.getElementById('tabNew').classList.toggle('active',    tab === 'new');
-  document.getElementById('tabDetail').classList.toggle('active', tab === 'detail');
+  var tabNew    = document.getElementById('tabNew');
+  var tabDetail = document.getElementById('tabDetail');
+  if (tabNew) {
+    tabNew.style.background   = tab === 'new' ? '#134e4a' : 'transparent';
+    tabNew.style.color        = tab === 'new' ? 'white' : '#64748b';
+    tabNew.style.borderBottom = tab === 'new' ? '3px solid #0d9488' : '3px solid transparent';
+  }
+  if (tabDetail) {
+    tabDetail.style.background   = tab === 'detail' ? '#1e3a8a' : 'transparent';
+    tabDetail.style.color        = tab === 'detail' ? 'white' : '#64748b';
+    tabDetail.style.borderBottom = tab === 'detail' ? '3px solid #3b82f6' : '3px solid transparent';
+  }
+}
+
+/* ── FILTRES AVANCÉS ── */
+function applyFilters() {
+  var q        = document.getElementById('searchInput').value.trim();
+  var from     = document.getElementById('f_from').value;
+  var to       = document.getElementById('f_to').value;
+  var status   = document.getElementById('f_status').value;
+  var brand    = document.getElementById('f_brand').value;
+  var model    = document.getElementById('f_model').value.trim();
+  var issue    = document.getElementById('f_issue').value.trim();
+  var priceMin = document.getElementById('f_price_min').value;
+  var priceMax = document.getElementById('f_price_max').value;
+  var url = '/api/repairs/search?q=' + encodeURIComponent(q);
+  if (from)     url += '&date_min=' + from;
+  if (to)       url += '&date_max=' + to;
+  if (status)   url += '&status='   + encodeURIComponent(status);
+  if (brand)    url += '&brand='    + encodeURIComponent(brand);
+  if (model)    url += '&model='    + encodeURIComponent(model);
+  if (issue)    url += '&issue='    + encodeURIComponent(issue);
+  if (priceMin) url += '&price_min=' + priceMin;
+  if (priceMax) url += '&price_max=' + priceMax;
+  fetch(url).then(function(r){ return r.json(); }).then(renderList);
+}
+
+function resetFilters() {
+  ['searchInput','f_from','f_to','f_model','f_issue','f_price_min','f_price_max'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['f_status','f_brand'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  loadRepairs();
 }
 
 /* ── LISTE ── */
@@ -531,11 +620,9 @@ function renderList(data) {
   }
   tbody.innerHTML = data.map(function(r) {
     return '<tr data-id="' + r.id + '" class="' + (r.id === currentId ? 'selected' : '') + '">' +
-      '<td><b>#' + r.id + '</b></td>' +
+      '<td><b>' + (r.numero_rep||('#'+r.id)) + '</b></td>' +
       '<td>' + (r.customer_name||'—') + '</td>' +
-      '<td>' + (r.phone||'—') + '</td>' +
-      '<td>' + (r.brand||'—') + '</td>' +
-      '<td>' + (r.model||'—') + '</td>' +
+      '<td style="font-size:11px">' + (r.brand||'—') + ' ' + (r.model||'') + '</td>' +
       '<td><span class="sbadge ' + (r.status||'') + '">' + (r.status||'—') + '</span></td>' +
       '</tr>';
   }).join('');
@@ -630,7 +717,10 @@ async function showRepair(id) {
 
     '<div class="btn-row">' +
       '<button class="btn-blue"   id="btnSaveRepair">💾 Enregistrer</button>' +
-      '<button class="btn-orange" id="btnPrintSAV">🧾 Ticket SAV</button>' +
+      '<button class="btn-orange" id="btnPrintSAV">🧾 Bon dépôt</button>' +
+      '<button onclick="sendWhatsAppRepair(' + id + ')" style="background:#25d366;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">💬 WA</button>' +
+      '<button onclick="sendEmailRepair(' + id + ')"   style="background:#0891b2;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">✉️ Email</button>' +
+      '<button onclick="editRepairInForm(' + id + ')"  style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">✏️ Modifier</button>' +
       '<button class="btn-red"    id="btnDeleteRepair">🗑 Supprimer</button>' +
     '</div>';
 
@@ -740,6 +830,111 @@ function resetForm() {
 }
 
 /* ── IMPRESSION SAV ── */
+
+/* ══ MODIFIER RÉPARATION DANS LE FORMULAIRE ══ */
+async function editRepairInForm(id) {
+  var r = await fetch('/api/repairs/' + id).then(function(x){ return x.json(); });
+  if (!r) return;
+  window._editingRepairId = id;
+  showTab('new');
+  document.getElementById('n_customer').value = r.customer_name || '';
+  document.getElementById('n_phone').value    = r.phone || '';
+  if (document.getElementById('n_device')) document.getElementById('n_device').value = r.device_type || '';
+  if (document.getElementById('n_brand'))  document.getElementById('n_brand').value  = r.brand || '';
+  document.getElementById('n_model').value    = r.model || '';
+  document.getElementById('n_serial').value   = r.serial_number || '';
+  document.getElementById('n_issue').value    = r.issue || '';
+  document.getElementById('n_price').value    = r.estimated_price || '';
+  document.getElementById('n_comment').value  = r.comment || '';
+  if (document.getElementById('n_garantie')) document.getElementById('n_garantie').value = r.garantie || '';
+  var existing = document.getElementById('repEditBanner');
+  if (existing) existing.remove();
+  var banner = document.createElement('div');
+  banner.id = 'repEditBanner';
+  banner.style.cssText = 'background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400e;display:flex;justify-content:space-between;align-items:center;';
+  banner.innerHTML = '<span>✏️ Modification de <b>' + (r.numero_rep||'REP #'+r.id) + '</b></span>' +
+    '<button onclick="cancelRepairEdit()" style="padding:4px 10px;background:#92400e;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">✕ Annuler</button>';
+  var formGrid = document.querySelector('#secNew .form-grid');
+  if (formGrid) formGrid.parentNode.insertBefore(banner, formGrid);
+  var createBtn = document.querySelector('#secNew .btn-green');
+  if (createBtn) { createBtn.textContent = '💾 Enregistrer'; createBtn.onclick = function() { saveRepairEdit(id); }; }
+}
+
+function cancelRepairEdit() {
+  window._editingRepairId = null;
+  var banner = document.getElementById('repEditBanner');
+  if (banner) banner.remove();
+  var createBtn = document.querySelector('#secNew .btn-green');
+  if (createBtn) { createBtn.textContent = '✅ Créer réparation'; createBtn.onclick = function() { createRepair(); }; }
+  resetForm();
+}
+
+async function saveRepairEdit(id) {
+  var customer = document.getElementById('n_customer').value.trim();
+  if (!customer) { alert('⚠️ Nom du client obligatoire'); return; }
+  var res = await fetch('/api/repairs/' + id, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      customer_name:   customer,
+      phone:           document.getElementById('n_phone').value,
+      device_type:     document.getElementById('n_device')?.value || '',
+      brand:           document.getElementById('n_brand')?.value || '',
+      model:           document.getElementById('n_model').value,
+      serial_number:   document.getElementById('n_serial').value,
+      issue:           document.getElementById('n_issue').value,
+      estimated_price: Number(document.getElementById('n_price').value||0),
+      comment:         document.getElementById('n_comment').value,
+      garantie:        document.getElementById('n_garantie')?.value ? Number(document.getElementById('n_garantie').value) : null,
+      status:          'EN_ATTENTE'
+    })
+  });
+  var d = await res.json();
+  if (d.error) { alert('❌ ' + d.error); return; }
+  alert('✅ Réparation modifiée !');
+  cancelRepairEdit();
+  loadRepairs();
+}
+
+/* ══ WHATSAPP + EMAIL RÉPARATIONS ══ */
+async function sendWhatsAppRepair(id) {
+  var r = await fetch('/api/repairs/' + id).then(function(x){ return x.json(); });
+  var phone = (r.phone||'').replace(/[\s.\-]/g,'').replace(/^0/,'33');
+  var fp    = Number(r.final_price||r.estimated_price||0);
+  var msg = 'Bonjour ' + (r.customer_name||'') + ',%0A%0A' +
+    'Votre appareil a ete pris en charge chez The SMARTPHONE.%0A%0A' +
+    'Bon de depot : ' + (r.numero_rep||'REP #'+r.id) + '%0A' +
+    'Appareil : ' + (r.brand||'') + ' ' + (r.model||'') + '%0A' +
+    'Panne : ' + (r.issue||'—') + '%0A' +
+    (fp > 0 ? 'Devis : ' + fp.toFixed(2) + ' EUR%0A' : '') +
+    'Statut : ' + (r.status||'—') + '%0A' +
+    (r.garantie ? 'Garantie : ' + r.garantie + ' mois%0A' : '') +
+    '%0AConservez ce message pour recuperer votre appareil.%0A' +
+    '%0AThe SMARTPHONE%0A01 47 07 18 66';
+  var url = phone ? 'https://wa.me/' + phone + '?text=' + msg : 'https://wa.me/?text=' + msg;
+  window.open(url, '_blank');
+}
+
+async function sendEmailRepair(id) {
+  var r = await fetch('/api/repairs/' + id).then(function(x){ return x.json(); });
+  var fp   = Number(r.final_price||r.estimated_price||0);
+  var date = new Date(r.created_at).toLocaleDateString('fr-FR');
+  var subject = encodeURIComponent('Bon de depot - The SMARTPHONE - ' + (r.numero_rep||'REP #'+r.id));
+  var bodyText = 'Bonjour ' + (r.customer_name||'') + ',\n\n' +
+    'Votre appareil a ete pris en charge chez The SMARTPHONE.\n\n' +
+    'Bon de depot : ' + (r.numero_rep||'REP #'+r.id) + '\n' +
+    'Date : ' + date + '\n' +
+    'Appareil : ' + (r.brand||'') + ' ' + (r.model||'') + '\n' +
+    'Panne : ' + (r.issue||'—') + '\n' +
+    (fp > 0 ? 'Devis : ' + fp.toFixed(2) + ' EUR\n' : '') +
+    (r.garantie ? 'Garantie : ' + r.garantie + ' mois\n' : '') +
+    '\nConservez cet email pour recuperer votre appareil.\n' +
+    '\nThe SMARTPHONE\n01 47 07 18 66\n1 Avenue d\'Italie, 75013 Paris';
+  var body  = encodeURIComponent(bodyText);
+  var email = prompt('Email du client :') || '';
+  if (!email) return;
+  window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
+}
+
 function printSAV(r) {
   var cb   = Number(r.amount_cb||0);
   var cash = Number(r.amount_cash||0);

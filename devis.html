@@ -82,11 +82,12 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 </head>
 <body>
 
-<div class="topbar">
+<div class="topbar" style="background:#1e3a8a;">
   <h2>📋 Devis</h2>
   <div style="display:flex;gap:8px;">
     <button class="btn-green" onclick="newDevis()">➕ Nouveau devis</button>
-    <button class="btn-home"  onclick="location.href='index.html'">🏠 Accueil</button>
+    <button onclick="location.href='rapport-comptable.html'" style="padding:10px 14px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📊 Rapport</button>
+    <button class="btn-home" onclick="location.href='index.html'">🏠 Accueil</button>
   </div>
 </div>
 
@@ -197,6 +198,8 @@ function renderDevisView() {
     html += '<button class="btn-sm" style="background:#22c55e;color:white;" onclick="convertDevis(\'order\')">⚡ → Vente</button>';
     html += '<button class="btn-sm" style="background:#0f766e;color:white;" onclick="convertDevis(\'repair\')">🔧 → Répar.</button>';
   }
+  html += '<button class="btn-sm" style="background:#25d366;color:white;" onclick="sendWhatsAppDevis()">💬 WA</button>';
+  html += '<button class="btn-sm" style="background:#0891b2;color:white;" onclick="sendEmailDevis()">✉️ Email</button>';
   if (status === 'EN_ATTENTE') {
     html += '<button class="btn-red btn-sm" onclick="updateStatus(\'REFUSE\')">❌ Refuser</button>';
   }
@@ -440,6 +443,72 @@ function printDevis() {
     '<script>window.onload=function(){window.print();}<\/script>' +
     '</body></html>');
   w.document.close();
+}
+
+
+function sendWhatsAppDevis() {
+  if (!currentDevis) return;
+  var d     = currentDevis;
+  var items = d.items || [];
+  var expDate = new Date(d.created_at);
+  expDate.setDate(expDate.getDate() + (d.validite||30));
+
+  var lignes = items.map(function(it) {
+    var line = (Number(it.price)*Number(it.quantity)) - (Number(it.discount||0)*Number(it.quantity));
+    return '  - ' + it.description + ' x' + it.quantity + ' = ' + line.toFixed(2) + ' EUR';
+  }).join('%0A');
+
+  var msg = 'Bonjour ' + (d.customer_name||'') + ',%0A%0A' +
+    'Voici votre devis de The SMARTPHONE.%0A%0A' +
+    'Devis : ' + (d.numero_dev||'—') + '%0A' +
+    lignes + '%0A' +
+    'TOTAL : ' + Number(d.total||0).toFixed(2) + ' EUR%0A' +
+    'Valable jusqu au : ' + expDate.toLocaleDateString('fr-FR') + '%0A%0A' +
+    'The SMARTPHONE%0A01 47 07 18 66%0A1 Avenue d Italie, 75013 Paris';
+
+  var phone = d.phone ? d.phone.replace(/[\s\.\-]/g,'').replace(/^0/,'33') : '';
+  var url = phone ? 'https://wa.me/' + phone + '?text=' + msg : 'https://wa.me/?text=' + msg;
+  window.open(url, '_blank');
+}
+
+function sendEmailDevis() {
+  if (!currentDevis) return;
+  var d     = currentDevis;
+  var items = d.items || [];
+  var expDate = new Date(d.created_at);
+  expDate.setDate(expDate.getDate() + (d.validite||30));
+
+  var lignes = items.map(function(it) {
+    var line = (Number(it.price)*Number(it.quantity)) - (Number(it.discount||0)*Number(it.quantity));
+    return '  - ' + it.description + ' x' + it.quantity + ' = ' + line.toFixed(2) + ' EUR';
+  }).join('
+');
+
+  var subject = encodeURIComponent('Devis ' + (d.numero_dev||'') + ' - The SMARTPHONE');
+  var body = encodeURIComponent(
+    'Bonjour ' + (d.customer_name||'') + ',
+
+' +
+    'Voici votre devis de The SMARTPHONE.
+
+' +
+    'Devis : ' + (d.numero_dev||'—') + '
+' +
+    lignes + '
+' +
+    'TOTAL : ' + Number(d.total||0).toFixed(2) + ' EUR
+' +
+    'Valable jusqu au : ' + expDate.toLocaleDateString('fr-FR') + '
+
+' +
+    'The SMARTPHONE
+01 47 07 18 66
+1 Avenue d'Italie, 75013 Paris'
+  );
+
+  var email = d.email || (prompt('Email du client :') || '');
+  if (!email) return;
+  window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
 }
 
 init();

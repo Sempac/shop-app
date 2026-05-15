@@ -122,9 +122,12 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 .pay-btn:hover{background:#16a34a;}
 .pay-btn:disabled{background:#94a3b8;cursor:not-allowed;}
 .empty-cart{text-align:center;color:#94a3b8;padding:20px;font-size:12px;}
-.main-tabs{display:flex;gap:0;background:#f1f5f9;border-bottom:2px solid #e2e8f0;flex-shrink:0;}
-.main-tab{flex:1;padding:12px;border:none;background:transparent;font-size:13px;font-weight:bold;cursor:pointer;color:#64748b;font-family:Arial;border-bottom:3px solid transparent;transition:0.15s;}
-.main-tab.active{color:#1e40af;border-bottom-color:#1e40af;background:white;}
+.main-tabs{display:flex;gap:0;background:#0f172a;border-bottom:2px solid #1e293b;flex-shrink:0;}
+.main-tab{flex:1;padding:13px;border:none;background:transparent;font-size:13px;font-weight:bold;cursor:pointer;color:#64748b;font-family:Arial;border-bottom:3px solid transparent;transition:0.2s;}
+.main-tab.active{color:white;border-bottom-color:#16a34a;background:#14532d;}
+.main-tab#tabCaisse.active{background:#14532d;border-bottom-color:#22c55e;}
+.main-tab#tabHisto.active{background:#134e4a;border-bottom-color:#0d9488;}
+.main-tab:hover:not(.active){background:#1e293b;color:#94a3b8;}
 .tab-content{display:none;flex:1;overflow:hidden;flex-direction:column;}
 .tab-content.active{display:flex;}
 .histo-filters{display:flex;gap:8px;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;flex-shrink:0;}
@@ -165,7 +168,10 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 <!-- ══ LEFT ══ -->
 <div class="left">
   <div class="left-top">
-    <button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <button class="home-btn" style="flex:1;margin-bottom:0;" onclick="location.href='index.html'">🏠 Accueil</button>
+      <button onclick="location.href='rapport-comptable.html'" style="padding:10px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📊 Rapport</button>
+    </div>
     <div class="stock-alert-bar" id="stockAlertBar">⚠️ <span id="stockAlertMsg"></span></div>
     <div class="search-row">
       <input id="search" placeholder="🔍  Nom, couleur, emplacement..." oninput="filterProducts()">
@@ -192,7 +198,7 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 
   <!-- TABS -->
   <div class="main-tabs">
-    <button class="main-tab active" id="tabCaisse"  onclick="switchMainTab('caisse')">⚡ Caisse</button>
+    <button class="main-tab active" id="tabCaisse"  onclick="switchMainTab('caisse')">⚡ Nouvelle vente</button>
     <button class="main-tab"        id="tabHisto"   onclick="switchMainTab('histo')">🧾 Historique</button>
   </div>
 
@@ -659,7 +665,7 @@ async function printOrder(id,type,cb,cash,credit){
   const comm=data.order.comment||'';
   if(type==='ticket'){
     w.document.write(`<html><head><meta charset="UTF-8"><style>@page{size:80mm auto;margin:5mm;}body{font-family:Arial;width:72mm;font-size:12px;}.c{text-align:center;}.b{font-weight:bold;}hr{border:none;border-top:1px dashed #999;margin:5px 0;}table{width:100%;border-collapse:collapse;}td,th{border-bottom:1px dashed #ccc;padding:3px 4px;font-size:11px;}.tot{font-size:14px;font-weight:bold;text-align:center;margin:8px 0;}.credit{font-weight:bold;text-align:center;border:2px solid #000;padding:4px;margin:6px 0;}</style></head><body>
-    <div class="c b" style="font-size:15px">${SHOP.name}</div><div class="c" style="font-size:10px">${SHOP.address}</div><div class="c" style="font-size:10px">📞 ${SHOP.tel1}</div><hr>
+    <div class="c b" style="font-size:15px">${SHOP.name}</div><div class="c" style="font-size:10px">${SHOP.address}</div><div class="c" style="font-size:10px">📞 ${SHOP.tel11}</div><hr>
     <div class="c">Ticket #${data.order.id} — ${new Date(data.order.created_at).toLocaleString('fr-FR')}</div><div class="c">Client : ${data.order.customer_name||'CLIENT'}</div><hr>
     <table><tr><th>Produit</th><th>Qté</th><th>P.U</th><th>Rem</th><th>Total</th></tr>${rows}</table>
     <div class="tot">TOTAL : ${Number(data.order.total).toFixed(2)} €</div><hr>
@@ -673,7 +679,7 @@ async function printOrder(id,type,cb,cash,credit){
     w.document.close();
   } else {
     w.document.write(`<html><head><meta charset="UTF-8"><style>body{font-family:Arial;padding:30px;}.sh{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:22px;}.sn{font-size:22px;font-weight:900;}.si{font-size:11px;color:#333;margin-top:3px;}.it{font-size:20px;font-weight:900;text-align:right;text-transform:uppercase;}.im{font-size:12px;text-align:right;margin-top:4px;color:#555;}table{width:100%;border-collapse:collapse;margin-top:20px;}th{border:1px solid #000;padding:8px;background:#e5e7eb;text-align:left;}td{border:1px solid #000;padding:8px;}.tb{margin-top:20px;text-align:right;font-size:20px;font-weight:bold;border-top:2px solid #000;padding-top:10px;}.pd{font-size:13px;color:#555;margin-top:4px;text-align:right;}.cb-box{margin-top:10px;padding:10px;border:2px solid #000;font-size:15px;font-weight:bold;text-align:right;}.ft{margin-top:40px;font-size:11px;color:#555;text-align:center;border-top:1px solid #ccc;padding-top:10px;}</style></head><body>
-    <div class="sh"><div><div class="sn">${SHOP.name}</div><div class="si">${SHOP.sub}</div><div class="si">📍 ${SHOP.address}</div><div class="si">📞 ${SHOP.tel1} | ${SHOP.tel2}</div><div class="si">✉️ ${SHOP.email}</div></div>
+    <div class="sh"><div><div class="sn">${SHOP.name}</div><div class="si">${SHOP.sub}</div><div class="si">📍 ${SHOP.address}</div><div class="si">📞 ${SHOP.tel11} | ${SHOP.tel12}</div><div class="si">✉️ ${SHOP.email}</div></div>
     <div><div class="it">FACTURE</div><div class="im">N° ${data.order.id}</div><div class="im">${new Date(data.order.created_at).toLocaleString('fr-FR')}</div></div></div>
     <p><b>Client :</b> ${data.order.customer_name||'CLIENT'}</p>
     <table><tr><th>Produit</th><th>Qté</th><th>Prix unit.</th><th>Remise</th><th>Total</th></tr>${rows}</table>
@@ -682,7 +688,7 @@ async function printOrder(id,type,cb,cash,credit){
     ${cb>0?`<div class="pd">💳 Payé CB : ${cb.toFixed(2)} €</div>`:''}
     ${cash>0?`<div class="pd">💵 Payé Espèces : ${cash.toFixed(2)} €</div>`:''}
     ${credit>0?`<div class="cb-box">⚠️ RESTE À PAYER : ${credit.toFixed(2)} €</div>`:''}
-    <div class="ft">${SHOP.name} — ${SHOP.address} — ${SHOP.tel1}</div>
+    <div class="ft">${SHOP.name} — ${SHOP.address} — ${SHOP.tel11}</div>
     <script>window.onload=()=>window.print();<\/script>
     `);
     w.document.close();
@@ -819,6 +825,8 @@ async function showOrderDetail(id) {
       '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">' +
         '<button onclick="printOrder(' + o.id + ',\'ticket\',' + cb + ',' + cash + ',' + cred + ')" style="padding:8px 14px;background:#475569;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🧾 Ticket</button>' +
         '<button onclick="printOrder(' + o.id + ',\'facture\',' + cb + ',' + cash + ',' + cred + ')" style="padding:8px 14px;background:#1e40af;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📄 Facture</button>' +
+        '<button onclick="sendWhatsAppOrder(' + o.id + ')" style="padding:8px 14px;background:#25d366;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">💬 WhatsApp</button>' +
+        '<button onclick="sendEmailOrder(' + o.id + ')" style="padding:8px 14px;background:#0891b2;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">✉️ Email</button>' +
         (o.status !== 'cancelled' ? '<button onclick="editOrder(' + o.id + ')" style="padding:8px 14px;background:#f59e0b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">✏️ Modifier</button>' : '') +
         (o.status !== 'cancelled' ? '<button onclick="cancelOrder(' + o.id + ')" style="padding:8px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🗑 Annuler</button>' : '<span style="font-size:12px;color:#ef4444;font-weight:bold;align-self:center;">❌ Annulée</span>') +
       '</div>';
@@ -955,6 +963,62 @@ async function saveModifiedOrder(id) {
   } catch(e) {
     alert('❌ ' + e.message);
   }
+}
+
+
+/* ══ ENVOI DOCUMENT ══ */
+async function sendWhatsAppOrder(id) {
+  var res  = await fetch('/api/orders/' + id);
+  var data = await res.json();
+  if (!data.order) return;
+  var o     = data.order;
+  var items = data.items || [];
+  var date  = new Date(o.created_at).toLocaleDateString('fr-FR');
+
+  var lignes = items.map(function(it) {
+    return '  - ' + it.name + ' x' + it.quantity + ' = ' + Number((it.price*it.quantity)-(it.discount||0)*it.quantity).toFixed(2) + ' EUR';
+  }).join('%0A');
+
+  var pm = {card:'CB', cash:'Especes', mixed:'CB + Especes', credit:'Credit'}[o.payment_method] || o.payment_method;
+  var msg = 'Bonjour ' + (o.customer_name||'') + ',%0A%0A' +
+    'Merci pour votre achat chez ' + SHOP.name + '.%0A%0A' +
+    'Vente %23' + o.id + ' du ' + date + '%0A' +
+    lignes + '%0A' +
+    'TOTAL : ' + Number(o.total||0).toFixed(2) + ' EUR%0A' +
+    'Paiement : ' + pm + '%0A' +
+    (o.garantie ? 'Garantie : ' + o.garantie + ' mois%0A' : '') +
+    '%0A' + SHOP.address + '%0A' + SHOP.tel1;
+
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+async function sendEmailOrder(id) {
+  var res  = await fetch('/api/orders/' + id);
+  var data = await res.json();
+  if (!data.order) return;
+  var o     = data.order;
+  var items = data.items || [];
+  var date  = new Date(o.created_at).toLocaleDateString('fr-FR');
+
+  var lignes = items.map(function(it) {
+    return '  - ' + it.name + ' x' + it.quantity + ' = ' + Number((it.price*it.quantity)-(it.discount||0)*it.quantity).toFixed(2) + ' EUR';
+  }).join('%0D%0A');
+
+  var pm = {card:'CB', cash:'Especes', mixed:'CB + Especes', credit:'Credit'}[o.payment_method] || o.payment_method;
+  var subject = encodeURIComponent('Ticket de caisse - ' + SHOP.name + ' - Vente #' + o.id);
+  var bodyText = 'Bonjour ' + (o.customer_name||'') + ',\n\n' +
+    'Merci pour votre achat chez ' + SHOP.name + '.\n\n' +
+    'Vente #' + o.id + ' du ' + date + '\n' +
+    items.map(function(it){ return '  - ' + it.name + ' x' + it.quantity + ' = ' + Number((it.price*it.quantity)-(it.discount||0)*it.quantity).toFixed(2) + ' EUR'; }).join('\n') + '\n' +
+    'TOTAL : ' + Number(o.total||0).toFixed(2) + ' EUR\n' +
+    'Paiement : ' + pm + '\n' +
+    (o.garantie ? 'Garantie : ' + o.garantie + ' mois\n' : '') +
+    '\n' + SHOP.address + '\n' + SHOP.tel1;
+  var body = encodeURIComponent(bodyText);
+
+  var email = prompt('Email du client :') || '';
+  if (!email) return;
+  window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
 }
 
 async function cancelOrder(id) {

@@ -113,23 +113,19 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 </div>
 
 <div class="main" id="mainGrid">
-  <!-- Gérant uniquement -->
-  <a href="dashboard.html"         class="card dashboard gerant-only"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
-
-  <!-- Tout le monde -->
-  <a href="sales.html"             class="card sales">    <div class="icon">⚡</div><div class="title">VENTES</div><div class="desc">Caisse rapide<br>Paiement mixte<br>Ticket / Facture</div></a>
-  <a href="devis.html"             class="card devis">    <div class="icon">📋</div><div class="title">DEVIS</div><div class="desc">Créer un devis<br>Convertir en vente<br>Imprimer</div></a>
-  <a href="repairs.html"           class="card repairs">  <div class="icon">🔧</div><div class="title">RÉPARATIONS</div><div class="desc">Gestion SAV<br>📞 Contact client<br>Suivi atelier</div></a>
-
   <a href="stock.html"             class="card stock">    <div class="icon">📦</div><div class="title">STOCK</div><div class="desc">Grade · Couleur<br>Fournisseur<br>⚡ Vendre direct</div></a>
-  <a href="lots.html"              class="card lots">     <div class="icon">🗂️</div><div class="title">LOTS</div><div class="desc">Achat de lots<br>Rentabilité<br>Suivi appareils</div></a>
-  <a href="contacts.html"          class="card contacts"> <div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>📞 💬 WA · ✉️</div></a>
+  <a href="sales.html"             class="card sales">    <div class="icon">⚡</div><div class="title">VENTES</div><div class="desc">Caisse rapide<br>Paiement mixte<br>Ticket / Facture</div></a>
+  <a href="repairs.html"           class="card repairs">  <div class="icon">🔧</div><div class="title">RÉPARATIONS</div><div class="desc">Gestion SAV<br>📞 Contact client<br>Suivi atelier</div></a>
   <a href="expenses.html"          class="card expenses"> <div class="icon">📉</div><div class="title">DÉPENSES</div><div class="desc">Sorties caisse<br>Fournisseurs<br>Suivi des coûts</div></a>
+  <a href="printshop.html"         class="card print">    <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
+  <a href="devis.html"             class="card devis">    <div class="icon">📋</div><div class="title">DEVIS</div><div class="desc">Créer un devis<br>Convertir en vente<br>Imprimer</div></a>
+  <a href="lots.html"              class="card lots">     <div class="icon">🗂️</div><div class="title">LOTS</div><div class="desc">Achat de lots<br>Rentabilité<br>Suivi appareils</div></a>
   <a href="returns.html"           class="card returns">  <div class="icon">↩️</div><div class="title">RETOURS</div><div class="desc">Retours clients<br>Retours fournisseur<br>Stock inutilisable</div></a>
   <a href="credits.html"           class="card credits">  <div class="icon">💳</div><div class="title">CRÉDITS</div><div class="desc">Dettes clients<br>Paiements partiels<br>Suivi des restes</div></a>
-  <a href="printshop.html"         class="card print">    <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
-  <a href="dailyreport.html"       class="card caisse gerant-only">  <div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
+  <a href="dailyreport.html"       class="card caisse gerant-only"><div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
   <a href="rapport-comptable.html" class="card compta">   <div class="icon">📋</div><div class="title">RAPPORT COMPTABLE</div><div class="desc">Détails CA<br>CB / Espèces / DP<br>Pour le comptable</div></a>
+  <a href="dashboard.html"         class="card dashboard gerant-only"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
+  <a href="contacts.html"          class="card contacts"> <div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>📞 💬 WA · ✉️</div></a>
 </div>
 
 <div class="footer">The SMARTPHONE © 2026 &nbsp;|&nbsp; 1 Avenue d'Italie, 75013 Paris</div>
@@ -227,15 +223,17 @@ function renderCalendar() {
   var html  = '';
 
   /* En-têtes jours — Dim en rouge */
-  var dayNames = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  /* Semaine commence lundi */
+  var dayNames = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
   dayNames.forEach(function(d, i) {
-    html += '<div class="cal-day-name' + (i===0?' sun':'') + '">' + d + '</div>';
+    html += '<div class="cal-day-name' + (i===6?' sun':'') + '">' + d + '</div>';
   });
 
-  /* Premier jour du mois */
-  var firstDay = new Date(calYear, calMonth, 1).getDay(); /* 0=Dim */
-  var daysInMonth    = new Date(calYear, calMonth+1, 0).getDate();
-  var daysInPrevMonth= new Date(calYear, calMonth,   0).getDate();
+  /* Premier jour du mois — converti en lundi=0 */
+  var firstDayRaw = new Date(calYear, calMonth, 1).getDay(); /* 0=Dim */
+  var firstDay = (firstDayRaw === 0) ? 6 : firstDayRaw - 1; /* Lun=0 ... Dim=6 */
+  var daysInMonth     = new Date(calYear, calMonth+1, 0).getDate();
+  var daysInPrevMonth = new Date(calYear, calMonth,   0).getDate();
 
   /* Jours mois précédent */
   for (var i = firstDay - 1; i >= 0; i--) {
@@ -246,7 +244,7 @@ function renderCalendar() {
   /* Jours du mois */
   for (var day = 1; day <= daysInMonth; day++) {
     var date    = new Date(calYear, calMonth, day);
-    var dow     = date.getDay(); /* 0=Dim, 6=Sam */
+    var dow     = date.getDay(); /* 0=Dim */
     var isSun   = dow === 0;
     var holiday = isHoliday(calYear, calMonth, day);
     var isToday = (day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
