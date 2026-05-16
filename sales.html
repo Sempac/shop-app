@@ -423,8 +423,9 @@ function filterProducts(){
   let filtered=allProducts.filter(p=>{
     const mc=activeCat==='Tous'||p.category===activeCat;
     const md=activeCond==='all'||(p.condition||'NEUF')===activeCond;
+    const qRaw=document.getElementById('search').value.trim();
     const mt=!q||norm(p.name).includes(q)
-               ||(p.barcode&&p.barcode.includes(q))
+               ||(p.barcode&&(p.barcode.trim()===qRaw.trim()||p.barcode.toLowerCase().includes(q)))
                ||norm(p.color).includes(q)
                ||norm(p.grade).includes(q)
                ||norm(p.location_zone).includes(q);
