@@ -33,7 +33,11 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .cal-cell.holiday{color:#f59e0b;font-weight:bold;}
 .cal-cell.holiday.sunday{color:#ef4444;}
 .cal-holiday-dot{width:4px;height:4px;background:#f59e0b;border-radius:50%;margin:1px auto 0;}
-.main{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;padding:16px;overflow:auto;}
+.main{flex:1;overflow:auto;padding:16px;}
+.group{margin-bottom:20px;}
+.group-title{font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#475569;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:8px;}
+.group-title::before{content:'';display:inline-block;width:3px;height:14px;border-radius:2px;background:var(--gc);}
+.group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
 .card{border-radius:14px;padding:18px;text-decoration:none;color:white;transition:0.2s;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:145px;box-shadow:0 6px 16px rgba(0,0,0,0.35);}
 .card:hover{transform:scale(1.04);}
 .card.hidden{display:none;}
@@ -54,6 +58,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .contacts {background:linear-gradient(135deg,#0891b2,#06b6d4);}
 .dashboard{background:linear-gradient(135deg,#064e3b,#059669);}
 .devis    {background:linear-gradient(135deg,#1e3a8a,#3b82f6);}
+.commandes{background:linear-gradient(135deg,#0e7490,#0891b2);}
 
 /* USER BAR */
 .user-bar{background:#1e293b;padding:8px 24px;display:flex;justify-content:space-between;align-items:center;font-size:12px;}
@@ -66,12 +71,6 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .switch-btn{padding:5px 12px;background:#1e3a8a;color:#93c5fd;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
 
 .footer{background:#111827;padding:6px;text-align:center;color:#475569;font-size:11px;}
-/* NOTIF IMPRESSION */
-.print-notif{display:none;background:#d97706;color:white;padding:10px 20px;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;animation:pulse-notif 2s infinite;}
-.print-notif.show{display:flex;}
-@keyframes pulse-notif{0%,100%{background:#d97706;}50%{background:#f59e0b;}}
-.print-notif-text{font-size:13px;font-weight:bold;}
-.print-notif-badge{background:white;color:#d97706;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold;}
 </style>
 <script src="auth.js"></script>
 </head>
@@ -88,12 +87,6 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
     <button class="switch-btn" onclick="window.location.href='login.html'">🔄 Changer</button>
     <button class="logout-btn" onclick="doLogout()">🔓 Déco.</button>
   </div>
-</div>
-
-<!-- NOTIFICATION IMPRESSION -->
-<div class="print-notif" id="printNotifIndex" onclick="location.href='printshop.html'">
-  <span class="print-notif-text">🖨️ Impression en attente !</span>
-  <span class="print-notif-badge" id="printNotifCount">0</span>
 </div>
 
 <div class="header">
@@ -125,19 +118,49 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 </div>
 
 <div class="main" id="mainGrid">
-  <a href="stock.html"             class="card stock">    <div class="icon">📦</div><div class="title">STOCK</div><div class="desc">Grade · Couleur<br>Fournisseur<br>⚡ Vendre direct</div></a>
-  <a href="sales.html"             class="card sales">    <div class="icon">⚡</div><div class="title">VENTES</div><div class="desc">Caisse rapide<br>Paiement mixte<br>Ticket / Facture</div></a>
-  <a href="repairs.html"           class="card repairs">  <div class="icon">🔧</div><div class="title">RÉPARATIONS</div><div class="desc">Gestion SAV<br>📞 Contact client<br>Suivi atelier</div></a>
-  <a href="expenses.html"          class="card expenses"> <div class="icon">📉</div><div class="title">DÉPENSES</div><div class="desc">Sorties caisse<br>Fournisseurs<br>Suivi des coûts</div></a>
-  <a href="printshop.html"         class="card print">    <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
-  <a href="devis.html"             class="card devis">    <div class="icon">📋</div><div class="title">DEVIS</div><div class="desc">Créer un devis<br>Convertir en vente<br>Imprimer</div></a>
-  <a href="lots.html"              class="card lots">     <div class="icon">🗂️</div><div class="title">LOTS</div><div class="desc">Achat de lots<br>Rentabilité<br>Suivi appareils</div></a>
-  <a href="returns.html"           class="card returns">  <div class="icon">↩️</div><div class="title">RETOURS</div><div class="desc">Retours clients<br>Retours fournisseur<br>Stock inutilisable</div></a>
-  <a href="credits.html"           class="card credits">  <div class="icon">💳</div><div class="title">CRÉDITS</div><div class="desc">Dettes clients<br>Paiements partiels<br>Suivi des restes</div></a>
-  <a href="dailyreport.html"       class="card caisse gerant-only"><div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
-  <a href="rapport-comptable.html" class="card compta">   <div class="icon">📋</div><div class="title">RAPPORT COMPTABLE</div><div class="desc">Détails CA<br>CB / Espèces / DP<br>Pour le comptable</div></a>
-  <a href="dashboard.html"         class="card dashboard gerant-only"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
-  <a href="contacts.html"          class="card contacts"> <div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>📞 💬 WA · ✉️</div></a>
+
+  <!-- ══ VENTE & CAISSE ══ -->
+  <div class="group">
+    <div class="group-title" style="--gc:#22c55e;">Vente &amp; Caisse</div>
+    <div class="group-grid">
+      <a href="sales.html"   class="card sales">  <div class="icon">⚡</div><div class="title">VENTES</div><div class="desc">Caisse rapide<br>Paiement mixte<br>Ticket / Facture</div></a>
+      <a href="repairs.html" class="card repairs"><div class="icon">🔧</div><div class="title">RÉPARATIONS</div><div class="desc">Gestion SAV<br>📞 Contact client<br>Suivi atelier</div></a>
+      <a href="devis.html"   class="card devis">  <div class="icon">📋</div><div class="title">DEVIS</div><div class="desc">Créer un devis<br>Convertir en vente<br>Imprimer</div></a>
+      <a href="credits.html" class="card credits"><div class="icon">💳</div><div class="title">CRÉDITS</div><div class="desc">Dettes clients<br>Paiements partiels<br>Suivi des restes</div></a>
+    </div>
+  </div>
+
+  <!-- ══ STOCK & APPROVISIONNEMENT ══ -->
+  <div class="group">
+    <div class="group-title" style="--gc:#f59e0b;">Stock &amp; Approvisionnement</div>
+    <div class="group-grid">
+      <a href="stock.html"     class="card stock">    <div class="icon">📦</div><div class="title">STOCK</div><div class="desc">Grade · Couleur<br>Fournisseur<br>⚡ Vendre direct</div></a>
+      <a href="commandes.html" class="card commandes"><div class="icon">🛒</div><div class="title">COMMANDES</div><div class="desc">Fournisseurs<br>Import facture PDF<br>Suivi réception</div></a>
+      <a href="lots.html"      class="card lots">     <div class="icon">🗂️</div><div class="title">LOTS</div><div class="desc">Achat de lots<br>Rentabilité<br>Suivi appareils</div></a>
+      <a href="returns.html"   class="card returns">  <div class="icon">↩️</div><div class="title">RETOURS</div><div class="desc">Retours clients<br>Retours fournisseur<br>Stock inutilisable</div></a>
+    </div>
+  </div>
+
+  <!-- ══ FINANCES ══ -->
+  <div class="group">
+    <div class="group-title" style="--gc:#ef4444;">Finances</div>
+    <div class="group-grid">
+      <a href="expenses.html"          class="card expenses"><div class="icon">📉</div><div class="title">DÉPENSES</div><div class="desc">Sorties caisse<br>Fournisseurs<br>Suivi des coûts</div></a>
+      <a href="dailyreport.html"       class="card caisse gerant-only"><div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
+      <a href="rapport-comptable.html" class="card compta"><div class="icon">📋</div><div class="title">RAPPORT COMPTABLE</div><div class="desc">Détails CA<br>CB / Espèces / DP<br>Pour le comptable</div></a>
+      <a href="dashboard.html"         class="card dashboard gerant-only"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
+    </div>
+  </div>
+
+  <!-- ══ OUTILS ══ -->
+  <div class="group">
+    <div class="group-title" style="--gc:#64748b;">Outils</div>
+    <div class="group-grid">
+      <a href="printshop.html" class="card print">   <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
+      <a href="contacts.html"  class="card contacts"><div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>📞 💬 WA · ✉️</div></a>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer">The SMARTPHONE © 2026 &nbsp;|&nbsp; 1 Avenue d'Italie, 75013 Paris</div>
@@ -295,29 +318,6 @@ function calNext() {
 }
 
 renderCalendar();
-
-/* ── NOTIFICATION IMPRESSION ── */
-(function() {
-  function checkPrintQueue() {
-    fetch('/api/print/queue')
-      .then(function(r){ return r.json(); })
-      .then(function(data) {
-        var waiting = data.filter(function(d){ return d.status === 'EN_ATTENTE'; });
-        var bar = document.getElementById('printNotifIndex');
-        var badge = document.getElementById('printNotifCount');
-        if (waiting.length > 0) {
-          bar.classList.add('show');
-          badge.textContent = waiting.length;
-        } else {
-          bar.classList.remove('show');
-        }
-      })
-      .catch(function(){});
-  }
-  /* Vérifier toutes les 10 secondes */
-  checkPrintQueue();
-  setInterval(checkPrintQueue, 5000);
-})();
 </script>
 </body>
 </html>
