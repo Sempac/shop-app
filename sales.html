@@ -477,8 +477,8 @@ function renderProducts(list){
           <button class="btn-add-cart" onclick="addToCart(${p.id})" ${qty===0?'disabled':''}>
             ${qty===0?'❌ Rupture':'🛒 Ajouter au panier'}
           </button>
-          ${qty===0?`<button onclick="location.href='stock.html?id=${p.id}'" style="flex:1;padding:6px;background:#f59e0b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📦 Modifier stock</button>`:''}
-          <button class="btn-detail" onclick="showProductDetail(${p.id})">🔍 Détail</button>
+          <button onclick="location.href='stock.html?id=${p.id}'" style="flex:1;padding:6px;background:#f59e0b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📦 Stock</button>
+          <button class="btn-detail" onclick="showProductDetail(${p.id})" style="padding:8px 14px;font-size:12px;">🔍 Détail</button>
         </div>
       </div>`;
   }).join('');
