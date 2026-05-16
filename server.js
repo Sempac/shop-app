@@ -977,4 +977,244 @@ app.put('/api/lot-items/:id', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+
+/* =======================================================
+   MODULE COMMANDES FOURNISSEURS
+======================================================= */
+
+/* ── GET toutes les commandes ── */
+app.get('/api/commandes', async(req,res)=>{
+  try{
+    const{statut,fournisseur}=req.query;
+    let sql=`SELECT c.*,
+      COUNT(ci.id) AS nb_items,
+      SUM(ci.quantite_cmd) AS total_qty_cmd,
+      SUM(ci.quantite_reçue) AS total_qty_recu
+      FROM commandes c
+      LEFT JOIN commande_items ci ON ci.commande_id=c.id
+      WHERE 1=1`;
+    const p=[];
+    if(statut){p.push(statut);sql+=` AND c.statut=$${p.length}`;}
+    if(fournisseur){p.push('%'+fournisseur+'%');sql+=` AND c.fournisseur ILIKE $${p.length}`;}
+    sql+=' GROUP BY c.id ORDER BY c.created_at DESC';
+    const r=await pool.query(sql,p);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── GET alertes commandes ── */
+app.get('/api/commandes/alertes', async(req,res)=>{
+  try{
+    /* Commandes en attente depuis plus de 1 jour */
+    const r=await pool.query(`
+      SELECT c.*,
+        EXTRACT(DAY FROM NOW()-c.created_at) AS jours_attente
+      FROM commandes c
+      WHERE c.statut IN ('EN_ATTENTE','PARTIELLEMENT_RECU')
+        AND c.created_at < NOW() - INTERVAL '1 day'
+      ORDER BY c.created_at ASC`);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── GET une commande avec ses items ── */
+app.get('/api/commandes/:id', async(req,res)=>{
+  try{
+    const c=await pool.query('SELECT * FROM commandes WHERE id=$1',[req.params.id]);
+    if(!c.rows[0])return res.status(404).json({error:'Commande introuvable'});
+    const items=await pool.query('SELECT * FROM commande_items WHERE commande_id=$1 ORDER BY id',[req.params.id]);
+    res.json({commande:c.rows[0],items:items.rows});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── POST créer une commande ── */
+app.post('/api/commandes', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{fournisseur,fournisseur_id,origine,date_commande,notes,paiement,
+          montant_ht,montant_ttc,numero_facture,fichier_pdf,created_by,items}=req.body;
+    const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const numRes=await client.query("SELECT next_numero('CMD',$1,'commandes','numero') AS num",[dateStr]);
+    const numero=numRes.rows[0].num;
+    await client.query('BEGIN');
+    const cmd=await client.query(
+      `INSERT INTO commandes(numero,fournisseur,fournisseur_id,origine,date_commande,
+        notes,paiement,montant_ht,montant_ttc,numero_facture,fichier_pdf,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [numero,fournisseur,fournisseur_id||null,origine||'MANUEL',
+       date_commande||new Date().toISOString().slice(0,10),
+       notes||null,paiement||'card',
+       Number(montant_ht||0),Number(montant_ttc||0),
+       numero_facture||null,fichier_pdf||null,created_by||null]);
+    const cmdId=cmd.rows[0].id;
+    for(const it of (items||[])){
+      await client.query(
+        `INSERT INTO commande_items(commande_id,reference,nom,categorie,
+          quantite_cmd,prix_ht,prix_ttc,prix_vente,notes)
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [cmdId,it.reference||null,it.nom,it.categorie||'Pièce détachée',
+         Number(it.quantite_cmd||1),Number(it.prix_ht||0),
+         Number(it.prix_ttc||0),Number(it.prix_vente||0),it.notes||null]);
+    }
+    await client.query('COMMIT');
+    res.json(cmd.rows[0]);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* ── PUT modifier une commande ── */
+app.put('/api/commandes/:id', async(req,res)=>{
+  try{
+    const{statut,date_livraison,notes,numero_facture,fichier_pdf}=req.body;
+    const r=await pool.query(
+      `UPDATE commandes SET statut=COALESCE($1,statut),
+        date_livraison=COALESCE($2,date_livraison),
+        notes=COALESCE($3,notes),
+        numero_facture=COALESCE($4,numero_facture),
+        fichier_pdf=COALESCE($5,fichier_pdf),
+        updated_at=NOW()
+       WHERE id=$6 RETURNING *`,
+      [statut||null,date_livraison||null,notes||null,
+       numero_facture||null,fichier_pdf||null,req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── PUT réception partielle/totale ── */
+app.put('/api/commandes/:id/reception', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{items}=req.body; // [{id, quantite_reçue, prix_vente, categorie}]
+    await client.query('BEGIN');
+    let totalRecu=0, totalCmd=0;
+    for(const it of items){
+      await client.query(
+        `UPDATE commande_items SET quantite_reçue=$1,prix_vente=$2,
+          statut=CASE WHEN $1>=quantite_cmd THEN 'RECU'
+                      WHEN $1>0 THEN 'PARTIEL'
+                      ELSE 'MANQUANT' END
+         WHERE id=$3`,
+        [Number(it.quantite_reçue||0),Number(it.prix_vente||0),it.id]);
+      /* Ajouter au stock si reçu */
+      if(Number(it.quantite_reçue)>0){
+        /* Chercher si produit existe déjà */
+        const existing=await client.query(
+          'SELECT id FROM products WHERE name ILIKE $1 LIMIT 1',
+          ['%'+it.nom+'%']);
+        if(existing.rows[0]){
+          await client.query(
+            'UPDATE products SET stock_quantity=stock_quantity+$1 WHERE id=$2',
+            [Number(it.quantite_reçue),existing.rows[0].id]);
+        } else {
+          await client.query(
+            `INSERT INTO products(name,category,condition,purchase_price,sale_price,
+              stock_quantity,stock_alert,supplier_name)
+             VALUES($1,$2,'NEUF',$3,$4,$5,3,$6)`,
+            [it.nom,it.categorie||'Pièce détachée',
+             Number(it.prix_ht||0),Number(it.prix_vente||0),
+             Number(it.quantite_reçue),it.fournisseur||null]);
+        }
+        totalRecu+=Number(it.quantite_reçue);
+      }
+      totalCmd+=Number(it.quantite_cmd||1);
+    }
+    /* Mettre à jour statut commande */
+    const statut=totalRecu===0?'EN_ATTENTE':
+                 totalRecu>=totalCmd?'RECU':'PARTIELLEMENT_RECU';
+    await client.query(
+      `UPDATE commandes SET statut=$1,date_livraison=CURRENT_DATE,updated_at=NOW() WHERE id=$2`,
+      [statut,req.params.id]);
+    await client.query('COMMIT');
+    res.json({success:true,statut});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* ── POST extraction PDF via Claude ── */
+app.post('/api/commandes/extract-pdf', async(req,res)=>{
+  try{
+    const{pdfBase64,filename}=req.body;
+    if(!pdfBase64)return res.status(400).json({error:'PDF manquant'});
+
+    const Anthropic=require('@anthropic-ai/sdk');
+    const anthropic=new Anthropic();
+
+    const response=await anthropic.messages.create({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:2000,
+      messages:[{
+        role:'user',
+        content:[
+          {type:'document',source:{type:'base64',media_type:'application/pdf',data:pdfBase64}},
+          {type:'text',text:`Extrais les informations de cette facture fournisseur et retourne UNIQUEMENT un JSON valide sans texte avant/après :
+{
+  "fournisseur": "nom du fournisseur",
+  "numero_facture": "numéro de facture",
+  "date_facture": "YYYY-MM-DD",
+  "montant_ht": 0.00,
+  "montant_ttc": 0.00,
+  "paiement": "card ou cash",
+  "items": [
+    {
+      "reference": "ref produit",
+      "nom": "nom du produit",
+      "quantite_cmd": 1,
+      "prix_ht": 0.00,
+      "prix_ttc": 0.00,
+      "categorie": "Pièce détachée ou Smartphone ou Accessoire ou Accessoire Info"
+    }
+  ]
+}`}
+        ]
+      }]
+    });
+
+    const text=response.content.map(b=>b.type==='text'?b.text:'').join('');
+    const clean=text.replace(/\`\`\`json|\`\`\`/g,'').trim();
+    const data=JSON.parse(clean);
+    res.json(data);
+  }catch(e){
+    console.error('Extract PDF error:',e.message);
+    res.status(500).json({error:e.message});
+  }
+});
+
+/* ── GET besoins technicien ── */
+app.get('/api/besoins', async(req,res)=>{
+  try{
+    const r=await pool.query('SELECT * FROM besoins_technicien ORDER BY urgence DESC,created_at DESC');
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.post('/api/besoins', async(req,res)=>{
+  try{
+    const{nom,categorie,quantite,urgence,notes,created_by}=req.body;
+    const r=await pool.query(
+      `INSERT INTO besoins_technicien(nom,categorie,quantite,urgence,notes,created_by)
+       VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [nom,categorie||'Pièce détachée',Number(quantite||1),
+       urgence||'NORMAL',notes||null,created_by||null]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.put('/api/besoins/:id', async(req,res)=>{
+  try{
+    const{statut,commande_id}=req.body;
+    const r=await pool.query(
+      'UPDATE besoins_technicien SET statut=$1,commande_id=$2 WHERE id=$3 RETURNING *',
+      [statut||'EN_ATTENTE',commande_id||null,req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.delete('/api/besoins/:id', async(req,res)=>{
+  try{
+    await pool.query('DELETE FROM besoins_technicien WHERE id=$1',[req.params.id]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
