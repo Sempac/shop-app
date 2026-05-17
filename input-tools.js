@@ -1,18 +1,13 @@
 /**
  * input-tools.js — The SMARTPHONE POS
  * Saisie vocale + Scan code barre (caméra + douchette)
- * NON INVASIF — ne modifie pas la structure HTML existante
- *
- * Usage :
- *   InputTools.addVoice('fieldId')           // bouton micro seul
- *   InputTools.addScan('fieldId')            // bouton caméra seul
- *   InputTools.addBoth('fieldId', callback)  // micro + caméra
+ * v2 — Scan global sans cliquer dans un champ
  */
 
 var InputTools = (function() {
 
   /* ═══════════════════════════
-     STYLES — injectés une fois
+     STYLES
   ═══════════════════════════ */
   function injectStyles() {
     if (document.getElementById('it-styles')) return;
@@ -26,7 +21,6 @@ var InputTools = (function() {
       '.it-btn:hover{background:#475569;}',
       '.it-btn.it-active{background:#ef4444;animation:it-pulse 1s infinite;}',
       '@keyframes it-pulse{0%,100%{opacity:1}50%{opacity:0.6}}',
-      /* Modal caméra */
       '#it-scan-modal{display:none;position:fixed;inset:0;background:#000000cc;',
         'z-index:9999;align-items:center;justify-content:center;}',
       '#it-scan-modal.show{display:flex;}',
@@ -39,24 +33,22 @@ var InputTools = (function() {
       '#it-crosshair{position:absolute;inset:0;display:flex;align-items:center;',
         'justify-content:center;pointer-events:none;}',
       '#it-crosshair-inner{width:220px;height:70px;border:2px solid #22c55e;',
-        'border-radius:4px;position:relative;}',
-      '#it-crosshair-inner::before,#it-crosshair-inner::after{content:"";',
-        'position:absolute;width:16px;height:16px;border-color:#22c55e;',
-        'border-style:solid;}',
-      '#it-crosshair-inner::before{top:-2px;left:-2px;',
-        'border-width:3px 0 0 3px;}',
-      '#it-crosshair-inner::after{bottom:-2px;right:-2px;',
-        'border-width:0 3px 3px 0;}',
+        'border-radius:4px;}',
       '#it-scan-status{font-size:12px;color:#94a3b8;margin-bottom:12px;}',
       '#it-scan-cancel{width:100%;padding:10px;background:#ef4444;color:white;',
         'border:none;border-radius:8px;font-size:13px;font-weight:bold;',
-        'cursor:pointer;font-family:Arial;}'
+        'cursor:pointer;font-family:Arial;}',
+      /* Toast scan global */
+      '#it-scan-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);',
+        'background:#22c55e;color:white;padding:10px 20px;border-radius:8px;',
+        'font-size:13px;font-family:Arial;z-index:99999;display:none;',
+        'box-shadow:0 4px 12px #0004;font-weight:bold;}'
     ].join('');
     document.head.appendChild(s);
   }
 
   /* ═══════════════════════════
-     MODAL CAMÉRA — créé une fois
+     MODAL CAMÉRA
   ═══════════════════════════ */
   function createScanModal() {
     if (document.getElementById('it-scan-modal')) return;
@@ -75,6 +67,11 @@ var InputTools = (function() {
       '</div>'
     ].join('');
     document.body.appendChild(m);
+
+    /* Toast scan global */
+    var toast = document.createElement('div');
+    toast.id = 'it-scan-toast';
+    document.body.appendChild(toast);
   }
 
   /* ═══════════════════════════
@@ -89,26 +86,86 @@ var InputTools = (function() {
   var _scanBtn      = null;
   var _detector     = null;
 
+  /* ══════════════════════════════════════════
+     SCAN GLOBAL DOUCHETTE — sans cliquer
+     Détecte séquence rapide + Enter
+  ══════════════════════════════════════════ */
+  var _globalBuffer   = '';
+  var _globalTimer    = null;
+  var _globalEnabled  = false;
+  var _globalCallback = null;
+  var _lastScannedCode = '';
+  var _lastScannedTime = 0;
+  var _DEBOUNCE_MS     = 2000; /* Ignorer le même code dans les 1.5s */
+
+  function enableGlobalScan(callback) {
+    if (_globalEnabled) return;
+    _globalEnabled  = true;
+    _globalCallback = callback;
+
+    document.addEventListener('keydown', function(e) {
+      var tag    = document.activeElement ? document.activeElement.tagName : '';
+      var isInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+
+      /* Détecter modal ouvert */
+      var modalOpen = !!document.querySelector('.moverlay.show, #overlay, [id="modal"].show');
+
+      if (e.key === 'Enter') {
+        if (_globalBuffer.length >= 3) {
+          var code = _globalBuffer.trim();
+          _globalBuffer = '';
+          clearTimeout(_globalTimer);
+
+          /* Si l'utilisateur tapait manuellement dans un champ (frappe lente) → ignorer
+             Mais si c'est la douchette (frappe rapide) → toujours traiter */
+          /* On ne bloque plus rien ici — le callback gère selon le contexte */
+
+          /* Bip */
+          try {
+            var ac = new AudioContext(); var osc = ac.createOscillator(); var g = ac.createGain();
+            osc.connect(g); g.connect(ac.destination); osc.frequency.value = 1200;
+            g.gain.setValueAtTime(0.3, ac.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, ac.currentTime + 0.12);
+            osc.start(); osc.stop(ac.currentTime + 0.12);
+          } catch(err) {}
+
+          /* Anti-doublon : ignorer si même code dans les 1.5s */
+          var now = Date.now();
+          if (code === _lastScannedCode && (now - _lastScannedTime) < _DEBOUNCE_MS) {
+            return; /* Doublon ignoré */
+          }
+          _lastScannedCode = code;
+          _lastScannedTime = now;
+
+          if (_globalCallback) _globalCallback(code, isInput && !modalOpen);
+        } else {
+          _globalBuffer = '';
+        }
+        return;
+      }
+
+      /* Accumule les caractères — JAMAIS de preventDefault (ne pas bloquer saisie manuelle) */
+      if (e.key.length === 1) {
+        _globalBuffer += e.key;
+        clearTimeout(_globalTimer);
+        _globalTimer = setTimeout(function() { _globalBuffer = ''; }, 300);
+      }
+    });
+  }
+
   /* ═══════════════════════════
      SAISIE VOCALE
   ═══════════════════════════ */
   function startVoice(fieldId, btn, callback) {
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      showToast('🎤 Voix non supportée — utilisez Chrome ou Edge');
-      return;
-    }
-    if (_voiceActive) {
-      if (_recognition) _recognition.stop();
-      return;
-    }
+    if (!SR) { showToast('🎤 Voix non supportée — utilisez Chrome ou Edge'); return; }
+    if (_voiceActive) { if (_recognition) _recognition.stop(); return; }
 
     var field = document.getElementById(fieldId);
     if (!field) return;
 
     _voiceActive = true;
     btn.classList.add('it-active');
-    btn.title = 'Écoute... (cliquez pour arrêter)';
 
     _recognition = new SR();
     _recognition.lang = 'fr-FR';
@@ -116,11 +173,8 @@ var InputTools = (function() {
     _recognition.interimResults = false;
 
     _recognition.onresult = function(e) {
-      var text = e.results[0][0].transcript;
-      /* Supprimer ponctuation automatique */
-      text = text.replace(/[.,;:!?]/g, '').trim();
+      var text = e.results[0][0].transcript.replace(/[.,;:!?]/g, '').trim();
       field.value = text;
-      /* Déclencher les événements pour que les filtres réagissent */
       field.dispatchEvent(new Event('input',  {bubbles:true}));
       field.dispatchEvent(new Event('change', {bubbles:true}));
       field.focus();
@@ -129,12 +183,7 @@ var InputTools = (function() {
     };
 
     _recognition.onerror = function(err) {
-      var msgs = {
-        'not-allowed':   'Microphone refusé — autorisez dans le navigateur',
-        'no-speech':     'Aucune parole détectée',
-        'network':       'Erreur réseau',
-        'audio-capture': 'Pas de micro détecté'
-      };
+      var msgs = {'not-allowed':'Microphone refusé','no-speech':'Aucune parole','network':'Erreur réseau','audio-capture':'Pas de micro'};
       showToast('🎤 ' + (msgs[err.error] || 'Erreur: ' + err.error));
       resetVoice(btn);
     };
@@ -145,10 +194,7 @@ var InputTools = (function() {
 
   function resetVoice(btn) {
     _voiceActive = false;
-    if (btn) {
-      btn.classList.remove('it-active');
-      btn.title = 'Saisie vocale (Chrome/Edge)';
-    }
+    if (btn) btn.classList.remove('it-active');
   }
 
   /* ═══════════════════════════
@@ -156,14 +202,12 @@ var InputTools = (function() {
   ═══════════════════════════ */
   function startScan(fieldId, btn, callback) {
     if (_scanActive) { stopScan(); return; }
-
     createScanModal();
     _scanFieldId  = fieldId;
     _scanCallback = callback;
     _scanBtn      = btn;
     _scanActive   = true;
-
-    if (btn) { btn.classList.add('it-active'); btn.title = 'Scan en cours...'; }
+    if (btn) btn.classList.add('it-active');
     document.getElementById('it-scan-modal').classList.add('show');
     document.getElementById('it-scan-status').textContent = 'Démarrage caméra...';
 
@@ -175,16 +219,11 @@ var InputTools = (function() {
       video.srcObject = stream;
       video.play();
       document.getElementById('it-scan-status').textContent = 'Pointez vers le code barre...';
-
-      /* Utiliser BarcodeDetector si dispo (Chrome 83+) */
       if ('BarcodeDetector' in window) {
-        _detector = new BarcodeDetector({
-          formats: ['ean_13','ean_8','code_128','code_39','qr_code','upc_a','upc_e','itf']
-        });
+        _detector = new BarcodeDetector({formats:['ean_13','ean_8','code_128','code_39','qr_code','upc_a','upc_e','itf']});
         requestAnimationFrame(scanLoop);
       } else {
-        document.getElementById('it-scan-status').textContent =
-          '⚠️ Scan non supporté sur ce navigateur — utilisez Chrome';
+        document.getElementById('it-scan-status').textContent = '⚠️ Scan non supporté — utilisez Chrome';
       }
     }).catch(function(err) {
       document.getElementById('it-scan-status').textContent = '❌ Caméra: ' + err.message;
@@ -195,32 +234,19 @@ var InputTools = (function() {
     if (!_scanActive || !_detector) return;
     var video = document.getElementById('it-video');
     if (!video || video.readyState < 2) { requestAnimationFrame(scanLoop); return; }
-
     _detector.detect(video).then(function(codes) {
-      if (codes.length > 0) {
-        onCodeDetected(codes[0].rawValue);
-      } else {
-        requestAnimationFrame(scanLoop);
-      }
-    }).catch(function() {
-      requestAnimationFrame(scanLoop);
-    });
+      if (codes.length > 0) onCodeDetected(codes[0].rawValue);
+      else requestAnimationFrame(scanLoop);
+    }).catch(function() { requestAnimationFrame(scanLoop); });
   }
 
   function onCodeDetected(code) {
-    /* Son bip */
     try {
-      var ac  = new AudioContext();
-      var osc = ac.createOscillator();
-      var g   = ac.createGain();
-      osc.connect(g); g.connect(ac.destination);
-      osc.frequency.value = 1200;
-      g.gain.setValueAtTime(0.3, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.01, ac.currentTime + 0.12);
+      var ac = new AudioContext(); var osc = ac.createOscillator(); var g = ac.createGain();
+      osc.connect(g); g.connect(ac.destination); osc.frequency.value = 1200;
+      g.gain.setValueAtTime(0.3, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.01, ac.currentTime + 0.12);
       osc.start(); osc.stop(ac.currentTime + 0.12);
     } catch(e) {}
-
-    /* Remplir le champ */
     var field = document.getElementById(_scanFieldId);
     if (field) {
       field.value = code;
@@ -233,31 +259,22 @@ var InputTools = (function() {
   }
 
   function stopScan() {
-    _scanActive = false;
-    _detector   = null;
-    if (_scanStream) {
-      _scanStream.getTracks().forEach(function(t){ t.stop(); });
-      _scanStream = null;
-    }
+    _scanActive = false; _detector = null;
+    if (_scanStream) { _scanStream.getTracks().forEach(function(t){t.stop();}); _scanStream = null; }
     var modal = document.getElementById('it-scan-modal');
     if (modal) modal.classList.remove('show');
-    if (_scanBtn) {
-      _scanBtn.classList.remove('it-active');
-      _scanBtn.title = 'Scanner un code barre';
-      _scanBtn = null;
-    }
+    if (_scanBtn) { _scanBtn.classList.remove('it-active'); _scanBtn = null; }
   }
 
   /* ═══════════════════════════
-     DOUCHETTE USB
+     DOUCHETTE SUR UN CHAMP
   ═══════════════════════════ */
   function enableBarcode(fieldId, callback) {
     var field = document.getElementById(fieldId);
     if (!field) return;
-    /* La douchette tape le code + Enter — on écoute Enter */
     field.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
-        e.preventDefault(); /* Empêcher submit/boutons */
+        e.preventDefault();
         e.stopPropagation();
         if (field.value.trim()) {
           field.dispatchEvent(new Event('input',  {bubbles:true}));
@@ -266,29 +283,27 @@ var InputTools = (function() {
         }
       }
     });
-    /* Indicateur visuel focus */
-    field.addEventListener('focus', function(){
-      field.style.boxShadow = '0 0 0 3px #22c55e44';
-    });
-    field.addEventListener('blur', function(){
-      field.style.boxShadow = '';
-    });
+    field.addEventListener('focus', function(){ field.style.boxShadow = '0 0 0 3px #22c55e44'; });
+    field.addEventListener('blur',  function(){ field.style.boxShadow = ''; });
   }
 
   /* ═══════════════════════════
-     TOAST NOTIFICATION
+     TOAST
   ═══════════════════════════ */
   function showToast(msg) {
     var t = document.createElement('div');
-    t.style.cssText = [
-      'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);',
-      'background:#1e293b;color:white;padding:10px 18px;border-radius:8px;',
-      'font-size:13px;font-family:Arial;z-index:99999;',
-      'box-shadow:0 4px 12px #0004;'
-    ].join('');
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:10px 18px;border-radius:8px;font-size:13px;font-family:Arial;z-index:99999;box-shadow:0 4px 12px #0004;';
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(function(){ t.remove(); }, 3000);
+  }
+
+  function showScanToast(code) {
+    var t = document.getElementById('it-scan-toast');
+    if (!t) return;
+    t.textContent = '🔍 ' + code;
+    t.style.display = 'block';
+    setTimeout(function(){ t.style.display = 'none'; }, 2000);
   }
 
   /* ═══════════════════════════
@@ -307,69 +322,41 @@ var InputTools = (function() {
   /* ═══════════════════════════
      API PUBLIQUE
   ═══════════════════════════ */
-
-  /**
-   * Ajouter bouton micro seulement
-   * @param {string} fieldId - ID du champ input
-   * @param {function} callback - appelée avec le texte reconnu
-   */
   function addVoice(fieldId, callback) {
     injectStyles();
     var field = document.getElementById(fieldId);
     if (!field) return;
-    var btn = makeBtn('🎤', 'Saisie vocale (Chrome/Edge)', function(){
-      startVoice(fieldId, btn, callback);
-    });
+    var btn = makeBtn('🎤', 'Saisie vocale', function(){ startVoice(fieldId, btn, callback); });
     field.insertAdjacentElement('afterend', btn);
   }
 
-  /**
-   * Ajouter bouton caméra seulement
-   * @param {string} fieldId - ID du champ input
-   * @param {function} callback - appelée avec le code détecté
-   */
   function addScan(fieldId, callback) {
-    injectStyles();
-    createScanModal();
+    injectStyles(); createScanModal();
     var field = document.getElementById(fieldId);
     if (!field) return;
     enableBarcode(fieldId, callback);
-    var btn = makeBtn('📷', 'Scanner un code barre', function(){
-      startScan(fieldId, btn, callback);
-    });
+    var btn = makeBtn('📷', 'Scanner un code barre', function(){ startScan(fieldId, btn, callback); });
     field.insertAdjacentElement('afterend', btn);
   }
 
-  /**
-   * Ajouter micro + caméra
-   * @param {string} fieldId - ID du champ input
-   * @param {function} callback - appelée avec la valeur
-   */
   function addBoth(fieldId, callback) {
-    injectStyles();
-    createScanModal();
+    injectStyles(); createScanModal();
     var field = document.getElementById(fieldId);
     if (!field) return;
     enableBarcode(fieldId, callback);
-
-    /* Bouton scan */
-    var btnScan = makeBtn('📷', 'Scanner un code barre', function(){
-      startScan(fieldId, btnScan, callback);
-    });
-    /* Bouton voix */
-    var btnVoice = makeBtn('🎤', 'Saisie vocale (Chrome/Edge)', function(){
-      startVoice(fieldId, btnVoice, callback);
-    });
-
+    var btnScan  = makeBtn('📷', 'Scanner un code barre', function(){ startScan(fieldId, btnScan, callback); });
+    var btnVoice = makeBtn('🎤', 'Saisie vocale', function(){ startVoice(fieldId, btnVoice, callback); });
     field.insertAdjacentElement('afterend', btnScan);
     btnScan.insertAdjacentElement('afterend', btnVoice);
   }
 
   return {
-    addVoice:  addVoice,
-    addScan:   addScan,
-    addBoth:   addBoth,
-    stopScan:  stopScan
+    addVoice:         addVoice,
+    addScan:          addScan,
+    addBoth:          addBoth,
+    stopScan:         stopScan,
+    enableGlobalScan: enableGlobalScan,
+    showScanToast:    showScanToast
   };
 
 })();

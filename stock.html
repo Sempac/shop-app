@@ -222,12 +222,45 @@ tr:hover td{background:#f8fafc;}
 <div class="moverlay" id="modal">
   <div class="modal">
     <h3 id="modalTitle">➕ Nouveau produit</h3>
+    <input type="hidden" id="p_id">
+
+    <!-- Type d'entrée + Statut -->
     <div class="msec">
-      <div class="msec-title">📋 Informations</div>
+      <div class="msec-title">📥 Origine &amp; Statut</div>
+      <div class="mgrid">
+        <div class="mfg"><label>Type d'entrée *</label>
+          <select id="p_type_entree" onchange="toggleEntreeFields()">
+            <option value="ACHAT_DIRECT">🏪 Achat direct</option>
+            <option value="RACHAT_CLIENT">👤 Rachat client</option>
+            <option value="LOT">📦 Lot fournisseur</option>
+            <option value="COMMANDE">🛒 Commande fournisseur</option>
+          </select>
+        </div>
+        <div class="mfg"><label>Statut produit</label>
+          <select id="p_statut">
+            <option value="DISPONIBLE">✅ Disponible</option>
+            <option value="EN_TEST">🔍 En test</option>
+            <option value="REPARATION">🔧 Réparation</option>
+            <option value="IRREPARABLE">❌ Irréparable</option>
+          </select>
+        </div>
+        <!-- Rachat client -->
+        <div class="mfg" id="f_client_nom" style="display:none"><label>👤 Nom client</label><input id="p_client_nom" placeholder="Nom du client"></div>
+        <div class="mfg" id="f_client_tel" style="display:none"><label>📞 Tél client</label><input id="p_client_tel" placeholder="06 XX XX XX XX"></div>
+        <!-- Lot -->
+        <div class="mfg" id="f_lot" style="display:none"><label>📦 Lot</label>
+          <select id="p_lot_id"><option value="">— Choisir un lot —</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informations produit -->
+    <div class="msec">
+      <div class="msec-title">📋 Informations produit</div>
       <div class="mgrid">
         <div class="mfg full"><label>Nom *</label><input id="p_name" placeholder="Ex: iPhone 12 64Go Noir"></div>
         <div class="mfg"><label>Catégorie</label>
-          <select id="p_cat">
+          <select id="p_cat" onchange="toggleIMEIField()">
             <option>Smartphone</option><option>Tablette</option><option>PC Portable</option>
             <option>Carte SIM</option><option>Coque</option><option>Protection écran</option>
             <option>Chargeur</option><option>Câble</option><option>Audio</option>
@@ -244,13 +277,9 @@ tr:hover td{background:#f8fafc;}
         <div class="mfg"><label>Grade</label>
           <select id="p_grade">
             <option value="">— Sans grade —</option>
-            <option value="NEUF">NEUF</option>
-            <option value="Grade A+">Grade A+</option>
-            <option value="Grade A">Grade A</option>
-            <option value="Grade B">Grade B</option>
-            <option value="Grade C">Grade C</option>
+            <option value="Grade A+">Grade A+</option><option value="Grade A">Grade A</option>
+            <option value="Grade B">Grade B</option><option value="Grade C">Grade C</option>
             <option value="Grade D">Grade D</option>
-            <option value="Pour pièces">Pour pièces</option>
           </select>
         </div>
         <div class="mfg"><label>Couleur</label>
@@ -258,18 +287,28 @@ tr:hover td{background:#f8fafc;}
             <option value="">— Sans couleur —</option>
             <option>Noir</option><option>Blanc</option><option>Gris</option><option>Argent</option>
             <option>Or</option><option>Rose</option><option>Rouge</option><option>Bleu</option>
-            <option>Bleu marine</option><option>Bleu ciel</option><option>Vert</option>
-            <option>Vert kaki</option><option>Violet</option><option>Lavande</option>
-            <option>Jaune</option><option>Orange</option><option>Marron</option>
-            <option>Bordeaux</option><option>Transparent</option><option>Multicolore</option>
+            <option>Bleu marine</option><option>Vert</option><option>Violet</option>
+            <option>Jaune</option><option>Orange</option><option>Transparent</option>
           </select>
         </div>
+        <!-- IMEI & Série (téléphones/tablettes) -->
+        <div class="mfg" id="f_imei"><label>📶 IMEI</label><input id="p_imei" placeholder="358239051234567" maxlength="20"></div>
+        <div class="mfg" id="f_serie"><label>🔢 N° Série</label><input id="p_serie" placeholder="S/N..."></div>
         <div class="mfg full"><label>Fournisseur / Origine</label>
-          <input id="p_supplier" placeholder="Ex: Mohamed, Lot mai 2026...">
+          <input id="p_supplier" placeholder="Ex: LCD Phone, Mohamed...">
         </div>
-        <div class="mfg"><label>Code barre</label><input id="p_barcode" placeholder="Ex: 3700123456789"></div>
+        <div class="mfg full"><label>Notes</label><input id="p_notes" placeholder="Remarques..."></div>
       </div>
     </div>
+
+    <!-- Codes barres -->
+    <div class="msec">
+      <div class="msec-title">🔍 Codes barres</div>
+      <div id="barcodesContainer"></div>
+      <button type="button" onclick="addBarcodeField()" style="width:100%;padding:7px;background:#1e293b;color:#64748b;border:1.5px dashed #334155;border-radius:6px;cursor:pointer;font-size:12px;font-family:Arial;margin-top:4px;">➕ Ajouter un code barre</button>
+    </div>
+
+    <!-- Emplacement -->
     <div class="msec">
       <div class="msec-title">📍 Emplacement</div>
       <div class="mgrid">
@@ -288,7 +327,6 @@ tr:hover td{background:#f8fafc;}
             <option value="">— Non défini —</option>
             <option>Tiroir 1 GAUCHE</option><option>Tiroir 1 DROITE</option>
             <option>Tiroir 2 GAUCHE</option><option>Tiroir 2 DROITE</option>
-            <option>Tiroir 3 GAUCHE</option><option>Tiroir 3 DROITE</option>
             <option>Haut GAUCHE</option><option>Haut DROITE</option>
             <option>Milieu GAUCHE</option><option>Milieu DROITE</option>
             <option>Bas GAUCHE</option><option>Bas DROITE</option>
@@ -296,6 +334,8 @@ tr:hover td{background:#f8fafc;}
         </div>
       </div>
     </div>
+
+    <!-- Prix & Stock -->
     <div class="msec">
       <div class="msec-title">💰 Prix &amp; Stock</div>
       <div class="mgrid">
@@ -305,7 +345,7 @@ tr:hover td{background:#f8fafc;}
         <div class="mfg"><label>Seuil alerte</label><input type="number" id="p_alert" value="3" min="0"></div>
       </div>
     </div>
-    <input type="hidden" id="p_id">
+
     <div class="mbtns">
       <button class="mbtn mbtn-cancel" id="btnCancelModal">Annuler</button>
       <button class="mbtn mbtn-save" id="btnSaveModal">✅ Enregistrer</button>
@@ -370,7 +410,31 @@ function showAlerts() {
 
 function applyFilters() {
   var norm = function(s){ return s ? s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') : ''; };
-  var q        = norm(document.getElementById('f_search').value.trim());
+  var qRaw = document.getElementById('f_search').value.trim();
+
+  /* Si recherche ressemble à un code barre → chercher via API (multi-barcodes) */
+  if (qRaw.length >= 4 && /^[A-Za-z0-9_-]+$/.test(qRaw)) {
+    fetch('/api/products/search-barcode/' + encodeURIComponent(qRaw))
+      .then(function(r){ return r.json(); })
+      .then(function(bcData) {
+        if (bcData && bcData.length > 0) {
+          filtered = bcData;
+          renderStats();
+          renderTable();
+          return;
+        }
+        /* Pas trouvé par barcode → recherche normale */
+        _applyFiltersLocal(qRaw, norm);
+      })
+      .catch(function() { _applyFiltersLocal(qRaw, norm); });
+    return;
+  }
+
+  _applyFiltersLocal(qRaw, norm);
+}
+
+function _applyFiltersLocal(qRaw, norm) {
+  var q        = norm(qRaw);
   var cat      = document.getElementById('f_cat').value;
   var cond     = document.getElementById('f_cond').value;
   var grade    = document.getElementById('f_grade').value;
@@ -398,6 +462,7 @@ function applyFilters() {
         || norm(p.supplier_name).indexOf(q) >= 0
         || norm(p.grade).indexOf(q) >= 0
         || norm(p.location_zone).indexOf(q) >= 0
+        || norm(p.imei||'').indexOf(q) >= 0
         || (p.barcode && (p.barcode.trim() === qRaw.trim() || p.barcode.toLowerCase().indexOf(q) >= 0));
       if (!match) return false;
     }
@@ -635,19 +700,70 @@ function sellFromStock(id) {
 }
 
 /* MODAL */
+function toggleEntreeFields() {
+  var type = document.getElementById('p_type_entree').value;
+  document.getElementById('f_client_nom').style.display = type === 'RACHAT_CLIENT' ? 'block' : 'none';
+  document.getElementById('f_client_tel').style.display = type === 'RACHAT_CLIENT' ? 'block' : 'none';
+  document.getElementById('f_lot').style.display        = type === 'LOT' ? 'block' : 'none';
+}
+
+function toggleIMEIField() {
+  var cat = document.getElementById('p_cat').value;
+  var showIMEI = ['Smartphone','Tablette','PC Portable'].indexOf(cat) >= 0;
+  document.getElementById('f_imei').style.display  = showIMEI ? 'block' : 'none';
+  document.getElementById('f_serie').style.display = showIMEI ? 'block' : 'none';
+}
+
+var modalBarcodes = [];
+
+function addBarcodeField(barcode, fournisseur) {
+  modalBarcodes.push({barcode: barcode||'', fournisseur: fournisseur||''});
+  renderBarcodeFields();
+}
+
+function renderBarcodeFields() {
+  var div = document.getElementById('barcodesContainer');
+  if (!div) return;
+  div.innerHTML = modalBarcodes.map(function(bc, i) {
+    return '<div style="display:flex;gap:6px;margin-bottom:5px;">' +
+      '<input value="' + (bc.barcode||'') + '" placeholder="Code barre" ' +
+        'style="flex:2;padding:7px;border:1.5px solid #e2e8f0;border-radius:5px;font-size:12px;font-family:Arial;" ' +
+        'oninput="modalBarcodes['+i+'].barcode=this.value">' +
+      '<input value="' + (bc.fournisseur||'') + '" placeholder="Fournisseur (optionnel)" ' +
+        'style="flex:1;padding:7px;border:1.5px solid #e2e8f0;border-radius:5px;font-size:12px;font-family:Arial;" ' +
+        'oninput="modalBarcodes['+i+'].fournisseur=this.value">' +
+      '<button onclick="modalBarcodes.splice('+i+',1);renderBarcodeFields();" ' +
+        'style="padding:7px 10px;background:#fee2e2;color:#ef4444;border:none;border-radius:5px;cursor:pointer;font-family:Arial;">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
 function openModal(id) {
   document.getElementById('p_id').value = '';
   document.getElementById('modalTitle').textContent = id ? '✏️ Modifier' : '➕ Nouveau produit';
-  var fields = ['p_name','p_barcode','p_buy','p_sell','p_supplier'];
-  fields.forEach(function(f){ document.getElementById(f).value = ''; });
-  document.getElementById('p_qty').value   = '1';
-  document.getElementById('p_alert').value = '3';
-  document.getElementById('p_cat').value   = 'Smartphone';
-  document.getElementById('p_cond').value  = 'NEUF';
-  document.getElementById('p_color').value = '';
-  document.getElementById('p_grade').value = '';
-  document.getElementById('p_zone').value  = '';
-  document.getElementById('p_detail').value= '';
+  var fields = ['p_name','p_buy','p_sell','p_supplier','p_imei','p_serie','p_notes','p_client_nom','p_client_tel'];
+  fields.forEach(function(f){ var el=document.getElementById(f); if(el) el.value=''; });
+  document.getElementById('p_qty').value          = '1';
+  document.getElementById('p_alert').value        = '3';
+  document.getElementById('p_cat').value          = 'Smartphone';
+  document.getElementById('p_cond').value         = 'NEUF';
+  document.getElementById('p_color').value        = '';
+  document.getElementById('p_grade').value        = '';
+  document.getElementById('p_zone').value         = '';
+  document.getElementById('p_detail').value       = '';
+  document.getElementById('p_statut').value       = 'DISPONIBLE';
+  document.getElementById('p_type_entree').value  = 'ACHAT_DIRECT';
+  modalBarcodes = [];
+  renderBarcodeFields();
+  toggleEntreeFields();
+  toggleIMEIField();
+
+  /* Charger les lots pour le select */
+  fetch('/api/lots').then(function(r){return r.json();}).then(function(lots){
+    var sel = document.getElementById('p_lot_id');
+    sel.innerHTML = '<option value="">— Choisir un lot —</option>' +
+      lots.map(function(l){ return '<option value="'+l.id+'">'+l.reference+' — '+l.fournisseur+'</option>'; }).join('');
+  }).catch(function(){});
 
   if (id) {
     var p = allProducts.find(function(x){ return x.id === id; });
@@ -661,11 +777,37 @@ function openModal(id) {
     document.getElementById('p_supplier').value= p.supplier_name || '';
     document.getElementById('p_zone').value    = p.location_zone || '';
     document.getElementById('p_detail').value  = p.location_detail || '';
-    document.getElementById('p_barcode').value = p.barcode || '';
+    /* Nouveaux champs */
+    document.getElementById('p_statut').value       = p.statut_produit || 'DISPONIBLE';
+    document.getElementById('p_type_entree').value  = p.type_entree || 'ACHAT_DIRECT';
+    if (document.getElementById('p_imei'))  document.getElementById('p_imei').value  = p.imei || '';
+    if (document.getElementById('p_serie')) document.getElementById('p_serie').value = p.numero_serie || '';
+    if (document.getElementById('p_notes')) document.getElementById('p_notes').value = p.notes || '';
+    if (document.getElementById('p_client_nom')) document.getElementById('p_client_nom').value = p.client_rachat_nom || '';
+    if (document.getElementById('p_client_tel')) document.getElementById('p_client_tel').value = p.client_rachat_tel || '';
     document.getElementById('p_buy').value     = p.purchase_price || '';
     document.getElementById('p_sell').value    = p.sale_price || p.price || '';
     document.getElementById('p_qty').value     = p.stock_quantity || 0;
     document.getElementById('p_alert').value   = p.stock_alert || 3;
+    toggleEntreeFields();
+    toggleIMEIField();
+    /* Charger les barcodes existants */
+    modalBarcodes = [];
+    fetch('/api/products/' + p.id + '/barcodes').then(function(r){return r.json();}).then(function(bcs){
+      modalBarcodes = bcs.map(function(b){ return {barcode:b.barcode,fournisseur:b.fournisseur||''}; });
+      if (!modalBarcodes.length && p.barcode) modalBarcodes = [{barcode:p.barcode,fournisseur:''}];
+      renderBarcodeFields();
+    }).catch(function(){
+      if (p.barcode) { modalBarcodes = [{barcode:p.barcode,fournisseur:''}]; renderBarcodeFields(); }
+    });
+  } else {
+    /* Nouveau produit — ajouter un champ barcode vide et focus dessus */
+    addBarcodeField();
+    /* Focus sur le premier champ barcode après rendu */
+    setTimeout(function() {
+      var inputs = document.querySelectorAll('#barcodesContainer input[placeholder="Code barre"]');
+      if (inputs.length > 0) inputs[0].focus();
+    }, 150);
   }
   document.getElementById('modal').classList.add('show');
 }
@@ -678,23 +820,37 @@ async function saveProduct() {
   var sell = Number(document.getElementById('p_sell').value);
   if (!name) { alert('Nom obligatoire'); return; }
   if (!sell) { alert('Prix de vente obligatoire'); return; }
+
   var body = {
-    name:           name,
-    category:       document.getElementById('p_cat').value,
-    condition:      document.getElementById('p_cond').value,
-    color:          document.getElementById('p_color').value || null,
-    grade:          document.getElementById('p_grade').value || null,
-    supplier_name:  document.getElementById('p_supplier').value || null,
-    location_zone:  document.getElementById('p_zone').value || null,
-    location_detail:document.getElementById('p_detail').value || null,
-    barcode:        document.getElementById('p_barcode').value || null,
-    purchase_price: Number(document.getElementById('p_buy').value||0),
-    sale_price:     sell,
-    stock_quantity: Number(document.getElementById('p_qty').value||0),
-    stock_alert:    Number(document.getElementById('p_alert').value||3)
+    name:              name,
+    category:          document.getElementById('p_cat').value,
+    condition:         document.getElementById('p_cond').value,
+    color:             document.getElementById('p_color').value || null,
+    grade:             document.getElementById('p_grade').value || null,
+    supplier_name:     document.getElementById('p_supplier').value || null,
+    location_zone:     document.getElementById('p_zone').value || null,
+    location_detail:   document.getElementById('p_detail').value || null,
+    purchase_price:    Number(document.getElementById('p_buy').value||0),
+    sale_price:        sell,
+    stock_quantity:    Number(document.getElementById('p_qty').value||0),
+    stock_alert:       Number(document.getElementById('p_alert').value||3),
+    statut_produit:    document.getElementById('p_statut').value || 'DISPONIBLE',
+    type_entree:       document.getElementById('p_type_entree').value || 'ACHAT_DIRECT',
+    imei:              document.getElementById('p_imei')?.value || null,
+    numero_serie:      document.getElementById('p_serie')?.value || null,
+    notes:             document.getElementById('p_notes')?.value || null,
+    client_rachat_nom: document.getElementById('p_client_nom')?.value || null,
+    client_rachat_tel: document.getElementById('p_client_tel')?.value || null,
+    lot_id:            document.getElementById('p_lot_id')?.value ? Number(document.getElementById('p_lot_id').value) : null,
+    barcodes:          modalBarcodes.filter(function(b){ return b.barcode; })
   };
-  var url = id ? '/api/products/' + id : '/api/products/quick';
-  var res = await fetch(url, {method: id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+
+  /* Premier barcode aussi dans le champ barcode legacy */
+  if (body.barcodes.length) body.barcode = body.barcodes[0].barcode;
+
+  var url = id ? '/api/products/full/' + id : '/api/products/full';
+  var method = id ? 'PUT' : 'POST';
+  var res = await fetch(url, {method:method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   var d   = await res.json();
   if (d.error) { alert('Erreur : ' + d.error); return; }
   closeModal();
@@ -1078,6 +1234,55 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof applyFilters === 'function') applyFilters();
       });
     }
+
+    /* ── SCAN GLOBAL DOUCHETTE ── */
+    InputTools.enableGlobalScan(function(code, isInput) {
+      var modal = document.getElementById('modal');
+      var modalOpen = modal && modal.classList.contains('show');
+
+      if (modalOpen) {
+        /* Empêcher le scan d'aller dans d'autres champs */
+        /* Trouver le premier input barcode vide */
+        var containers = document.getElementById('barcodesContainer');
+        if (containers) {
+          var inputs = containers.querySelectorAll('input[placeholder="Code barre"]');
+          var emptyInput = null;
+          for (var i = 0; i < inputs.length; i++) {
+            if (!inputs[i].value.trim()) { emptyInput = inputs[i]; break; }
+          }
+          if (emptyInput) {
+            emptyInput.value = code;
+            /* Mettre à jour modalBarcodes */
+            var idx = Array.from(containers.querySelectorAll('input[placeholder="Code barre"]')).indexOf(emptyInput);
+            if (idx >= 0 && modalBarcodes[idx] !== undefined) modalBarcodes[idx].barcode = code;
+          } else {
+            /* Ajouter un nouveau */
+            modalBarcodes.push({barcode: code, fournisseur: ''});
+            renderBarcodeFields();
+          }
+          InputTools.showScanToast(code);
+        }
+        return;
+      }
+
+      /* Modal fermé → recherche directe via API barcode */
+      fetch('/api/products/search-barcode/' + encodeURIComponent(code))
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          if (data && data.length > 0) {
+            filtered = data;
+            renderStats();
+            renderTable();
+            /* Mettre à jour le champ de recherche */
+            var el = document.getElementById('f_search');
+            if (el) el.value = code;
+            InputTools.showScanToast(code);
+          } else {
+            InputTools.showScanToast('❓ Non trouvé : ' + code);
+          }
+        })
+        .catch(function(e){ console.error('Scan error:', e); });
+    });
     /* Fournisseur */
     if (document.getElementById('f_supplier')) {
       InputTools.addVoice('f_supplier', function() {

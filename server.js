@@ -1217,4 +1217,204 @@ app.delete('/api/besoins/:id', async(req,res)=>{
 });
 
 
+
+/* =======================================================
+   STOCK V2 — Nouveaux champs + codes barres multiples
+======================================================= */
+
+/* ── GET tous les produits avec barcodes ── */
+app.get('/api/products/full', async(req,res)=>{
+  try{
+    const r = await pool.query(`
+      SELECT p.*,
+        COALESCE(json_agg(pb.*) FILTER (WHERE pb.id IS NOT NULL), '[]') AS barcodes
+      FROM products p
+      LEFT JOIN product_barcodes pb ON pb.product_id = p.id
+      GROUP BY p.id
+      ORDER BY p.name ASC`);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── POST créer produit complet ── */
+app.post('/api/products/full', async(req,res)=>{
+  const client = await pool.connect();
+  try{
+    const{name,category,condition,color,grade,location_zone,location_detail,
+          supplier_name,purchase_price,sale_price,stock_quantity,stock_alert,
+          imei,numero_serie,statut_produit,type_entree,lot_id,commande_id,
+          client_rachat_nom,client_rachat_tel,notes,barcodes}=req.body;
+    await client.query('BEGIN');
+    const r = await client.query(`
+      INSERT INTO products(name,category,condition,color,grade,location_zone,
+        location_detail,supplier_name,purchase_price,sale_price,stock_quantity,
+        stock_alert,imei,numero_serie,statut_produit,type_entree,lot_id,
+        commande_id,client_rachat_nom,client_rachat_tel,notes)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+      RETURNING *`,
+      [name,category||'Smartphone',condition||'NEUF',color||null,grade||null,
+       location_zone||null,location_detail||null,supplier_name||null,
+       Number(purchase_price||0),Number(sale_price||0),
+       Number(stock_quantity||1),Number(stock_alert||3),
+       imei||null,numero_serie||null,statut_produit||'DISPONIBLE',
+       type_entree||'ACHAT_DIRECT',lot_id||null,commande_id||null,
+       client_rachat_nom||null,client_rachat_tel||null,notes||null]);
+    const pid = r.rows[0].id;
+    /* Insérer les codes barres */
+    for(const bc of (barcodes||[])){
+      if(bc.barcode){
+        await client.query(
+          'INSERT INTO product_barcodes(product_id,barcode,fournisseur,notes) VALUES($1,$2,$3,$4)',
+          [pid,bc.barcode,bc.fournisseur||null,bc.notes||null]);
+      }
+    }
+    await client.query('COMMIT');
+    res.json(r.rows[0]);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* ── PUT modifier produit complet ── */
+app.put('/api/products/full/:id', async(req,res)=>{
+  const client = await pool.connect();
+  try{
+    const{name,category,condition,color,grade,location_zone,location_detail,
+          supplier_name,purchase_price,sale_price,stock_quantity,stock_alert,
+          imei,numero_serie,statut_produit,type_entree,lot_id,commande_id,
+          client_rachat_nom,client_rachat_tel,notes,barcodes}=req.body;
+    await client.query('BEGIN');
+    const r = await client.query(`
+      UPDATE products SET
+        name=$1,category=$2,condition=$3,color=$4,grade=$5,
+        location_zone=$6,location_detail=$7,supplier_name=$8,
+        purchase_price=$9,sale_price=$10,stock_quantity=$11,stock_alert=$12,
+        imei=$13,numero_serie=$14,statut_produit=$15,type_entree=$16,
+        lot_id=$17,commande_id=$18,client_rachat_nom=$19,client_rachat_tel=$20,
+        notes=$21,updated_at=NOW()
+      WHERE id=$22 RETURNING *`,
+      [name,category||'Smartphone',condition||'NEUF',color||null,grade||null,
+       location_zone||null,location_detail||null,supplier_name||null,
+       Number(purchase_price||0),Number(sale_price||0),
+       Number(stock_quantity||1),Number(stock_alert||3),
+       imei||null,numero_serie||null,statut_produit||'DISPONIBLE',
+       type_entree||'ACHAT_DIRECT',lot_id||null,commande_id||null,
+       client_rachat_nom||null,client_rachat_tel||null,notes||null,
+       req.params.id]);
+    /* Remplacer les codes barres */
+    await client.query('DELETE FROM product_barcodes WHERE product_id=$1',[req.params.id]);
+    for(const bc of (barcodes||[])){
+      if(bc.barcode){
+        await client.query(
+          'INSERT INTO product_barcodes(product_id,barcode,fournisseur,notes) VALUES($1,$2,$3,$4)',
+          [req.params.id,bc.barcode,bc.fournisseur||null,bc.notes||null]);
+      }
+    }
+    await client.query('COMMIT');
+    res.json(r.rows[0]);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* ── PUT statut produit ── */
+app.put('/api/products/:id/statut', async(req,res)=>{
+  try{
+    const{statut_produit}=req.body;
+    const r=await pool.query(
+      'UPDATE products SET statut_produit=$1,updated_at=NOW() WHERE id=$2 RETURNING *',
+      [statut_produit,req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── GET produits par statut ── */
+app.get('/api/products/statut/:statut', async(req,res)=>{
+  try{
+    const r=await pool.query(
+      'SELECT * FROM products WHERE statut_produit=$1 ORDER BY name',
+      [req.params.statut]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── GET barcodes d'un produit ── */
+app.get('/api/products/:id/barcodes', async(req,res)=>{
+  try{
+    const r=await pool.query(
+      'SELECT * FROM product_barcodes WHERE product_id=$1 ORDER BY id',
+      [req.params.id]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── POST ajouter un barcode ── */
+app.post('/api/products/:id/barcodes', async(req,res)=>{
+  try{
+    const{barcode,fournisseur,notes}=req.body;
+    const r=await pool.query(
+      'INSERT INTO product_barcodes(product_id,barcode,fournisseur,notes) VALUES($1,$2,$3,$4) RETURNING *',
+      [req.params.id,barcode,fournisseur||null,notes||null]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── DELETE barcode ── */
+app.delete('/api/barcodes/:id', async(req,res)=>{
+  try{
+    await pool.query('DELETE FROM product_barcodes WHERE id=$1',[req.params.id]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── Recherche par barcode (tous les codes) ── */
+app.get('/api/products/search-barcode/:code', async(req,res)=>{
+  try{
+    const r=await pool.query(`
+      SELECT p.* FROM products p
+      WHERE p.barcode=$1 OR p.imei=$1
+      UNION
+      SELECT p.* FROM products p
+      JOIN product_barcodes pb ON pb.product_id=p.id
+      WHERE pb.barcode=$1
+      LIMIT 5`,[req.params.code]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── Import CSV produits ── */
+app.post('/api/products/import-csv', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{rows}=req.body; // Array of product objects
+    await client.query('BEGIN');
+    var imported=0, errors=[];
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i];
+      if(!row.name||!row.category||!row.prix_vente){
+        errors.push({line:i+2,error:'Champs obligatoires manquants (nom, categorie, prix_vente)'});
+        continue;
+      }
+      try{
+        await client.query(`
+          INSERT INTO products(name,category,condition,purchase_price,sale_price,
+            stock_quantity,stock_alert,supplier_name,color,grade,imei,
+            numero_serie,statut_produit,type_entree,notes,barcode)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+          [row.name,row.categorie||'Autre',row.condition||'NEUF',
+           Number(row.prix_achat||0),Number(row.prix_vente||0),
+           Number(row.quantite||1),Number(row.stock_alert||3),
+           row.fournisseur||null,row.couleur||null,row.grade||null,
+           row.imei||null,row.numero_serie||null,
+           row.statut||'DISPONIBLE',row.type_entree||'ACHAT_DIRECT',
+           row.notes||null,row.barcode||null]);
+        imported++;
+      }catch(e){
+        errors.push({line:i+2,error:e.message});
+      }
+    }
+    await client.query('COMMIT');
+    res.json({imported,errors,total:rows.length});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));

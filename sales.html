@@ -417,9 +417,23 @@ function setCond(c){
   filterProducts();
 }
 
-function filterProducts(){
+async function filterProducts(){
   const norm=s=>s?s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''):'';
-  const q=norm(document.getElementById('search').value.trim());
+  const qRaw=document.getElementById('search').value.trim();
+
+  /* Recherche par code barre exact via API (multi-barcodes) */
+  if(qRaw.length>=4 && /^[A-Za-z0-9]+$/.test(qRaw)){
+    try{
+      const bcRes=await fetch('/api/products/search-barcode/'+encodeURIComponent(qRaw));
+      const bcData=await bcRes.json();
+      if(bcData&&bcData.length>0){
+        renderProducts(bcData);
+        return;
+      }
+    }catch(e){}
+  }
+
+  const q=norm(qRaw);
   let filtered=allProducts.filter(p=>{
     const mc=activeCat==='Tous'||p.category===activeCat;
     const md=activeCond==='all'||(p.condition||'NEUF')===activeCond;
@@ -1056,6 +1070,24 @@ init();
         if (el) el.dispatchEvent(new Event('input', {bubbles:true}));
       });
     }
+
+    /* ── SCAN GLOBAL DOUCHETTE ── */
+    InputTools.enableGlobalScan(function(code) {
+      /* Recherche directe via API barcode */
+      fetch('/api/products/search-barcode/' + encodeURIComponent(code))
+        .then(function(r){ return r.json(); })
+        .then(function(products) {
+          if (products && products.length > 0) {
+            /* Afficher les produits trouvés */
+            var el = document.getElementById('search');
+            if (el) el.value = code;
+            renderProducts(products);
+            InputTools.showScanToast(code);
+          } else {
+            InputTools.showScanToast('❓ Non trouvé : ' + code);
+          }
+        }).catch(function(e){ console.error('Scan ventes error:', e); });
+    });
     if (document.getElementById('customer')) InputTools.addVoice('customer');
     if (document.getElementById('comment'))  InputTools.addVoice('comment');
   }
