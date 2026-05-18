@@ -1370,11 +1370,11 @@ app.get('/api/products/search-barcode/:code', async(req,res)=>{
   try{
     const r=await pool.query(`
       SELECT p.* FROM products p
-      WHERE p.barcode=$1 OR p.imei=$1
+      WHERE UPPER(p.barcode)=UPPER($1) OR UPPER(p.imei)=UPPER($1)
       UNION
       SELECT p.* FROM products p
       JOIN product_barcodes pb ON pb.product_id=p.id
-      WHERE pb.barcode=$1
+      WHERE UPPER(pb.barcode)=UPPER($1)
       LIMIT 5`,[req.params.code]);
     res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}

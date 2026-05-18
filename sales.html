@@ -1074,7 +1074,7 @@ init();
     /* ── SCAN GLOBAL DOUCHETTE ── */
     InputTools.enableGlobalScan(function(code) {
       /* Recherche directe via API barcode */
-      fetch('/api/products/search-barcode/' + encodeURIComponent(code))
+      fetch('/api/products/search-barcode/' + encodeURIComponent(code.toUpperCase()))
         .then(function(r){ return r.json(); })
         .then(function(products) {
           if (products && products.length > 0) {

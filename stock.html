@@ -1266,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       /* Modal fermé → recherche directe via API barcode */
-      fetch('/api/products/search-barcode/' + encodeURIComponent(code))
+      fetch('/api/products/search-barcode/' + encodeURIComponent(code.toUpperCase()))
         .then(function(r){ return r.json(); })
         .then(function(data) {
           if (data && data.length > 0) {
