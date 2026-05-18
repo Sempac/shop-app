@@ -762,7 +762,10 @@ function openModal(id) {
   fetch('/api/lots').then(function(r){return r.json();}).then(function(lots){
     var sel = document.getElementById('p_lot_id');
     sel.innerHTML = '<option value="">— Choisir un lot —</option>' +
-      lots.map(function(l){ return '<option value="'+l.id+'">'+l.reference+' — '+l.fournisseur+'</option>'; }).join('');
+      lots.map(function(l){
+        var label = (l.name||'Lot #'+l.id) + (l.supplier_name ? ' — '+l.supplier_name : '');
+        return '<option value="'+l.id+'">'+label+'</option>';
+      }).join('');
   }).catch(function(){});
 
   if (id) {
