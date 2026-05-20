@@ -367,11 +367,9 @@ function renderDetail(data, stockProds, statsData){
   const achat=Number(l.total_cost||0);
   const totalCouts=costs.reduce((s,c)=>s+Number(c.amount||0),0);
   const invested=achat+totalCouts;
-  const vendus=items.filter(i=>i.status==='VENDU');
-  const totalVendu=vendus.reduce((s,i)=>s+Number(i.sale_price||0),0);
+  const totalVendu=Number(statsData.total_ventes||l.total_ventes||0);
   const profit=totalVendu-invested;
   const pColor=profit>=0?'#22c55e':'#ef4444';
-  const pending=items.filter(i=>!['VENDU','IRREPARABLE'].includes(i.status));
 
   /* Prix achat moyen par appareil si prix global */
   const nbItems=items.length;
@@ -404,11 +402,11 @@ function renderDetail(data, stockProds, statsData){
 
       <!-- STATS -->
       <div class="stats-grid">
-        <div class="sbox blue"><div>Appareils</div><div class="sv">${items.length}</div></div>
+        <div class="sbox blue"><div>Appareils</div><div class="sv">${nbTotal}</div></div>
         <div class="sbox red"><div>Investi total</div><div class="sv">−${fmt(invested)}</div></div>
         <div class="sbox green"><div>Encaissé</div><div class="sv">+${fmt(totalVendu)}</div></div>
-        <div class="sbox orange"><div>En attente</div><div class="sv">${pending.length}</div></div>
-        <div class="sbox purple"><div>Vendus</div><div class="sv">${vendus.length}/${items.length}</div></div>
+        <div class="sbox orange"><div>En attente</div><div class="sv">${Number(statsData.nb_test||0)+Number(statsData.nb_reparation||0)}</div></div>
+        <div class="sbox purple"><div>Vendus</div><div class="sv">${Number(statsData.nb_vendu||0)}/${nbTotal}</div></div>
       </div>
 
       <!-- RENTABILITÉ LOT -->
@@ -423,7 +421,7 @@ function renderDetail(data, stockProds, statsData){
         <div class="rsep">=</div>
         <div class="rresult">
           <div class="rv" style="color:${pColor}">${profit>=0?'+':''}${fmt(profit)}</div>
-          <div class="rl" style="color:#64748b">RÉSULTAT ${pending.length>0?'PARTIEL':'FINAL'}</div>
+          <div class="rl" style="color:#64748b">RÉSULTAT ${(Number(statsData.nb_test||0)+Number(statsData.nb_reparation||0)+Number(statsData.nb_disponible||0))>0?'PARTIEL':'FINAL'}</div>
         </div>
       </div>
       ${nbItems>0&&achat>0&&!items.some(i=>Number(i.purchase_price||0)>0)?`

@@ -393,7 +393,15 @@ app.delete('/api/lots/costs/:id',async(req,res)=>{
 });
 /* Route PUT lot_items supprimée */
 app.get('/api/lots/:id',async(req,res)=>{
-  try{const lot=await pool.query(`SELECT * FROM lots WHERE id=$1`,[req.params.id]);
+  try{const lot=await pool.query(`
+    SELECT l.*,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id) AS nb_appareils,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='VENDU') AS nb_vendus,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='DISPONIBLE') AS nb_stock,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='EN_TEST') AS nb_test,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='REPARATION') AS nb_reparation,
+      (SELECT COALESCE(SUM(sale_price),0) FROM products WHERE lot_id=l.id AND statut_produit='VENDU') AS total_ventes
+    FROM lots l WHERE l.id=$1`,[req.params.id]);
     const items={rows:[]}; /* lot_items supprimée - tout est dans products */
     const costs=await pool.query(`SELECT lc.*,p.name AS product_name FROM lot_costs lc LEFT JOIN products p ON p.id=lc.product_id WHERE lc.lot_id=$1 ORDER BY lc.created_at ASC`,[req.params.id]);
     res.json({lot:lot.rows[0],items:items.rows,costs:costs.rows});
