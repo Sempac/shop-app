@@ -727,6 +727,7 @@ async function showRepair(id) {
       '<div class="fg full"><label>Commentaire interne</label><textarea id="e_comment">' + (r.comment||'') + '</textarea></div>' +
       '<input type="hidden" id="e_source" value="' + (r.source||'CLIENT') + '">' +
     '<div class="fg"><label>Statut</label><select id="e_status">' + statusOpts + '</select></div>' +
+      '<div class="fg"><label>📅 Date réparation</label><input type="date" id="e_rep_date" value="' + (r.created_at?r.created_at.slice(0,10):new Date().toISOString().slice(0,10)) + '" title="Date de création ou modification de la réparation"></div>' +
       '<div class="fg"><label>Prix estimé (€)</label><input id="e_estimated" type="number" value="' + Number(r.estimated_price||0) + '" min="0" step="0.01"></div>' +
       '<div class="fg"><label>Prix final (€)</label><input id="e_final" type="number" value="' + fp + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
     '</div>' +
@@ -801,6 +802,7 @@ function calcRepPay() {
 async function updateRepair(id) {
   var fp   = Number(document.getElementById('e_final').value||0);
   var status = document.getElementById('e_status').value;
+  var repDate = document.getElementById('e_rep_date')?.value || null;
   var isInterne = document.getElementById('e_source')?.value === 'INTERNE';
   var cb   = isInterne ? 0 : Number(document.getElementById('e_cb')?.value||0);
   var cash = isInterne ? 0 : Number(document.getElementById('e_cash')?.value||0);
@@ -831,6 +833,7 @@ async function updateRepair(id) {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
       status:          status,
+      repair_date:     repDate,
       final_price:     fp,
       estimated_price: Number(document.getElementById('e_estimated')?.value||0),
       customer_name:   document.getElementById('e_customer')?.value||'',

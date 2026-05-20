@@ -70,7 +70,7 @@ app.delete('/api/products/:id',async(req,res)=>{
 app.post('/api/orders',async(req,res)=>{
   const client=await pool.connect();
   try{
-    const{cart,payment,customer,comment,garantie,amount_cb,amount_cash,amount_credit}=req.body;
+    const{cart,payment,customer,comment,garantie,amount_cb,amount_cash,amount_credit,sale_date}=req.body;
     if(!cart||!cart.length)return res.status(400).json({success:false,error:'Panier vide'});
     const total=cart.reduce((s,i)=>s+(Number(i.price)*Number(i.qty))-(Number(i.discount||0)*Number(i.qty)),0);
     const cb=Number(amount_cb||0),cash=Number(amount_cash||0),credit=Number(amount_credit||0);
@@ -79,8 +79,9 @@ app.post('/api/orders',async(req,res)=>{
     const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
     const numRes=await client.query("SELECT next_numero('VNT',$1,'orders','numero') AS num",[dateStr]);
     const numero=numRes.rows[0].num;
-    const or=await client.query(`INSERT INTO orders(numero,total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,garantie,created_at) VALUES($1,$2,$3,$4,$5,'completed',$6,$7,$8,$9,NOW()) RETURNING id`,
-      [numero,total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit,garantie||null]);
+    const orderDate = sale_date ? new Date(sale_date) : new Date();
+    const or=await client.query(`INSERT INTO orders(numero,total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,garantie,created_at) VALUES($1,$2,$3,$4,$5,'completed',$6,$7,$8,$9,$10) RETURNING id`,
+      [numero,total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit,garantie||null,orderDate]);
     const orderId=or.rows[0].id;
     for(const item of cart){
       await client.query(`INSERT INTO order_items(order_id,product_id,quantity,price,discount) VALUES($1,$2,$3,$4,$5)`,[orderId,item.id,item.qty,Number(item.price),Number(item.discount||0)]);
@@ -268,12 +269,12 @@ app.put('/api/repairs/:id',async(req,res)=>{
   const client=await pool.connect();
   try{
     const status=String(req.body.status||'EN_ATTENTE');
+    const repair_date=req.body.repair_date||null;
     const fp=Number(req.body.final_price||0);
     const ep=Number(req.body.estimated_price||0);
     const cb=Number(req.body.amount_cb||0),cash=Number(req.body.amount_cash||0),credit=Number(req.body.amount_credit||0);
     const{customer_name,phone,device_type,brand,model,serial_number,issue,comment}=req.body;
     let pm='cash';if(cb>0&&cash>0)pm='mixed';else if(cb>0)pm='card';else if(cash>0)pm='cash';else if(credit>0)pm='credit';
-    await client.query('BEGIN');
     const r=await client.query(`UPDATE repairs SET
       status=CAST($1 AS varchar),final_price=$2,
       estimated_price=CASE WHEN $3>0 THEN $3 ELSE estimated_price END,
@@ -286,14 +287,16 @@ app.put('/api/repairs/:id',async(req,res)=>{
       issue=CASE WHEN $10!='' THEN $10 ELSE issue END,
       comment=$11,payment_method=$12,amount_cb=$13,amount_cash=$14,amount_credit=$15,
       updated_at=NOW(),
+      created_at=COALESCE(CASE WHEN $17::text IS NOT NULL THEN $17::timestamp ELSE NULL END,created_at),
       delivered_at=CASE WHEN CAST($1 AS varchar)='TERMINE' THEN NOW() ELSE delivered_at END
       WHERE id=$16 RETURNING *`,
-      [status,fp,ep,customer_name||'',phone||'',device_type||'',brand||'',model||'',serial_number||'',issue||'',comment||'',pm,cb,cash,credit,req.params.id]);
+      [status,fp,ep,customer_name||'',phone||'',device_type||'',brand||'',model||'',serial_number||'',issue||'',comment||'',pm,cb,cash,credit,req.params.id,repair_date||null]);
     if(credit>0){const rep=r.rows[0];const ex=await client.query(`SELECT id FROM customer_credits WHERE repair_id=$1`,[req.params.id]);
       if(ex.rows.length===0){await client.query(`INSERT INTO customer_credits(customer_name,phone,repair_id,total_amount,amount_paid,amount_due,status) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS')`,
         [rep.customer_name||'Anonyme',rep.phone||'',req.params.id,fp,(cb+cash).toFixed(2),credit.toFixed(2)]);}
-      else{await client.query(`UPDATE customer_credits SET amount_paid=$1,amount_due=$2,status=CASE WHEN $2<=0 THEN 'SOLDE' ELSE status END,updated_at=NOW() WHERE repair_id=$3`,
-        [(cb+cash).toFixed(2),credit.toFixed(2),req.params.id]);}}
+      else{await client.query(`UPDATE customer_credits SET amount_paid=$1,amount_due=$2,status=CASE WHEN $2<=0 THEN 'SOLDE' ELSE 'EN_COURS' END WHERE repair_id=$3`,
+        [(cb+cash).toFixed(2),credit.toFixed(2),req.params.id]);}
+    }
     await client.query('COMMIT');res.json(r.rows[0]);
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
 });
@@ -869,7 +872,7 @@ app.delete('/api/devis/:id', async(req,res)=>{
 app.put('/api/orders/:id', async(req,res)=>{
   const client=await pool.connect();
   try{
-    const{customer_name,comment,garantie,payment_method,amount_cb,amount_cash,amount_credit,items}=req.body;
+    const{customer_name,comment,garantie,payment_method,amount_cb,amount_cash,amount_credit,items,sale_date}=req.body;
     await client.query('BEGIN');
 
     /* Récupérer les anciens items pour ajuster le stock */
@@ -897,9 +900,10 @@ app.put('/api/orders/:id', async(req,res)=>{
     /* Mettre à jour la commande */
     const r=await client.query(
       `UPDATE orders SET customer_name=$1,comment=$2,garantie=$3,payment_method=$4,
-       amount_cb=$5,amount_cash=$6,amount_credit=$7,total=$8,updated_at=NOW()
+       amount_cb=$5,amount_cash=$6,amount_credit=$7,total=$8,updated_at=NOW(),
+       created_at=COALESCE($10,created_at)
        WHERE id=$9 RETURNING *`,
-      [customer_name||'',comment||null,garantie||null,pm,cb,cash,credit,total.toFixed(2),req.params.id]);
+      [customer_name||'',comment||null,garantie||null,pm,cb,cash,credit,total.toFixed(2),req.params.id,sale_date?new Date(sale_date):null]);
 
     /* Réinsérer les nouveaux items et décrémenter le stock */
     for(const it of (items||[])){

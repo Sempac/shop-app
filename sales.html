@@ -233,6 +233,9 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
       <div class="total-bar" id="totalBar">TOTAL : 0.00 €</div>
 
       <div class="bottom-section">
+        <div class="fl">Date vente</div>
+        <input class="fi" id="saleDate" type="date" title="Date de la vente — laisser vide pour aujourd'hui">
+
         <div class="fl">Client (optionnel)</div>
         <input class="fi" id="customer" placeholder="Nom du client">
 
@@ -634,6 +637,7 @@ async function checkout(){
   const payment=document.getElementById('payment').value;
   const customer=document.getElementById('customer').value;
   const comment=document.getElementById('comment').value;
+  const saleDateVal = document.getElementById('saleDate')?.value || '';
   const total=cartTotal();
   let cb=0,cash=0,credit=0;
   if(payment==='card'){cb=total;}
@@ -645,7 +649,7 @@ async function checkout(){
     credit=Math.max(0,total-cb-cash);
   }
   const res=await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cart,payment,customer,comment,garantie:document.getElementById('garantie')?.value?Number(document.getElementById('garantie').value):null,amount_cb:cb,amount_cash:cash,amount_credit:credit})});
+    body:JSON.stringify({cart,payment,customer,comment,garantie:document.getElementById('garantie')?.value?Number(document.getElementById('garantie').value):null,amount_cb:cb,amount_cash:cash,amount_credit:credit,sale_date:saleDateVal||null})});
   const d=await res.json();
   if(!d.success){alert('❌ '+d.error);return;}
   let msg=`✅ Vente N° ${d.orderId} enregistrée`;
@@ -902,6 +906,9 @@ async function editOrder(id) {
   /* Pré-remplir les champs */
   document.getElementById('customer').value = o.customer_name || '';
   document.getElementById('comment').value  = o.comment || '';
+  if (document.getElementById('saleDate') && o.created_at) {
+    document.getElementById('saleDate').value = o.created_at.slice(0,10);
+  }
   if (document.getElementById('garantie')) {
     document.getElementById('garantie').value = o.garantie || '';
   }
