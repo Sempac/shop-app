@@ -127,12 +127,17 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 .search-item:hover{background:#f8fafc;}
 .sel-prod{background:#f0fdf4;border:1.5px solid #22c55e;border-radius:6px;padding:8px 12px;margin-top:6px;font-size:12px;display:none;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="tooltips.css">
 </head>
 <body>
 <div class="topbar">
   <h2>🗂️ Gestion des Lots</h2>
   <div style="display:flex;gap:8px">
-    <button class="btn-green" id="btnNewLot">➕ Nouveau lot</button>
+    <button class="btn-green" id="btnNewLot" title="Créer un nouveau lot d'achat">➕ Nouveau lot</button>
+    <button onclick="downloadLotTemplate()" title="Télécharger le template Excel pré-rempli avec le nom de ce lot" style="padding:9px 14px;background:#0891b2;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;">📥 Template</button>
+    <button onclick="document.getElementById('lotImportInput').click()" title="Importer des appareils depuis un fichier Excel" style="padding:9px 14px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;">📤 Importer</button>
+    <input type="file" id="lotImportInput" accept=".xlsx,.csv" style="display:none" onchange="importStockFile(this)">
     <button class="btn-home"  onclick="location.href='index.html'">🏠 Accueil</button>
   </div>
 </div>
@@ -295,7 +300,7 @@ function renderLotList(){
     const isAct=currentLot&&currentLot.id===l.id;
     return `<div class="lot-card${isAct?' active':''}" data-id="${l.id}">
       <div class="lc-name">${l.name}</div>
-      <div class="lc-sub">${l.supplier_name||'—'} · ${new Date(l.purchase_date+'T00:00:00').toLocaleDateString('fr-FR')}</div>
+      <div class="lc-sub">${l.supplier_name||'—'} · ${new Date(l.purchase_date?new Date(l.purchase_date+'T00:00:00').toLocaleDateString('fr-FR'):'—')}</div>
       <div class="lc-stats">
         ${Number(l.nb_test||0)>0       ?`<span class="lb lb-test">${l.nb_test} test</span>`:''}
         ${Number(l.nb_reparation||0)>0 ?`<span class="lb lb-rep">${l.nb_reparation} répar.</span>`:''}
@@ -314,16 +319,22 @@ function renderLotList(){
 /* ══ DETAIL LOT ══ */
 async function loadLot(id){
   try{
-    const res=await fetch('/api/lots/'+id);
-    if(!res.ok)throw new Error('Erreur '+res.status);
-    const data=await res.json();
-    currentLot=data.lot; currentItems=data.items||[];
-    renderDetail(data);
-    const rl=await fetch('/api/lots');lots=await rl.json();renderLotList();
-  }catch(e){alert('❌ '+e.message);}
+    const data      = await fetch('/api/lots/'+id).then(r=>r.json());
+    const stockProds = await fetch('/api/lots/'+id+'/products').then(r=>r.json()).catch(()=>[]);
+    const statsData  = await fetch('/api/lots/'+id+'/stats').then(r=>r.json()).catch(()=>({}));
+    const lotsData   = await fetch('/api/lots').then(r=>r.json()).catch(()=>lots||[]);
+    console.log('loadLot:', id, 'stockProds:', stockProds.length, 'items:', (data.items||[]).length);
+    currentLot = data.lot;
+    currentItems = data.items || [];
+    currentStockProds = stockProds || [];
+    renderDetail(data, stockProds, statsData);
+    lots = lotsData;
+    renderLotList();
+  }catch(e){console.error('loadLot error:',e); alert('Erreur: '+e.message);}
 }
 
-function renderDetail(data){
+function renderDetail(data, stockProds, statsData){
+  var nbTotal=(data.items||[]).length+(stockProds||[]).length;
   const l=data.lot, items=data.items||[], costs=data.costs||[];
   const achat=Number(l.total_cost||0);
   const totalCouts=costs.reduce((s,c)=>s+Number(c.amount||0),0);
@@ -346,7 +357,7 @@ function renderDetail(data){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
           <div style="font-size:17px;font-weight:bold;color:#0f172a">${l.name}</div>
-          <div style="font-size:12px;color:#64748b;margin-top:3px">${l.supplier_name||'—'} · ${new Date(l.purchase_date+'T00:00:00').toLocaleDateString('fr-FR')} · <b>${l.status}</b></div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px">${l.supplier_name||'—'} · ${new Date(l.purchase_date?new Date(l.purchase_date+'T00:00:00').toLocaleDateString('fr-FR'):'—')} · <b>${l.status}</b></div>
           ${l.supplier_phone?`<div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <span style="font-size:12px;color:#64748b">📞 ${l.supplier_phone}</span>
             <a href="tel:${l.supplier_phone.replace(/\s/g,'')}" style="padding:3px 9px;background:#16a34a;color:white;border-radius:5px;text-decoration:none;font-size:11px;font-weight:bold">📞 Appeler</a>
@@ -397,10 +408,9 @@ function renderDetail(data){
     <!-- APPAREILS AVEC RENTABILITÉ -->
     <div class="dcard">
       <h4>📱 Appareils &amp; Rentabilité par appareil
-        <button class="btn-green btn-sm" onclick="openModalItem()">➕ Ajouter</button>
+        <button class="btn-green btn-sm" onclick="location.href='stock.html'">➕ Ajouter dans Stock</button>
       </h4>
-      ${items.length===0
-        ?'<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px">Aucun appareil</div>'
+      ${false ? ''
         :`<table class="items-table">
           <thead>
             <tr>
@@ -466,16 +476,13 @@ function renderDetail(data){
                   </select>
                   <button class="btn-orange btn-sm" style="margin-top:4px" onclick="openModalCost(${it.id})">💸</button>
                   <button onclick="editNote(${it.id})" style="margin-top:4px;padding:4px 8px;background:#f1f5f9;color:#374151;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:Arial">✏️</button>
-                  ${it.status!=='VENDU'?`<div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;">
-                    <button onclick="lotItemToStock(${it.id},'vente')" style="padding:4px 7px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:bold;font-family:Arial;">⚡ Stock</button>
-                    <button onclick="lotItemToRepair(${it.id})" style="padding:4px 7px;background:#0f766e;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:bold;font-family:Arial;">🔧 Atelier</button>
-                    <button onclick="lotItemToStock(${it.id},'pieces')" style="padding:4px 7px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:bold;font-family:Arial;">🔩 Pièces</button>
-                  </div>`:''}
+
                 </td>
               </tr>`;
             }).join('')}
           </tbody>
         </table>`}
+
     </div>
 
     <!-- COÛTS -->
@@ -501,7 +508,165 @@ function renderDetail(data){
         Achat lot : <span style="color:#ef4444">−${fmt(achat)}</span> + Frais : <span style="color:#ef4444">−${fmt(totalCouts)}</span> = <b>−${fmt(invested)}</b>
       </div>
     </div>
+
+
   `;
+
+  /* Stocker pour accès global */
+  window._currentStockProds = stockProds || [];
+  /* Attendre que le DOM soit rendu puis injecter dans le tableau */
+  setTimeout(function() {
+    renderLotStockProds(stockProds || []);
+  }, 150);
+}
+
+function renderLotStockProds(prods) {
+  /* Trouver le tbody du tableau items-table dans #detail */
+  var table = document.querySelector('#detail .items-table');
+  if (!table) { console.warn('items-table non trouvé'); return; }
+  /* Supprimer ancien tbody stock */
+  var oldTbody = document.getElementById('stockTbody');
+  if (oldTbody) oldTbody.remove();
+  if (!prods || !prods.length) return;
+
+  var fmt = function(n){ return Number(n||0).toFixed(2)+' €'; };
+  var ST_LABELS = {DISPONIBLE:'📦 Stock',EN_TEST:'🔍 Test',REPARATION:'🔧 Répar.',IRREPARABLE:'❌ Irrépar.',VENDU:'✅ Vendu'};
+
+  var rows = prods.map(function(p) {
+    var achat  = Number(p.purchase_price||0);
+    var statut = p.statut_produit || 'EN_TEST';
+    var stLabel= ST_LABELS[statut] || statut;
+    var vendu  = Number(p.sale_price||0);
+    var estVendu = statut === 'VENDU';
+    var estIrrep = statut === 'IRREPARABLE';
+    var frais = Number(p.frais_reparation||0);
+    var rentabilite = vendu - achat - frais;
+
+    var rentHtml = estVendu
+      ? '<div class="'+(rentabilite>=0?'rent-pos':'rent-neg')+'">'+(rentabilite>=0?'+':'')+Number(rentabilite).toFixed(2)+' €</div>'+
+        '<div class="rent-detail">'+
+          '<div class="rent-detail-row"><span>Vendu</span><span style="color:#22c55e">+'+fmt(vendu)+'</span></div>'+
+          '<div class="rent-detail-row"><span>Achat</span><span style="color:#ef4444">−'+fmt(achat)+'</span></div>'+
+          (frais>0?'<div class="rent-detail-row"><span>Frais répar.</span><span style="color:#ef4444">−'+fmt(frais)+'</span></div>':'')+
+          '<div class="rent-detail-row total"><span>Résultat</span><span style="color:'+(rentabilite>=0?'#16a34a':'#ef4444')+'">'+(rentabilite>=0?'+':'')+Number(rentabilite).toFixed(2)+' €</span></div>'+
+        '</div>'
+      : estIrrep
+        ? '<div class="rent-neg">−'+fmt(achat+frais)+'</div>'
+        : '<div class="rent-pending">En cours… −'+fmt(achat+frais)+'</div>';
+
+    return '<tr>' +
+      '<td>' +
+        '<div style="font-weight:bold;font-size:13px">' + (p.name||'—') + '</div>' +
+        ((p.color||p.grade) ? '<div style="font-size:11px;color:#64748b">' + [p.color,p.grade].filter(Boolean).join(' · ') + '</div>' : '') +
+        (p.imei ? '<div style="font-size:10px;color:#94a3b8">IMEI: '+p.imei+'</div>' : '') +
+        (p.notes ? '<div style="font-size:11px;color:#64748b">💬 '+p.notes+'</div>' : '') +
+        '<span style="font-size:9px;background:#1e3a8a;color:#93c5fd;padding:1px 5px;border-radius:3px;display:inline-block;margin-top:2px;">Stock</span>' +
+      '</td>' +
+      '<td>' +
+        '<select onchange="changeStatutStock('+p.id+',this.value)" title="Changer le statut de cet appareil (En test, Réparation, Disponible, Vendu...)" style="padding:4px 6px;border:1px solid #334155;border-radius:5px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">' +
+          '<option value="DISPONIBLE"'+(statut==='DISPONIBLE'?' selected':'')+'>📦 Stock</option>' +
+          '<option value="EN_TEST"'+(statut==='EN_TEST'?' selected':'')+'>🔍 Test</option>' +
+          '<option value="REPARATION"'+(statut==='REPARATION'?' selected':'')+'>🔧 Répar.</option>' +
+          '<option value="IRREPARABLE"'+(statut==='IRREPARABLE'?' selected':'')+'>❌ Irrépar.</option>' +
+          '<option value="VENDU"'+(statut==='VENDU'?' selected':'')+'>✅ Vendu</option>' +
+        '</select>' +
+      '</td>' +
+      '<td>' + fmt(achat) + '</td>' +
+      '<td style="text-align:right;">' + (Number(p.frais_reparation||0) > 0 ? '<span style="color:#ef4444;">−'+Number(p.frais_reparation).toFixed(2)+' €</span>' : '—') + '</td>' +
+      '<td>' + (estVendu ? fmt(vendu) : '—') + '</td>' +
+      '<td>' + rentHtml + '</td>' +
+      '<td style="white-space:nowrap">' +
+        (statut === 'DISPONIBLE' ?
+          '<button onclick="vendreDepuisLot(' + p.id + ',\'' + (p.name||'').replace(/'/g,'') + '\',' + Number(p.sale_price||0) + ')" title="Vendre cet appareil — ouvre le module Ventes avec cet appareil dans le panier" style="padding:4px 8px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;margin-right:3px;">🛒</button>' : '') +
+        '<button onclick="editStockProdFromLot(' + p.id + ')" title="Modifier les informations de cet appareil (prix, statut, IMEI...)" style="padding:4px 8px;background:#f59e0b;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;margin-right:3px;">✏️</button>' +
+        '<button onclick="removeProdFromLot(' + p.id + ')" title="Retirer cet appareil du lot — il restera dans le stock mais ne sera plus lié à ce lot" style="padding:4px 8px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">✕</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+
+  var tbody = document.createElement('tbody');
+  tbody.id = 'stockTbody';
+  tbody.innerHTML = rows;
+  table.appendChild(tbody);
+}
+
+
+function editStockProdFromLot(prodId) {
+  /* Ouvrir stock avec le produit en surbrillance */
+  window.open('stock.html?edit=' + prodId, '_blank');
+}
+
+function vendreDepuisLot(prodId, nomProd, prixVente) {
+  /* Stocker le produit dans sessionStorage pour le récupérer dans ventes */
+  var prodData = {
+    id:         prodId,
+    name:       decodeURIComponent(nomProd),
+    sale_price: prixVente,
+    from_lot:   true
+  };
+  sessionStorage.setItem('lot_cart_item', JSON.stringify(prodData));
+  window.location.href = 'sales.html';
+}
+
+async function removeProdFromLot(prodId) {
+  if (!confirm('Retirer cet appareil du lot ?\nIl restera dans le stock mais ne sera plus lié à ce lot.')) return;
+  try {
+    await fetch('/api/products/' + prodId + '/statut', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({statut_produit: 'DISPONIBLE'})
+    });
+    /* Retirer le lot_id */
+    await fetch('/api/products/full/' + prodId, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({lot_id: null})
+    });
+    loadLot(currentLot.id);
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+async function changeStatutStock(prodId, newStatut) {
+  try {
+    if (newStatut === 'REPARATION') {
+      /* Créer fiche réparation automatiquement */
+      var panne = prompt('Panne / réparation à effectuer :');
+      if (!panne) return;
+      var prixEstime = parseFloat(prompt('Prix estimé réparation (€) :', '0') || '0');
+      var res = await fetch('/api/products/' + prodId + '/to-repair', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({panne, prix_estime: prixEstime})
+      });
+      var d = await res.json();
+      if (d.error) { alert('Erreur: ' + d.error); return; }
+      alert('✅ Fiche réparation créée : ' + (d.repair.numero_rep||'REP #'+d.repair.id) + '\nVisible dans le module Réparations');
+    } else if (newStatut === 'VENDU') {
+      /* Rediriger vers le module Ventes pour avoir un ticket */
+      var prod = currentStockProds.find(function(p){ return p.id === prodId; });
+      if (prod) {
+        var prodData = {
+          id: prod.id,
+          name: prod.name,
+          sale_price: Number(prod.sale_price||0),
+          category: prod.category||'Smartphone',
+          product_id: prod.id
+        };
+        sessionStorage.setItem('lot_cart_item', JSON.stringify(prodData));
+        if (confirm('Vendre cet appareil ?\n' + prod.name + ' — ' + Number(prod.sale_price||0).toFixed(2) + ' €\n\nVous allez être redirigé vers le module Ventes pour finaliser la vente et obtenir un ticket.')) {
+          window.location.href = 'sales.html';
+        }
+      }
+      return;
+    } else {
+      await fetch('/api/products/' + prodId + '/statut', {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({statut_produit: newStatut})
+      });
+    }
+    loadLot(currentLot.id);
+  } catch(e) { alert('Erreur: ' + e.message); }
 }
 
 /* ══ STATUT ══ */
@@ -606,10 +771,12 @@ function searchProd(){
   ).sort((a,b)=>{const ap=CAT.includes(a.category)?0:1,bp=CAT.includes(b.category)?0:1;return ap-bp||a.name.localeCompare(b.name);}).slice(0,20);
   resDiv.style.display='block';
   resDiv.innerHTML=hits.length===0?'<div style="padding:10px;color:#94a3b8;font-size:12px">Aucun résultat</div>'
-    :hits.map(p=>{const qty=parseInt(p.stock_quantity||0);return `<div class="search-item" onclick="pickProd(${p.id})">
-      <div><b>${p.name}</b><br><span style="font-size:10px;color:#64748b">${p.category||''}${p.color?' · '+p.color:''}${p.grade?' · '+p.grade:''}</span></div>
-      <span style="font-size:11px;color:${qty===0?'#f59e0b':'#16a34a'};font-weight:bold">${qty===0?'⚠️ 0':'✅ '+qty}</span>
-    </div>`;}).join('');
+    :hits.map(function(p){var qty=parseInt(p.stock_quantity||0);
+      return '<div class="search-item" onclick="pickProd('+p.id+')">'+
+        '<div><b>'+p.name+'</b><br><span style="font-size:10px;color:#64748b">'+(p.category||'')+(p.color?' · '+p.color:'')+(p.grade?' · '+p.grade:'')+'</span></div>'+
+        '<span style="font-size:11px;color:'+(qty===0?'#f59e0b':'#16a34a')+';font-weight:bold">'+(qty===0?'⚠️ 0':'✅ '+qty)+'</span>'+
+      '</div>';
+    }).join('');
 }
 
 function pickProd(id){
@@ -726,6 +893,64 @@ document.addEventListener('DOMContentLoaded',()=>{
   init();
 });
 
+/* ══ IMPORT STOCK DEPUIS LOTS ══ */
+function downloadLotTemplate() {
+  var url = '/api/stock/template';
+  if (currentLot && currentLot.id) {
+    url += '?lot_id=' + currentLot.id;
+  }
+  window.location.href = url;
+}
+
+async function importStockFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      var wb   = XLSX.read(e.target.result, {type:'array'});
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      var headerRow = -1;
+      for (var i = 0; i < Math.min(data.length, 10); i++) {
+        if (data[i].indexOf('categorie') >= 0) { headerRow = i; break; }
+      }
+      if (headerRow < 0) { alert('Colonne "categorie" non trouvee'); return; }
+      var headers = data[headerRow];
+      var rows = [];
+      /* Catégories valides pour filtrer les vraies données */
+      var VALID_CATS = ['Smartphone','Tablette','PC Portable','Accessoire','Accessoire Info',
+        'Coque','Protection écran','Chargeur','Câble','Pièce détachée','Prestation'];
+      for (var r = headerRow + 1; r < data.length; r++) {
+        var row = data[r];
+        if (!row || row.every(function(v){ return v === ''; })) continue;
+        var obj = {};
+        headers.forEach(function(h, i){ if(h) obj[h] = row[i] !== undefined ? String(row[i]).trim() : ''; });
+        /* Ignorer les lignes de description/exemple sans catégorie valide */
+        var cat = (obj.categorie||'').trim();
+        var isValidCat = VALID_CATS.some(function(v){ return v.toLowerCase() === cat.toLowerCase(); });
+        if (!isValidCat) continue;
+        if (obj.modele || obj.marque) rows.push(obj);
+      }
+      if (!rows.length) { alert('Aucune ligne à importer'); return; }
+      if (!confirm(rows.length + ' ligne(s) à importer. Continuer ?')) return;
+      var res = await fetch('/api/stock/import', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({rows: rows})
+      });
+      var d = await res.json();
+      if (d.error) { alert('❌ ' + d.error); return; }
+      var msg = d.imported + ' produit(s) importe(s) dans le stock !';
+      if (d.skipped) msg += ' - ' + d.skipped + ' doublon(s) IMEI ignore(s)';
+      if (d.errors && d.errors.length) msg += ' - ' + d.errors.length + ' erreur(s)';
+      alert(msg);
+      if (currentLot) loadLot(currentLot.id);
+    } catch(err) { alert('❌ ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 /* ══ TRANSFERT LOT → STOCK / ATELIER ══ */
 async function lotItemToStock(itemId, mode) {
   /* Récupérer les infos de l'item */
@@ -833,5 +1058,6 @@ async function lotItemToRepair(itemId) {
   }
 }
 </script>
+<script src="tooltips.js"></script>
 </body>
 </html>

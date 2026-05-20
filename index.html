@@ -77,6 +77,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .footer{background:#111827;padding:6px;text-align:center;color:#475569;font-size:11px;}
 </style>
 <script src="auth.js"></script>
+<link rel="stylesheet" href="tooltips.css">
 </head>
 <body>
 
@@ -129,19 +130,19 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
       <div class="group">
         <div class="group-title" style="--gc:#22c55e;">⚡ Vente &amp; Caisse</div>
         <div class="group-grid">
-          <a href="sales.html"   class="card sales">  <div class="icon">⚡</div><div class="title">VENTES</div><div class="desc">Caisse rapide<br>Paiement mixte<br>Ticket / Facture</div></a>
-          <a href="repairs.html" class="card repairs"><div class="icon">🔧</div><div class="title">RÉPARATIONS</div><div class="desc">Gestion SAV<br>Contact client<br>Suivi atelier</div></a>
-          <a href="devis.html"   class="card devis">  <div class="icon">📋</div><div class="title">DEVIS</div><div class="desc">Créer un devis<br>Convertir en vente<br>Imprimer</div></a>
-          <a href="credits.html" class="card credits"><div class="icon">💳</div><div class="title">CRÉDITS</div><div class="desc">Dettes clients<br>Paiements partiels<br>Suivi des restes</div></a>
+          <a title="VENTES" href="sales.html"   class="card sales">  <div class="icon">⚡</div><div class="title">VENTES</div><div class="desc">Caisse rapide<br>Paiement mixte<br>Ticket / Facture</div></a>
+          <a title="RÉPARATIONS" href="repairs.html" class="card repairs"><div class="icon">🔧</div><div class="title">RÉPARATIONS</div><div class="desc">Gestion SAV<br>Contact client<br>Suivi atelier</div></a>
+          <a title="DEVIS" href="devis.html"   class="card devis">  <div class="icon">📋</div><div class="title">DEVIS</div><div class="desc">Créer un devis<br>Convertir en vente<br>Imprimer</div></a>
+          <a title="CRÉDITS" href="credits.html" class="card credits"><div class="icon">💳</div><div class="title">CRÉDITS</div><div class="desc">Dettes clients<br>Paiements partiels<br>Suivi des restes</div></a>
         </div>
       </div>
       <div class="group">
         <div class="group-title" style="--gc:#ef4444;">💰 Finances</div>
         <div class="group-grid">
-          <a href="expenses.html"          class="card expenses"><div class="icon">📉</div><div class="title">DÉPENSES</div><div class="desc">Sorties caisse<br>Fournisseurs<br>Suivi des coûts</div></a>
-          <a href="dailyreport.html"       class="card caisse gerant-only"><div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
-          <a href="rapport-comptable.html" class="card compta"><div class="icon">📋</div><div class="title">RAPPORT COMPTABLE</div><div class="desc">Détails CA<br>CB / Espèces / DP<br>Pour le comptable</div></a>
-          <a href="dashboard.html"         class="card dashboard gerant-only"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
+          <a title="DÉPENSES" href="expenses.html"          class="card expenses"><div class="icon">📉</div><div class="title">DÉPENSES</div><div class="desc">Sorties caisse<br>Fournisseurs<br>Suivi des coûts</div></a>
+          <a title="CAISSE DU JOUR" href="dailyreport.html"       class="card caisse gerant-only"><div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
+          <a title="RAPPORT COMPTABLE" href="rapport-comptable.html" class="card compta"><div class="icon">📋</div><div class="title">RAPPORT COMPTABLE</div><div class="desc">Détails CA<br>CB / Espèces / DP<br>Pour le comptable</div></a>
+          <a title="DASHBOARD" href="dashboard.html"         class="card dashboard gerant-only"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
         </div>
       </div>
     </div>
@@ -151,17 +152,17 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
       <div class="group">
         <div class="group-title" style="--gc:#f59e0b;">📦 Stock &amp; Approvisionnement</div>
         <div class="group-grid">
-          <a href="stock.html"     class="card stock">    <div class="icon">📦</div><div class="title">STOCK</div><div class="desc">Grade · Couleur<br>Fournisseur<br>Vendre direct</div></a>
-          <a href="commandes.html" class="card commandes"><div class="icon">🛒</div><div class="title">COMMANDES</div><div class="desc">Fournisseurs<br>Import facture PDF<br>Suivi réception</div></a>
-          <a href="lots.html"      class="card lots">     <div class="icon">🗂️</div><div class="title">LOTS</div><div class="desc">Achat de lots<br>Rentabilité<br>Suivi appareils</div></a>
-          <a href="returns.html"   class="card returns">  <div class="icon">↩️</div><div class="title">RETOURS</div><div class="desc">Retours clients<br>Retours fournisseur<br>Stock inutilisable</div></a>
+          <a title="STOCK" href="stock.html"     class="card stock">    <div class="icon">📦</div><div class="title">STOCK</div><div class="desc">Grade · Couleur<br>Fournisseur<br>Vendre direct</div></a>
+          <a title="COMMANDES" href="commandes.html" class="card commandes"><div class="icon">🛒</div><div class="title">COMMANDES</div><div class="desc">Fournisseurs<br>Import facture PDF<br>Suivi réception</div></a>
+          <a title="LOTS" href="lots.html"      class="card lots">     <div class="icon">🗂️</div><div class="title">LOTS</div><div class="desc">Achat de lots<br>Rentabilité<br>Suivi appareils</div></a>
+          <a title="RETOURS" href="returns.html"   class="card returns">  <div class="icon">↩️</div><div class="title">RETOURS</div><div class="desc">Retours clients<br>Retours fournisseur<br>Stock inutilisable</div></a>
         </div>
       </div>
       <div class="group">
         <div class="group-title" style="--gc:#64748b;">⚙️ Outils</div>
         <div class="group-grid">
-          <a href="printshop.html" class="card print">   <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
-          <a href="contacts.html"  class="card contacts"><div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>WA · Email</div></a>
+          <a title="IMPRESSION" href="printshop.html" class="card print">   <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
+          <a title="CONTACTS" href="contacts.html"  class="card contacts"><div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>WA · Email</div></a>
         </div>
       </div>
     </div>

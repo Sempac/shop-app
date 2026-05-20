@@ -162,6 +162,7 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 .mbtn-add{background:#3b82f6;color:white;}
 .mbtn-cancel{background:#f1f5f9;color:#374151;}
 </style>
+<link rel="stylesheet" href="tooltips.css">
 </head>
 <body>
 
@@ -1071,6 +1072,35 @@ init();
       });
     }
 
+    /* ── PRODUIT VENANT DU LOT ── */
+    var lotItem = sessionStorage.getItem('lot_cart_item');
+    if (lotItem) {
+      sessionStorage.removeItem('lot_cart_item');
+      try {
+        var prod = JSON.parse(lotItem);
+        /* Attendre que allProducts soit chargé puis ajouter */
+        setTimeout(function(){
+          var found = allProducts.find(function(p){ return p.id === prod.id; });
+          if (found) {
+            addToCart(prod.id);
+            alert('🛒 ' + prod.name + ' ajouté au panier !');
+          } else {
+            /* Produit pas dans allProducts (statut non DISPONIBLE) → forcer ajout */
+            cart.push({
+              id:       prod.id,
+              name:     prod.name,
+              price:    prod.sale_price,
+              qty:      1,
+              discount: 0,
+              product_id: prod.id
+            });
+            renderCart();
+            alert('🛒 ' + prod.name + ' ajouté au panier !');
+          }
+        }, 500);
+      } catch(e) { console.error('lot_cart_item parse error:', e); }
+    }
+
     /* ── SCAN GLOBAL DOUCHETTE ── */
     InputTools.enableGlobalScan(function(code) {
       /* Recherche directe via API barcode */
@@ -1098,5 +1128,6 @@ init();
   }
 })();
 </script>
+<script src="tooltips.js"></script>
 </body>
 </html>

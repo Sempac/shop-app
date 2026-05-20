@@ -1,0 +1,3 @@
+/* tooltips.css — masque le tooltip natif du navigateur */
+[title] { cursor: default; }
+button[title], a[title] { cursor: pointer; }

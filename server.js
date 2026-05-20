@@ -40,7 +40,7 @@ const upload=multer({storage,limits:{fileSize:20*1024*1024},
    PRODUCTS — spécifiques AVANT /:id
 ======================================================= */
 app.get('/api/products',async(req,res)=>{
-  try{const r=await pool.query(`SELECT id,name,category,condition,color,grade,location_zone,location_detail,stock_alert,sale_price AS price,sale_price,purchase_price,stock_quantity,barcode,supplier_id,supplier_name FROM products ORDER BY name ASC`);res.json(r.rows);}
+  try{const r=await pool.query(`SELECT id,name,category,condition,color,grade,location_zone,location_detail,stock_alert,sale_price AS price,sale_price,purchase_price,stock_quantity,barcode,supplier_id,supplier_name,statut_produit,type_entree,lot_id,imei,numero_serie,notes,client_rachat_nom,client_rachat_tel FROM products ORDER BY name ASC`);res.json(r.rows);}
   catch(e){res.status(500).json({error:e.message});}
 });
 app.get('/api/products/alerts',async(req,res)=>{
@@ -76,17 +76,21 @@ app.post('/api/orders',async(req,res)=>{
     const cb=Number(amount_cb||0),cash=Number(amount_cash||0),credit=Number(amount_credit||0);
     let pm=payment||'cash';if(!['card','cash','mixed','credit'].includes(pm))pm='cash';
     await client.query('BEGIN');
-    const or=await client.query(`INSERT INTO orders(total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,garantie,created_at) VALUES($1,$2,$3,$4,'completed',$5,$6,$7,$8,NOW()) RETURNING id`,
-      [total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit,garantie||null]);
+    const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const numRes=await client.query("SELECT next_numero('VNT',$1,'orders','numero') AS num",[dateStr]);
+    const numero=numRes.rows[0].num;
+    const or=await client.query(`INSERT INTO orders(numero,total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,garantie,created_at) VALUES($1,$2,$3,$4,$5,'completed',$6,$7,$8,$9,NOW()) RETURNING id`,
+      [numero,total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit,garantie||null]);
     const orderId=or.rows[0].id;
     for(const item of cart){
       await client.query(`INSERT INTO order_items(order_id,product_id,quantity,price,discount) VALUES($1,$2,$3,$4,$5)`,[orderId,item.id,item.qty,Number(item.price),Number(item.discount||0)]);
       await client.query(`UPDATE products SET stock_quantity=stock_quantity-$1 WHERE id=$2`,[item.qty,item.id]);
-      /* Mise à jour lot si produit vient d'un lot */
-      const li=await client.query(`SELECT id FROM lot_items WHERE product_id=$1 AND status NOT IN ('VENDU','IRREPARABLE') ORDER BY id DESC LIMIT 1`,[item.id]);
-      if(li.rows.length>0){
-        await client.query(`UPDATE lot_items SET status='VENDU',sale_price=$1,order_id=$2,updated_at=NOW() WHERE id=$3`,
-          [Number(item.price)-Number(item.discount||0),orderId,li.rows[0].id]);
+      /* Mettre à jour statut produit si vendu depuis stock */
+      if(item.product_id || item.id){
+        const pid = item.product_id || item.id;
+        await client.query(
+          'UPDATE products SET statut_produit=$1,sale_price=$2,updated_at=NOW() WHERE id=$3 AND statut_produit!=\'VENDU\'',
+          ['VENDU', Number(item.price)-Number(item.discount||0), pid]);
       }
     }
     if(credit>0){await client.query(`INSERT INTO customer_credits(customer_name,phone,order_id,total_amount,amount_paid,amount_due,status,notes) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS',$7)`,
@@ -244,8 +248,22 @@ app.get('/api/repairs/search',async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs WHERE id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
-app.post('/api/repairs',async(req,res)=>{try{const r=await pool.query(`INSERT INTO repairs(customer_name,phone,device_type,brand,model,serial_number,issue,estimated_price,comment,garantie,status,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'EN_ATTENTE',NOW()) RETURNING *`,
-  [req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',req.body.brand||'',req.body.model||'',req.body.serial_number||'',req.body.issue||'',Number(req.body.estimated_price||0),req.body.comment||'',req.body.garantie||null]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+app.post('/api/repairs',async(req,res)=>{
+  try{
+    const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const numRes=await pool.query("SELECT next_numero('REP',$1,'repairs','numero_rep') AS num",[dateStr]);
+    const numero=numRes.rows[0].num;
+    const r=await pool.query(
+      `INSERT INTO repairs(numero_rep,customer_name,phone,device_type,brand,model,
+        serial_number,issue,estimated_price,comment,garantie,status,created_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'EN_ATTENTE',NOW()) RETURNING *`,
+      [numero,req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',
+       req.body.brand||'',req.body.model||'',req.body.serial_number||'',
+       req.body.issue||'',Number(req.body.estimated_price||0),
+       req.body.comment||'',req.body.garantie||null]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
 app.put('/api/repairs/:id',async(req,res)=>{
   const client=await pool.connect();
   try{
@@ -289,22 +307,19 @@ app.delete('/api/repairs/:id',async(req,res)=>{
    EXPENSES
 ======================================================= */
 app.get('/api/expenses',async(req,res)=>{try{const{from='2000-01-01',to='2999-12-31',category}=req.query;let q=`SELECT * FROM expenses WHERE DATE(date) BETWEEN $1 AND $2`;const p=[from,to];if(category){q+=` AND category=$3`;p.push(category);}q+=` ORDER BY date DESC`;const r=await pool.query(q,p);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.post('/api/expenses',async(req,res)=>{try{const{description,amount,category,date}=req.body;const r=await pool.query(`INSERT INTO expenses(description,amount,category,date) VALUES($1,$2,$3,$4) RETURNING *`,[description||'',Number(amount||0),category||'Autre',date||new Date().toISOString().split('T')[0]]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
-app.delete('/api/expenses/:id',async(req,res)=>{try{await pool.query(`DELETE FROM expenses WHERE id=$1`,[req.params.id]);res.json({success:true});}catch(e){res.status(500).json({error:e.message});}});
-
-/* =======================================================
-   CREDITS — /search AVANT /:id
-======================================================= */
-app.get('/api/credits',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM customer_credits WHERE status=$1 ORDER BY created_at DESC`,[req.query.status||'EN_COURS']);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.get('/api/credits/search',async(req,res)=>{try{const q=req.query.q||'';const r=await pool.query(`SELECT * FROM customer_credits WHERE customer_name ILIKE $1 OR phone ILIKE $1 ORDER BY created_at DESC`,[`%${q}%`]);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.post('/api/credits/:id/pay',async(req,res)=>{
-  const client=await pool.connect();
-  try{const{amount,payment_method,notes}=req.body;
-    await client.query('BEGIN');
-    await client.query(`INSERT INTO credit_payments(credit_id,amount,payment_method,notes) VALUES($1,$2,$3,$4)`,[req.params.id,Number(amount),payment_method||'cash',notes||'']);
-    const r=await client.query(`UPDATE customer_credits SET amount_paid=amount_paid+$1,amount_due=amount_due-$1,status=CASE WHEN (amount_due-$1)<=0 THEN 'SOLDE' ELSE status END,updated_at=NOW() WHERE id=$2 RETURNING *`,[Number(amount),req.params.id]);
-    await client.query('COMMIT');res.json(r.rows[0]);
-  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
+app.post('/api/expenses',async(req,res)=>{
+  try{
+    const{description,amount,category,date}=req.body;
+    const dateStr=(date||new Date().toISOString().slice(0,10)).replace(/-/g,'');
+    const numRes=await pool.query("SELECT next_numero('DEP',$1,'expenses','numero') AS num",[dateStr]);
+    const numero=numRes.rows[0].num;
+    const r=await pool.query(
+      `INSERT INTO expenses(numero,description,amount,category,date)
+       VALUES($1,$2,$3,$4,$5) RETURNING *`,
+      [numero,description||'',Number(amount||0),category||'Autre',
+       date||new Date().toISOString().split('T')[0]]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
 });
 
 /* =======================================================
@@ -336,15 +351,15 @@ app.put('/api/print/:id/cancel',async(req,res)=>{try{const r=await pool.query(`U
 ======================================================= */
 app.get('/api/lots',async(req,res)=>{
   try{const r=await pool.query(`
-    SELECT l.*,COUNT(li.id) AS nb_appareils,
-      COUNT(CASE WHEN li.status='VENDU' THEN 1 END) AS nb_vendus,
-      COUNT(CASE WHEN li.status='EN_STOCK' THEN 1 END) AS nb_stock,
-      COUNT(CASE WHEN li.status='EN_TEST' THEN 1 END) AS nb_test,
-      COUNT(CASE WHEN li.status='EN_REPARATION' THEN 1 END) AS nb_reparation,
-      COUNT(CASE WHEN li.status='IRREPARABLE' THEN 1 END) AS nb_irreparable,
-      COALESCE(SUM(li.sale_price),0) AS total_ventes,
+    SELECT l.*,(SELECT COUNT(*) FROM products WHERE lot_id=l.id) AS nb_appareils,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='VENDU') AS nb_vendus,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='DISPONIBLE') AS nb_stock,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='EN_TEST') AS nb_test,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='REPARATION') AS nb_reparation,
+      (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='IRREPARABLE') AS nb_irreparable,
+      (SELECT COALESCE(SUM(sale_price),0) FROM products WHERE lot_id=l.id AND statut_produit='VENDU') AS total_ventes,
       COALESCE((SELECT SUM(lc.amount) FROM lot_costs lc WHERE lc.lot_id=l.id),0) AS total_couts_sup
-    FROM lots l LEFT JOIN lot_items li ON li.lot_id=l.id
+    FROM lots l
     GROUP BY l.id ORDER BY l.created_at DESC`);
   res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}
 });
@@ -376,32 +391,10 @@ app.delete('/api/lots/costs/:id',async(req,res)=>{
     await client.query('COMMIT');res.json({success:true});
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
 });
-app.put('/api/lots/items/:id',async(req,res)=>{
-  const client=await pool.connect();
-  try{const{status,sale_price,notes,order_id,repair_id}=req.body;
-    await client.query('BEGIN');
-    const old=await client.query(`SELECT * FROM lot_items WHERE id=$1`,[req.params.id]);
-    const oldStatus=old.rows[0]?.status||'EN_TEST';
-    const r=await client.query(`UPDATE lot_items SET status=$1,
-      sale_price=CASE WHEN $2::numeric IS NOT NULL THEN $2::numeric ELSE sale_price END,
-      notes=CASE WHEN $3::text IS NOT NULL THEN $3::text ELSE notes END,
-      order_id=CASE WHEN $4::int IS NOT NULL THEN $4::int ELSE order_id END,
-      repair_id=CASE WHEN $5::int IS NOT NULL THEN $5::int ELSE repair_id END,
-      updated_at=NOW() WHERE id=$6 RETURNING *`,
-      [status,sale_price!=null?Number(sale_price):null,notes!=null?notes:null,order_id||null,repair_id||null,req.params.id]);
-    const item=r.rows[0];
-    if(item.product_id){
-      if(status==='EN_STOCK'&&oldStatus!=='EN_STOCK')await client.query(`UPDATE products SET stock_quantity=GREATEST(stock_quantity,1) WHERE id=$1`,[item.product_id]);
-      if(status==='IRREPARABLE'&&oldStatus!=='IRREPARABLE')await client.query(`UPDATE products SET stock_quantity=GREATEST(0,stock_quantity-1) WHERE id=$1`,[item.product_id]);
-      if(status==='VENDU'&&oldStatus!=='VENDU')await client.query(`UPDATE products SET stock_quantity=GREATEST(0,stock_quantity-1) WHERE id=$1`,[item.product_id]);
-      if(oldStatus==='EN_STOCK'&&(status==='EN_REPARATION'||status==='EN_TEST'))await client.query(`UPDATE products SET stock_quantity=GREATEST(0,stock_quantity-1) WHERE id=$1`,[item.product_id]);
-    }
-    await client.query('COMMIT');res.json(item);
-  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
-});
+/* Route PUT lot_items supprimée */
 app.get('/api/lots/:id',async(req,res)=>{
   try{const lot=await pool.query(`SELECT * FROM lots WHERE id=$1`,[req.params.id]);
-    const items=await pool.query(`SELECT li.*,p.name AS product_name,o.total AS order_total FROM lot_items li LEFT JOIN products p ON p.id=li.product_id LEFT JOIN orders o ON o.id=li.order_id WHERE li.lot_id=$1 ORDER BY li.id ASC`,[req.params.id]);
+    const items={rows:[]}; /* lot_items supprimée - tout est dans products */
     const costs=await pool.query(`SELECT lc.*,p.name AS product_name FROM lot_costs lc LEFT JOIN products p ON p.id=lc.product_id WHERE lc.lot_id=$1 ORDER BY lc.created_at ASC`,[req.params.id]);
     res.json({lot:lot.rows[0],items:items.rows,costs:costs.rows});
   }catch(e){res.status(500).json({error:e.message});}
@@ -423,40 +416,8 @@ app.put('/api/lots/:id',async(req,res)=>{
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
 });
 app.delete('/api/lots/:id',async(req,res)=>{try{await pool.query(`DELETE FROM lots WHERE id=$1`,[req.params.id]);res.json({success:true});}catch(e){res.status(500).json({error:e.message});}});
-app.post('/api/lots/:id/items',async(req,res)=>{
-  const client=await pool.connect();
-  try{const{product_id,name,category,color,grade,supplier_name,purchase_price,sale_price,notes}=req.body;
-    await client.query('BEGIN');
-    if(product_id){
-      const prod=await client.query(`SELECT * FROM products WHERE id=$1`,[product_id]);
-      if(!prod.rows[0])throw new Error('Produit introuvable');
-      const p=prod.rows[0];
-      const item=await client.query(`INSERT INTO lot_items(lot_id,name,purchase_price,status,product_id,notes) VALUES($1,$2,$3,'EN_TEST',$4,$5) RETURNING *`,
-        [req.params.id,p.name,Number(purchase_price||0),product_id,notes||'']);
-      await client.query(`UPDATE products SET stock_quantity=stock_quantity+1 WHERE id=$1`,[product_id]);
-      if(sale_price&&Number(sale_price)>0)await client.query(`UPDATE products SET sale_price=$1 WHERE id=$2`,[Number(sale_price),product_id]);
-      await client.query('COMMIT');res.json({...item.rows[0],product_id});
-    }else{
-      if(!name)throw new Error('Nom obligatoire');
-      const prod=await client.query(`INSERT INTO products(name,category,condition,color,grade,supplier_name,purchase_price,sale_price,stock_quantity,stock_alert) VALUES($1,$2,'OCCASION',$3,$4,$5,$6,$7,1,1) RETURNING *`,
-        [name,category||'Smartphone',color||null,grade||null,supplier_name||null,Number(purchase_price||0),Number(sale_price||0)]);
-      const productId=prod.rows[0].id;
-      const item=await client.query(`INSERT INTO lot_items(lot_id,name,purchase_price,status,product_id,notes) VALUES($1,$2,$3,'EN_TEST',$4,$5) RETURNING *`,
-        [req.params.id,name,Number(purchase_price||0),productId,notes||'']);
-      await client.query('COMMIT');res.json({...item.rows[0],product_id:productId});
-    }
-  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
-});
-app.post('/api/lots/:id/costs',async(req,res)=>{
-  const client=await pool.connect();
-  try{const{lot_item_id,description,amount,cost_type,repair_type,product_id,quantity}=req.body;
-    await client.query('BEGIN');
-    const r=await client.query(`INSERT INTO lot_costs(lot_id,lot_item_id,description,amount,cost_type,repair_type,product_id,quantity) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [req.params.id,lot_item_id||null,description,Number(amount||0),cost_type||'piece',repair_type||'interne',product_id||null,Number(quantity||1)]);
-    if(product_id&&cost_type==='piece')await client.query(`UPDATE products SET stock_quantity=stock_quantity-$1 WHERE id=$2 AND stock_quantity>=$1`,[Number(quantity||1),product_id]);
-    await client.query('COMMIT');res.json(r.rows[0]);
-  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
-});
+/* Route lot_items supprimée: /* Route POST lot_items supprimée */
+
 
 /* =======================================================
    CONTACTS — CRUD complet
@@ -950,32 +911,11 @@ app.put('/api/orders/:id', async(req,res)=>{
 
 
 /* ── LOT ITEMS ── */
-app.get('/api/lot-items/:id', async(req,res)=>{
-  try{
-    const r=await pool.query('SELECT * FROM lot_items WHERE id=$1',[req.params.id]);
-    if(!r.rows[0])return res.status(404).json({error:'Item introuvable'});
-    res.json(r.rows[0]);
-  }catch(e){res.status(500).json({error:e.message});}
-});
+/* Route lot_items supprimée: app.get('/api/lot-items/:id' */
 
-app.put('/api/lot-items/:id', async(req,res)=>{
-  try{
-    const{status,name,notes,purchase_price,sale_price}=req.body;
-    const r=await pool.query(
-      `UPDATE lot_items SET
-        status=COALESCE($1,status),
-        name=COALESCE($2,name),
-        notes=COALESCE($3,notes),
-        purchase_price=COALESCE($4,purchase_price),
-        sale_price=COALESCE($5,sale_price)
-       WHERE id=$6 RETURNING *`,
-      [status||null,name||null,notes||null,
-       purchase_price!==undefined?Number(purchase_price):null,
-       sale_price!==undefined?Number(sale_price):null,
-       req.params.id]);
-    res.json(r.rows[0]);
-  }catch(e){res.status(500).json({error:e.message});}
-});
+
+/* Route lot_items supprimée: app.put('/api/lot-items/:id' */
+
 
 
 /* =======================================================
@@ -1244,6 +1184,7 @@ app.post('/api/products/full', async(req,res)=>{
           supplier_name,purchase_price,sale_price,stock_quantity,stock_alert,
           imei,numero_serie,statut_produit,type_entree,lot_id,commande_id,
           client_rachat_nom,client_rachat_tel,notes,barcodes}=req.body;
+    console.log('DEBUG POST products/full lot_id:', lot_id, 'type:', typeof lot_id);
     await client.query('BEGIN');
     const r = await client.query(`
       INSERT INTO products(name,category,condition,color,grade,location_zone,
@@ -1283,6 +1224,10 @@ app.put('/api/products/full/:id', async(req,res)=>{
           imei,numero_serie,statut_produit,type_entree,lot_id,commande_id,
           client_rachat_nom,client_rachat_tel,notes,barcodes}=req.body;
     await client.query('BEGIN');
+    /* Récupérer le lot_id existant si non fourni */
+    const existing = await client.query('SELECT lot_id FROM products WHERE id=$1',[req.params.id]);
+    const existingLotId = existing.rows[0]?.lot_id;
+    const finalLotId = lot_id !== undefined && lot_id !== null ? lot_id : existingLotId;
     const r = await client.query(`
       UPDATE products SET
         name=$1,category=$2,condition=$3,color=$4,grade=$5,
@@ -1297,7 +1242,7 @@ app.put('/api/products/full/:id', async(req,res)=>{
        Number(purchase_price||0),Number(sale_price||0),
        Number(stock_quantity||1),Number(stock_alert||3),
        imei||null,numero_serie||null,statut_produit||'DISPONIBLE',
-       type_entree||'ACHAT_DIRECT',lot_id||null,commande_id||null,
+       type_entree||'ACHAT_DIRECT',finalLotId||null,commande_id||null,
        client_rachat_nom||null,client_rachat_tel||null,notes||null,
        req.params.id]);
     /* Remplacer les codes barres */
@@ -1318,10 +1263,22 @@ app.put('/api/products/full/:id', async(req,res)=>{
 /* ── PUT statut produit ── */
 app.put('/api/products/:id/statut', async(req,res)=>{
   try{
-    const{statut_produit}=req.body;
-    const r=await pool.query(
-      'UPDATE products SET statut_produit=$1,updated_at=NOW() WHERE id=$2 RETURNING *',
-      [statut_produit,req.params.id]);
+    const{statut_produit,sale_price}=req.body;
+    let sql='UPDATE products SET statut_produit=$1,updated_at=NOW()';
+    const params=[statut_produit,req.params.id];
+    if(sale_price!==undefined){
+      sql+=',sale_price=$3';
+      params.splice(1,0,Number(sale_price));
+    }
+    sql+=' WHERE id=$'+(params.length)+' RETURNING *';
+    /* Réindexer */
+    const finalParams=[statut_produit];
+    if(sale_price!==undefined) finalParams.push(Number(sale_price));
+    finalParams.push(req.params.id);
+    const finalSql=sale_price!==undefined
+      ?'UPDATE products SET statut_produit=$1,sale_price=$2,updated_at=NOW() WHERE id=$3 RETURNING *'
+      :'UPDATE products SET statut_produit=$1,updated_at=NOW() WHERE id=$2 RETURNING *';
+    const r=await pool.query(finalSql,finalParams);
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -1412,9 +1369,327 @@ app.post('/api/products/import-csv', async(req,res)=>{
       }
     }
     await client.query('COMMIT');
-    res.json({imported,errors,total:rows.length});
+    res.json({imported,errors,skipped,total:rows.length});
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
   finally{client.release();}
+});
+
+
+/* ── GET produits d'un lot depuis products ── */
+app.get('/api/lots/:id/products', async(req,res)=>{
+  try{
+    const r = await pool.query(`
+      SELECT p.*,
+        COALESCE(json_agg(DISTINCT pb.*) FILTER (WHERE pb.id IS NOT NULL), '[]') AS barcodes,
+        COALESCE((SELECT SUM(lc.amount) FROM lot_costs lc WHERE lc.product_id=p.id AND lc.lot_id=$1),0) AS frais_reparation
+      FROM products p
+      LEFT JOIN product_barcodes pb ON pb.product_id = p.id
+      WHERE p.lot_id = $1
+      GROUP BY p.id
+      ORDER BY p.id DESC`,
+      [req.params.id]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── GET stats d'un lot depuis products ── */
+app.get('/api/lots/:id/stats', async(req,res)=>{
+  try{
+    const r = await pool.query(`
+      SELECT
+        COUNT(*) AS total,
+        COUNT(CASE WHEN statut_produit='DISPONIBLE'  THEN 1 END) AS nb_disponible,
+        COUNT(CASE WHEN statut_produit='EN_TEST'     THEN 1 END) AS nb_test,
+        COUNT(CASE WHEN statut_produit='REPARATION'  THEN 1 END) AS nb_reparation,
+        COUNT(CASE WHEN statut_produit='IRREPARABLE' THEN 1 END) AS nb_irreparable,
+        COUNT(CASE WHEN statut_produit='VENDU'       THEN 1 END) AS nb_vendu,
+        COALESCE(SUM(purchase_price),0) AS total_achat,
+        COALESCE(SUM(CASE WHEN statut_produit='VENDU' THEN sale_price ELSE 0 END),0) AS total_vendu
+      FROM products WHERE lot_id=$1`,
+      [req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+
+/* ── TEMPLATE IMPORT STOCK (avec lot optionnel) ── */
+app.get('/api/stock/template', async(req,res)=>{
+  try{
+    const path=require('path');
+    const fs=require('fs');
+    const{lot_id}=req.query;
+    let lotName='';
+    if(lot_id){
+      const lr=await pool.query('SELECT name FROM lots WHERE id=$1',[lot_id]);
+      if(lr.rows[0]) lotName=lr.rows[0].name;
+    }
+    /* Utiliser le template mise en forme existant */
+    const templatePath=path.join(__dirname,'template_import_stock.xlsx');
+    if(!fs.existsSync(templatePath)){
+      return res.status(404).json({error:'Template non trouvé — copiez template_import_stock.xlsx dans le dossier app'});
+    }
+    if(!lot_id){
+      /* Template générique */
+      return res.download(templatePath,'template_import_stock.xlsx');
+    }
+    /* Modifier le lot_nom dans le template à la volée */
+    const XlsxModule=require('xlsx');
+    const wb=XlsxModule.readFile(templatePath);
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    /* Trouver la colonne lot_nom (col K = index 10) et remplacer les exemples */
+    /* Lignes 6 et 7 (index 5 et 6) = lignes d'exemple */
+    const lotCol='K'; /* colonne lot_nom */
+    [6,7,8,9,10,11,12].forEach(function(row){
+      var cellRef=lotCol+row;
+      if(ws[cellRef]) ws[cellRef].v=lotName;
+      else ws[cellRef]={v:lotName,t:'s'};
+    });
+    const filename='template_'+lotName.replace(/[^a-zA-Z0-9]/g,'_')+'.xlsx';
+    const buf=XlsxModule.write(wb,{type:'buffer',bookType:'xlsx'});
+    res.setHeader('Content-Disposition','attachment; filename="'+filename+'"');
+    res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buf);
+  }catch(e){
+    console.error('Template error:',e.message);
+    res.status(500).json({error:e.message});
+  }
+});
+
+/* ── IMPORT STOCK depuis JSON parsé côté client ── */
+app.post('/api/stock/import', async(req,res)=>{
+  const client = await pool.connect();
+  try{
+    const{rows}=req.body;
+    if(!rows||!rows.length) return res.status(400).json({error:'Aucune ligne'});
+    await client.query('BEGIN');
+    var imported=0,errors=[],skipped=0;
+    console.log('IMPORT rows count:', rows.length);
+    if(rows[0]) console.log('first row keys:', Object.keys(rows[0]));
+    if(rows[0]) console.log('first row values:', JSON.stringify(rows[0]));
+    for(var i=0;i<rows.length;i++){
+      var r=rows[i];
+      var marque=(r.marque||'').trim();
+      var modele=(r.modele||'').trim();
+      var nom=modele.toLowerCase().includes(marque.toLowerCase())?modele:(marque+' '+modele).trim();
+      if(!nom||!r.categorie){errors.push({ligne:i+5,erreur:'Nom ou catégorie manquant'});continue;}
+      var lot_id=null;
+      if(r.lot_nom && r.lot_nom.trim()){
+        const lr=await client.query("SELECT id FROM lots WHERE LOWER(name)=LOWER($1) LIMIT 1",[r.lot_nom.trim()]);
+        if(lr.rows[0]){
+          lot_id=lr.rows[0].id;
+        } else {
+          console.log('Lot non trouvé pour:', r.lot_nom.trim());
+        }
+      }
+      try{
+        var typeEntree = lot_id ? 'LOT' : 'ACHAT_DIRECT';
+        var statut = (r.statut||'EN_TEST').toUpperCase().trim();
+        var validStatuts = ['EN_TEST','DISPONIBLE','REPARATION','IRREPARABLE','VENDU'];
+        if (!validStatuts.includes(statut)) statut = 'EN_TEST';
+        /* Anti-doublon IMEI */
+        if(r.imei && r.imei.trim()){
+          const existing=await client.query('SELECT id FROM products WHERE imei=$1',[r.imei.trim()]);
+          if(existing.rows[0]){ skipped++; continue; }
+        }
+        await client.query(
+          'INSERT INTO products(name,category,condition,imei,color,grade,purchase_price,sale_price,stock_quantity,stock_alert,statut_produit,type_entree,lot_id,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,1,3,$9,$10,$11,$12)',
+          [nom, r.categorie||'Smartphone', r.condition||'OCCASION',
+           r.imei||null, r.couleur||null, r.grade||null,
+           Number(r.prix_achat||0), Number(r.prix_vente||1),
+           statut, typeEntree, lot_id||null, r.notes||null]);
+        imported++;
+      }catch(e){errors.push({ligne:i+5,erreur:e.message});}
+    }
+    await client.query('COMMIT');
+    res.json({imported,errors,skipped,total:rows.length});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+
+/* ── GET prix de vente réel depuis orders pour un produit ── */
+app.get('/api/products/:id/last-sale', async(req,res)=>{
+  try{
+    const r=await pool.query(`
+      SELECT o.total, o.created_at FROM orders o
+      JOIN order_items oi ON oi.order_id=o.id
+      JOIN products p ON p.name=oi.name
+      WHERE p.id=$1 AND o.status='completed'
+      ORDER BY o.created_at DESC LIMIT 1`,
+      [req.params.id]);
+    res.json(r.rows[0]||null);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+
+/* =======================================================
+   REPAIR PARTS — Pièces de réparation
+======================================================= */
+
+/* GET pièces d'une réparation */
+app.get('/api/repairs/:id/parts', async(req,res)=>{
+  try{
+    const r=await pool.query(
+      'SELECT * FROM repair_parts WHERE repair_id=$1 ORDER BY id',
+      [req.params.id]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* POST ajouter une pièce */
+app.post('/api/repairs/:id/parts', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{nom,cout,source,inclure_depense,product_id}=req.body;
+    await client.query('BEGIN');
+    const r=await client.query(
+      `INSERT INTO repair_parts(repair_id,nom,cout,source,inclure_depense,product_id)
+       VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [req.params.id,nom,Number(cout||0),source||'ACHAT',
+       inclure_depense===true||inclure_depense==='true',product_id||null]);
+    /* Si inclure_depense → créer dépense */
+    if(inclure_depense===true||inclure_depense==='true'){
+      const rep=await client.query('SELECT * FROM repairs WHERE id=$1',[req.params.id]);
+      await client.query(
+        `INSERT INTO expenses(description,amount,category,date)
+         VALUES($1,$2,'Pièce réparation',CURRENT_DATE)`,
+        ['Pièce: '+nom+' (Répar. '+(rep.rows[0]?.numero_rep||'#'+req.params.id)+')',
+         Number(cout||0)]);
+    }
+    await client.query('COMMIT');
+    res.json(r.rows[0]);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* DELETE pièce */
+app.delete('/api/repair-parts/:id', async(req,res)=>{
+  try{
+    await pool.query('DELETE FROM repair_parts WHERE id=$1',[req.params.id]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* PUT statut produit → REPARATION : crée fiche réparation auto */
+app.post('/api/products/:id/to-repair', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{panne,prix_estime}=req.body;
+    const prod=await client.query('SELECT * FROM products WHERE id=$1',[req.params.id]);
+    const p=prod.rows[0];
+    if(!p) return res.status(404).json({error:'Produit non trouvé'});
+
+    await client.query('BEGIN');
+
+    /* Générer numéro réparation */
+    const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const numRes=await client.query("SELECT next_numero('REP',$1,'repairs','numero_rep') AS num",[dateStr]);
+    const numero=numRes.rows[0].num;
+
+    /* Nom du lot si applicable */
+    let clientName='INTERNE';
+    if(p.lot_id){
+      const lotRes=await client.query('SELECT name FROM lots WHERE id=$1',[p.lot_id]);
+      if(lotRes.rows[0]) clientName='LOT — '+lotRes.rows[0].name;
+    }
+
+    /* Créer la fiche réparation */
+    const rep=await client.query(
+      `INSERT INTO repairs(numero_rep,customer_name,phone,device_type,brand,model,
+        issue,estimated_price,status,source,product_id,lot_id,created_at)
+       VALUES($1,$2,'',COALESCE($3,'Smartphone'),COALESCE($4,''),COALESCE($5,''),
+        $6,$7,'EN_ATTENTE','INTERNE',$8,$9,NOW()) RETURNING *`,
+      [numero,clientName,p.category,
+       (p.name||'').split(' ')[0],
+       (p.name||''),
+       panne||'À diagnostiquer',
+       Number(prix_estime||0),
+       p.id,p.lot_id||null]);
+
+    /* Mettre à jour le statut du produit */
+    await client.query(
+      'UPDATE products SET statut_produit=$1,repair_id=$2 WHERE id=$3',
+      ['REPARATION',rep.rows[0].id,req.params.id]);
+
+    await client.query('COMMIT');
+    res.json({repair:rep.rows[0],product_id:req.params.id});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* PUT réparation terminée → produit DISPONIBLE + frais lot */
+app.post('/api/repairs/:id/terminer', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const{prix_final}=req.body;
+    await client.query('BEGIN');
+
+    /* Récupérer la réparation */
+    const rep=await client.query('SELECT * FROM repairs WHERE id=$1',[req.params.id]);
+    const r=rep.rows[0];
+    if(!r) return res.status(404).json({error:'Réparation non trouvée'});
+
+    /* Marquer terminée */
+    const newStatus = req.body.status || 'TERMINE';
+    await client.query(
+      `UPDATE repairs SET status=$1,final_price=$2,delivered_at=NOW() WHERE id=$3`,
+      [newStatus,Number(prix_final||r.estimated_price||0),req.params.id]);
+
+    /* Si produit stock lié → DISPONIBLE */
+    if(r.product_id){
+      await client.query(
+        'UPDATE products SET statut_produit=$1,repair_id=NULL WHERE id=$2',
+        ['DISPONIBLE',r.product_id]);
+    }
+
+    /* Coût total des pièces */
+    const partsRes=await client.query(
+      'SELECT COALESCE(SUM(cout),0) AS total FROM repair_parts WHERE repair_id=$1',
+      [req.params.id]);
+    const coutPieces=Number(partsRes.rows[0].total||0);
+    const prixFinal=Number(prix_final||r.estimated_price||0);
+    const coutTotal=coutPieces; /* MO inclus dans estimated_price */
+
+    /* Si lot → ajouter frais (même si 0, pour traçabilité) */
+    if(r.lot_id){
+      /* Montant = pièces + prix final réparation si pas de pièces */
+      const montantFrais = coutTotal > 0 ? coutTotal : prixFinal;
+      console.log('LOT COST: lot_id='+r.lot_id+' montant='+montantFrais+' pieces='+coutPieces);
+      if(montantFrais > 0){
+        await client.query(
+          `INSERT INTO lot_costs(lot_id,description,amount,cost_type,repair_type,product_id,quantity)
+           VALUES($1,$2,$3,'repair','parts',$4,1)`,
+          [r.lot_id,
+           'Répar. '+(r.numero_rep||'#'+r.id)+' — '+(r.brand||'')+' '+(r.model||''),
+           montantFrais,
+           r.product_id||null]);
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({success:true,cout_pieces:coutPieces,prix_final:prixFinal});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* GET rechercher un lot dans stock/réparations/ventes */
+app.get('/api/lots/:id/search-all', async(req,res)=>{
+  try{
+    const id=req.params.id;
+    const [prods,reps,sales]=await Promise.all([
+      pool.query('SELECT id,name,statut_produit,sale_price,purchase_price FROM products WHERE lot_id=$1',[id]),
+      pool.query('SELECT id,numero_rep,status,customer_name,brand,model FROM repairs WHERE lot_id=$1',[id]),
+      pool.query(`SELECT o.id,o.total,o.created_at,oi.name FROM orders o
+        JOIN order_items oi ON oi.order_id=o.id
+        JOIN products p ON p.name=oi.name AND p.lot_id=$1
+        WHERE o.status='completed' GROUP BY o.id,oi.name`,[id])
+    ]);
+    res.json({
+      produits:prods.rows,
+      reparations:reps.rows,
+      ventes:sales.rows
+    });
+  }catch(e){res.status(500).json({error:e.message});}
 });
 
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));

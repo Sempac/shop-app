@@ -145,7 +145,7 @@ var InputTools = (function() {
       }
 
       /* Accumule les caractères — JAMAIS de preventDefault (ne pas bloquer saisie manuelle) */
-      if (e.key.length === 1) {
+      if (e.key && e.key.length === 1) {
         _globalBuffer += e.key;
         clearTimeout(_globalTimer);
         _globalTimer = setTimeout(function() { _globalBuffer = ''; }, 300);

@@ -696,7 +696,8 @@ async function showRepair(id) {
       '<div class="fg"><label>N° de série</label><input id="e_serial" value="' + (r.serial_number||'') + '"></div>' +
       '<div class="fg full"><label>Panne / Problème</label><input id="e_issue" value="' + (r.issue||'') + '"></div>' +
       '<div class="fg full"><label>Commentaire interne</label><textarea id="e_comment">' + (r.comment||'') + '</textarea></div>' +
-      '<div class="fg"><label>Statut</label><select id="e_status">' + statusOpts + '</select></div>' +
+      '<input type="hidden" id="e_source" value="' + (r.source||'CLIENT') + '">' +
+    '<div class="fg"><label>Statut</label><select id="e_status">' + statusOpts + '</select></div>' +
       '<div class="fg"><label>Prix estimé (€)</label><input id="e_estimated" type="number" value="' + Number(r.estimated_price||0) + '" min="0" step="0.01"></div>' +
       '<div class="fg"><label>Prix final (€)</label><input id="e_final" type="number" value="' + fp + '" min="0" step="0.01" oninput="calcRepPay()"></div>' +
     '</div>' +
@@ -715,6 +716,15 @@ async function showRepair(id) {
       '<div class="pay-err" id="rp_err">⚠️ CB + Espèces dépasse le prix !</div>' +
     '</div>' +
 
+    /* Section pièces */
+    '<div style="background:#1e293b;border-radius:10px;padding:14px;margin-top:14px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+        '<div style="font-size:13px;font-weight:bold;color:white;">🔩 Pièces utilisées</div>' +
+        '<button onclick="showAddPart(' + id + ')" style="padding:5px 12px;background:#7c3aed;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">➕ Ajouter</button>' +
+      '</div>' +
+      '<div id="partsList"></div>' +
+      '<div id="partsTotal" style="text-align:right;font-size:13px;font-weight:bold;color:#22c55e;margin-top:8px;"></div>' +
+    '</div>' +
     '<div class="btn-row">' +
       '<button class="btn-blue"   id="btnSaveRepair">💾 Enregistrer</button>' +
       '<button class="btn-orange" id="btnPrintSAV">🧾 Bon dépôt</button>' +
@@ -725,7 +735,16 @@ async function showRepair(id) {
     '</div>';
 
   /* Attacher les événements */
+  /* Charger les pièces */
+  loadRepairParts(id);
+
+  /* Masquer paiement si réparation interne */
   setTimeout(function() {
+    var srcEl = document.getElementById('e_source');
+    if (srcEl && srcEl.value === 'INTERNE') {
+      var paySection = document.querySelector('.pay-section');
+      if (paySection) paySection.style.display = 'none';
+    }
     var btnSave   = document.getElementById('btnSaveRepair');
     var btnPrint  = document.getElementById('btnPrintSAV');
     var btnDelete = document.getElementById('btnDeleteRepair');
@@ -751,11 +770,32 @@ function calcRepPay() {
 
 async function updateRepair(id) {
   var fp   = Number(document.getElementById('e_final').value||0);
-  var cb   = Number(document.getElementById('e_cb').value||0);
-  var cash = Number(document.getElementById('e_cash').value||0);
-  if (cb + cash > fp + 0.01) { alert('⚠️ CB + Espèces dépasse le prix !'); return; }
-  var credit = Math.max(0, fp - cb - cash);
   var status = document.getElementById('e_status').value;
+  var isInterne = document.getElementById('e_source')?.value === 'INTERNE';
+  var cb   = isInterne ? 0 : Number(document.getElementById('e_cb')?.value||0);
+  var cash = isInterne ? 0 : Number(document.getElementById('e_cash')?.value||0);
+  if (!isInterne && cb + cash > fp + 0.01) { alert('⚠️ CB + Espèces dépasse le prix !'); return; }
+  var credit = isInterne ? 0 : Math.max(0, fp - cb - cash);
+
+  /* Si TERMINE ou LIVRE → appeler route terminer (interne ET externe avec product_id) */
+  if ((status === 'TERMINE' || status === 'LIVRE') && isInterne) {
+    var res2 = await fetch('/api/repairs/' + id + '/terminer', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({prix_final: fp})
+    });
+    var d2 = await res2.json();
+    if (d2.error) { alert('Erreur: ' + d2.error); return; }
+    alert('✅ Réparation terminée ! Produit passé en DISPONIBLE. Frais ajoutés au lot.');
+  } else if ((status === 'TERMINE' || status === 'LIVRE')) {
+    /* Réparation externe - juste mettre à jour si product_id */
+    await fetch('/api/repairs/' + id + '/terminer', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({prix_final: fp})
+    });
+  }
+
   var res = await fetch('/api/repairs/' + id, {
     method: 'PUT',
     headers: {'Content-Type':'application/json'},
@@ -933,6 +973,60 @@ async function sendEmailRepair(id) {
   var email = prompt('Email du client :') || '';
   if (!email) return;
   window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
+}
+
+
+/* ══ PIÈCES DE RÉPARATION ══ */
+async function loadRepairParts(repairId) {
+  try {
+    var parts = await fetch('/api/repairs/' + repairId + '/parts').then(function(r){ return r.json(); });
+    var div   = document.getElementById('partsList');
+    var total = document.getElementById('partsTotal');
+    if (!div) return;
+    if (!parts.length) {
+      div.innerHTML = '<div style="color:#475569;font-size:12px;text-align:center;padding:8px;">Aucune pièce</div>';
+      if (total) total.textContent = '';
+      return;
+    }
+    var sum = 0;
+    div.innerHTML = parts.map(function(p) {
+      sum += Number(p.cout||0);
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #334155;">' +
+        '<div>' +
+          '<span style="font-size:12px;color:white;">' + p.nom + '</span>' +
+          '<span style="font-size:10px;margin-left:6px;padding:1px 6px;border-radius:3px;background:' +
+            (p.source==='INTERNE'?'#1e3a8a;color:#93c5fd':'#166534;color:#86efac') + ';">' +
+            (p.source==='INTERNE'?'Interne':'Achat') + '</span>' +
+          (p.inclure_depense?'<span style="font-size:10px;color:#f59e0b;margin-left:4px;">📊 En dépense</span>':'') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;">' +
+          '<span style="font-size:13px;font-weight:bold;color:#22c55e;">' + Number(p.cout||0).toFixed(2) + ' €</span>' +
+          '<button onclick="deletePart(' + p.id + ',' + repairId + ')" style="padding:2px 7px;background:#fee2e2;color:#ef4444;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-family:Arial;">✕</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    if (total) total.innerHTML = 'Total pièces : <b>' + sum.toFixed(2) + ' €</b>';
+  } catch(e) { console.error('loadRepairParts:', e); }
+}
+
+function showAddPart(repairId) {
+  var nom    = prompt('Nom de la pièce :');
+  if (!nom) return;
+  var cout   = parseFloat(prompt('Coût (€) :', '0') || '0');
+  var source = prompt('Source (ACHAT / INTERNE) :', 'ACHAT').toUpperCase();
+  if (!['ACHAT','INTERNE'].includes(source)) source = 'ACHAT';
+  var inclure = source === 'ACHAT' && confirm('Inclure dans les dépenses du jour ?\n(Non par défaut)') === true;
+  fetch('/api/repairs/' + repairId + '/parts', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({nom, cout, source, inclure_depense: inclure})
+  }).then(function(){ loadRepairParts(repairId); });
+}
+
+async function deletePart(partId, repairId) {
+  if (!confirm('Supprimer cette pièce ?')) return;
+  await fetch('/api/repair-parts/' + partId, {method:'DELETE'});
+  loadRepairParts(repairId);
 }
 
 function printSAV(r) {

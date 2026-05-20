@@ -567,18 +567,67 @@ async function loadQueue() {
 }
 
 async function printAndDone(id) {
-  /* Ouvrir le fichier pour impression */
   try {
     var res  = await fetch('/api/print/queue');
     var data = await res.json();
     var item = data.find(function(d){ return d.id === id; });
     if (item && item.file_url) {
-      var w = window.open(item.file_url, '_blank');
-      if (w) {
-        setTimeout(function(){ w.print(); }, 1000);
+      var url  = item.file_url;
+      var ext  = url.split('?')[0].split('.').pop().toLowerCase();
+      var imgExts = ['jpg','jpeg','png','gif','webp','bmp'];
+
+      if (ext === 'pdf') {
+        /* PDF : ouvrir dans un iframe caché et lancer print() quand chargé */
+        var old = document.getElementById('printFrame');
+        if (old) old.remove();
+        var frame = document.createElement('iframe');
+        frame.id = 'printFrame';
+        frame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+        frame.src = url;
+        document.body.appendChild(frame);
+        frame.onload = function() {
+          try {
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+          } catch(e) {
+            /* Si l'iframe bloque (CORS), fallback : nouvel onglet */
+            var w = window.open(url, '_blank');
+            if (w) setTimeout(function(){ try{ w.print(); }catch(e2){} }, 2500);
+          }
+        };
+        /* Timeout de sécurité : si onload ne se déclenche pas après 8s */
+        setTimeout(function() {
+          if (document.getElementById('printFrame')) {
+            var w = window.open(url, '_blank');
+            if (w) setTimeout(function(){ try{ w.print(); }catch(e2){} }, 2500);
+          }
+        }, 8000);
+
+      } else if (imgExts.indexOf(ext) >= 0) {
+        /* Image : créer une page avec l'image et imprimer */
+        var w = window.open('', '_blank');
+        if (w) {
+          w.document.write(
+            '<!DOCTYPE html><html><head><title>Impression</title>' +
+            '<style>*{margin:0;padding:0;}body{display:flex;justify-content:center;align-items:center;min-height:100vh;}' +
+            'img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head>' +
+            '<body><img src="' + url + '" onload="window.print()"></body></html>'
+          );
+          w.document.close();
+        }
+
+      } else {
+        /* Autres (Word, Excel, etc.) : télécharger + message */
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = item.filename || 'document';
+        a.click();
+        alert('📥 Fichier téléchargé.\n\nOuvrez-le puis faites Fichier → Imprimer (Ctrl+P).');
       }
     }
-  } catch(e) {}
+  } catch(e) {
+    alert('Erreur : impossible d\'ouvrir le fichier.\n' + e.message);
+  }
   /* Marquer comme imprimé */
   await markDone(id);
 }
