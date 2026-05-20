@@ -91,7 +91,36 @@ hr{border:1px solid #334155;margin:12px 0;}
 .apf-btn{width:100%;padding:8px;background:#22c55e;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;font-family:Arial;}
 .badge-zone{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold;background:#dbeafe;color:#1e40af;}
 .badge-local{background:#dcfce7;color:#166534;}
+
+.table-wrap table thead tr th,
+table.sticky thead tr th,
+.items-table thead tr th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1e293b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+
+
+
+
+/* En-têtes figés — relatifs au conteneur scrollable */
+.table-wrap {
+  overflow-y: auto;
+   /* hauteur dispo sous topbar+filtres */
+}
+.table-wrap table thead th,
+.items-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1e293b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
 </style>
+<link rel="stylesheet" href="tooltips.css">
 </head>
 <body>
 <div class="container">
@@ -727,7 +756,8 @@ async function showRepair(id) {
     '</div>' +
     '<div class="btn-row">' +
       '<button class="btn-blue"   id="btnSaveRepair">💾 Enregistrer</button>' +
-      '<button class="btn-orange" id="btnPrintSAV">🧾 Bon dépôt</button>' +
+      '<button class="btn-orange" id="btnPrintSAV" title="Imprimer le bon de dépôt client">🧾 Bon dépôt</button>' +
+      '<button onclick="printFactureRep(' + id + ')" style="padding:9px 16px;background:#1e40af;color:white;border:none;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;" title="Imprimer la facture de réparation">🖨️ Facture</button>' +
       '<button onclick="sendWhatsAppRepair(' + id + ')" style="background:#25d366;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">💬 WA</button>' +
       '<button onclick="sendEmailRepair(' + id + ')"   style="background:#0891b2;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">✉️ Email</button>' +
       '<button onclick="editRepairInForm(' + id + ')"  style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">✏️ Modifier</button>' +
@@ -1068,8 +1098,157 @@ function printSAV(r) {
     '<script>window.onload=function(){window.print();}<\/script>' +
     '</head><body>' + body + '</body></html>'
   );
-  w.document.close();
 }
+
+/* Figer l'en-tête via translateY */
+(function() {
+  function initSticky() {
+    var left = document.querySelector('.left');
+    if (!left) return;
+    left.addEventListener('scroll', function() {
+      var ths = left.querySelectorAll('table.rl thead th');
+      ths.forEach(function(th) {
+        th.style.transform = 'translateY(' + left.scrollTop + 'px)';
+      });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSticky);
+  } else {
+    setTimeout(initSticky, 500);
+  }
+})();
+
+
+/* ══ FACTURE RÉPARATION ══ */
+async function printFactureRep(repairId) {
+  try {
+    var r = await fetch('/api/repairs/' + repairId).then(function(x){ return x.json(); });
+    var parts = await fetch('/api/repairs/' + repairId + '/parts').then(function(x){ return x.json(); });
+
+    var fmt = function(n){ return Number(n||0).toFixed(2) + ' €'; };
+    var date = new Date(r.created_at).toLocaleDateString('fr-FR');
+    var dateLivr = r.delivered_at ? new Date(r.delivered_at).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+    var prixFinal = Number(r.final_price || r.estimated_price || 0);
+
+    var partsList = '';
+    var totalPieces = 0;
+    if (parts && parts.length) {
+      partsList = '<table style="width:100%;border-collapse:collapse;margin:8px 0;">' +
+        '<thead><tr style="background:#f1f5f9;">' +
+          '<th style="padding:6px;text-align:left;border:1px solid #e2e8f0;font-size:12px;">Pièce / Prestation</th>' +
+          '<th style="padding:6px;text-align:right;border:1px solid #e2e8f0;font-size:12px;">Montant</th>' +
+        '</tr></thead><tbody>';
+      parts.forEach(function(p) {
+        totalPieces += Number(p.cout||0);
+        partsList += '<tr>' +
+          '<td style="padding:6px;border:1px solid #e2e8f0;font-size:12px;">' + p.nom + '</td>' +
+          '<td style="padding:6px;text-align:right;border:1px solid #e2e8f0;font-size:12px;">' + fmt(p.cout) + '</td>' +
+        '</tr>';
+      });
+      partsList += '</tbody></table>';
+    }
+
+    var moPrice = prixFinal - totalPieces;
+
+    var html = [
+      '<!DOCTYPE html><html><head><meta charset="UTF-8">',
+      '<title>Facture Réparation ' + (r.numero_rep||'#'+r.id) + '</title>',
+      '<style>',
+        'body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#0f172a;font-size:13px;}',
+        '.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0f172a;}',
+        '.logo{font-size:22px;font-weight:bold;color:#0f172a;}',
+        '.logo span{color:#3b82f6;}',
+        '.adresse{font-size:11px;color:#64748b;margin-top:4px;}',
+        '.facture-info{text-align:right;}',
+        '.facture-num{font-size:18px;font-weight:bold;color:#1e40af;}',
+        '.facture-date{font-size:11px;color:#64748b;}',
+        '.section{margin:16px 0;}',
+        '.section-title{font-size:11px;font-weight:bold;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}',
+        '.client-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;}',
+        '.rep-detail{background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin:12px 0;}',
+        '.total-box{background:#0f172a;color:white;border-radius:8px;padding:14px;text-align:right;margin-top:16px;}',
+        '.total-label{font-size:12px;color:#94a3b8;}',
+        '.total-amount{font-size:24px;font-weight:bold;color:white;}',
+        '.badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:bold;}',
+        '.badge-ok{background:#dcfce7;color:#16a34a;}',
+        '.footer{margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8;}',
+        '.garantie{background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:8px;margin-top:12px;font-size:11px;}',
+      '</style>',
+      '</head><body>',
+
+      /* En-tête */
+      '<div class="header">',
+        '<div>',
+          '<div class="logo">📱 The <span>SMARTPHONE</span></div>',
+          '<div class="adresse">1 Avenue d\'Italie, 75013 Paris</div>',
+          '<div class="adresse">📞 01 47 07 18 66 | 06 86 84 82 79</div>',
+          '<div class="adresse">✉️ smartphonesatelier4@gmail.com</div>',
+        '</div>',
+        '<div class="facture-info">',
+          '<div class="facture-num">FACTURE ' + (r.numero_rep||'REP-'+r.id) + '</div>',
+          '<div class="facture-date">Date dépôt : ' + date + '</div>',
+          '<div class="facture-date">Date livraison : ' + dateLivr + '</div>',
+          '<div style="margin-top:6px"><span class="badge badge-ok">✅ ' + (r.status||'TERMINE') + '</span></div>',
+        '</div>',
+      '</div>',
+
+      /* Client */
+      '<div class="section">',
+        '<div class="section-title">Client</div>',
+        '<div class="client-box">',
+          '<b>' + (r.customer_name||'—') + '</b>',
+          r.phone ? '<br>📞 ' + r.phone : '',
+        '</div>',
+      '</div>',
+
+      /* Détail réparation */
+      '<div class="section">',
+        '<div class="section-title">Détail de la réparation</div>',
+        '<div class="rep-detail">',
+          '<div><b>' + (r.brand||'') + ' ' + (r.model||'') + '</b>' +
+            (r.serial_number ? ' — N° série : ' + r.serial_number : '') + '</div>',
+          '<div style="margin-top:4px;color:#1e40af;font-weight:bold;">Panne : ' + (r.issue||'—') + '</div>',
+          r.comment ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">Note : ' + r.comment + '</div>' : '',
+        '</div>',
+      '</div>',
+
+      /* Pièces */
+      parts && parts.length ? '<div class="section"><div class="section-title">Pièces & Prestations</div>' + partsList + '</div>' : '',
+
+      /* Main d'oeuvre si pas de pièces détaillées */
+      !parts || !parts.length ? '<div class="section"><div class="section-title">Prestation</div>' +
+        '<table style="width:100%;border-collapse:collapse;">' +
+          '<tr><td style="padding:8px;border:1px solid #e2e8f0;">Réparation : ' + (r.issue||'—') + '</td>' +
+          '<td style="padding:8px;text-align:right;border:1px solid #e2e8f0;font-weight:bold;">' + fmt(prixFinal) + '</td></tr>' +
+        '</table></div>' : '',
+
+      /* Total */
+      '<div class="total-box">',
+        '<div class="total-label">TOTAL TTC</div>',
+        '<div class="total-amount">' + fmt(prixFinal) + '</div>',
+      '</div>',
+
+      /* Garantie */
+      r.garantie ? '<div class="garantie">🛡️ Garantie : ' + r.garantie + '</div>' : '',
+
+      /* Footer */
+      '<div class="footer">',
+        'The SMARTPHONE — 1 Avenue d\'Italie, 75013 Paris<br>',
+        'Merci de votre confiance !',
+      '</div>',
+
+      '<script>window.onload=function(){window.print();}<\/script>',
+      '</body></html>'
+    ].join('');
+
+    var w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
 
 loadRepairs();
 </script>
@@ -1344,5 +1523,26 @@ document.getElementById('notre_prix').addEventListener('input', loadCompPrices);
 })();
 </script>
 
+<script src="tooltips.js"></script>
+<script>
+/* Figer l'en-tête de la liste réparations */
+(function() {
+  function initSticky() {
+    var left = document.querySelector('.left');
+    if (!left) return;
+    left.addEventListener('scroll', function() {
+      var ths = left.querySelectorAll('table.rl thead th');
+      ths.forEach(function(th) {
+        th.style.transform = 'translateY(' + left.scrollTop + 'px)';
+      });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSticky);
+  } else {
+    setTimeout(initSticky, 500);
+  }
+})();
+</script>
 </body>
 </html>
