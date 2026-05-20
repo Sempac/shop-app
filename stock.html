@@ -505,6 +505,7 @@ function _applyFiltersLocal(qRaw, norm) {
         || norm(p.grade).indexOf(q) >= 0
         || norm(p.location_zone).indexOf(q) >= 0
         || norm(p.imei||'').indexOf(q) >= 0
+        || norm(p.lot_name||'').indexOf(q) >= 0
         || (p.barcode && (p.barcode.trim() === qRaw.trim() || p.barcode.toLowerCase().indexOf(q) >= 0));
       if (!match) return false;
     }
@@ -582,7 +583,9 @@ function renderTable() {
     rows += '<td><span class="badge-cond c' + cond + '">' + condLabel + '</span></td>';
     rows += '<td>' + gradeHtml + '</td>';
     rows += '<td>' + colorHtml + '</td>';
-    rows += '<td style="font-size:11px;color:#475569">' + supplierHtml + '</td>';
+    rows += '<td style="font-size:11px;color:#475569">' + supplierHtml +
+      (p.lot_name ? '<br><span style="font-size:9px;background:#1e3a8a;color:#93c5fd;padding:1px 5px;border-radius:3px;">📦 '+p.lot_name+'</span>' : '') +
+    '</td>';
     rows += '<td style="font-size:11px;color:#3b82f6">' + locHtml + '</td>';
     /* Statut : rupture/alerte uniquement pour produits en quantité (pas les lots) */
     var affStatut = statut;

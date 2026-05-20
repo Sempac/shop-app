@@ -40,7 +40,7 @@ const upload=multer({storage,limits:{fileSize:20*1024*1024},
    PRODUCTS — spécifiques AVANT /:id
 ======================================================= */
 app.get('/api/products',async(req,res)=>{
-  try{const r=await pool.query(`SELECT id,name,category,condition,color,grade,location_zone,location_detail,stock_alert,sale_price AS price,sale_price,purchase_price,stock_quantity,barcode,supplier_id,supplier_name,statut_produit,type_entree,lot_id,imei,numero_serie,notes,client_rachat_nom,client_rachat_tel FROM products ORDER BY name ASC`);res.json(r.rows);}
+  try{const r=await pool.query(`SELECT p.id,p.name,p.category,p.condition,p.color,p.grade,p.location_zone,p.location_detail,p.stock_alert,p.sale_price AS price,p.sale_price,p.purchase_price,p.stock_quantity,p.barcode,p.supplier_id,p.supplier_name,p.statut_produit,p.type_entree,p.lot_id,p.imei,p.numero_serie,p.notes,p.client_rachat_nom,p.client_rachat_tel,l.name AS lot_name FROM products p LEFT JOIN lots l ON l.id=p.lot_id ORDER BY p.name ASC`);res.json(r.rows);}
   catch(e){res.status(500).json({error:e.message});}
 });
 app.get('/api/products/alerts',async(req,res)=>{
