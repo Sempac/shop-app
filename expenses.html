@@ -29,8 +29,37 @@ tr:hover td{background:#f8fafc;}
 .del-btn{background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;}
 .role-notice{background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:12px;display:none;}
 @media print{.home-btn,.btn-add,.fg,.del-btn,.filters,.no-print{display:none!important;}body{background:white;}}
+
+.table-wrap table thead tr th,
+table.sticky thead tr th,
+.items-table thead tr th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1e293b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+
+
+
+
+/* En-têtes figés — relatifs au conteneur scrollable */
+.table-wrap {
+  overflow-y: auto;
+   /* hauteur dispo sous topbar+filtres */
+}
+.table-wrap table thead th,
+.items-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1e293b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
 </style>
 <script src="auth.js"></script>
+<link rel="stylesheet" href="tooltips.css">
 </head>
 <body>
 <div class="topbar">
@@ -267,6 +296,30 @@ function sendEmailExpenses() {
 }
 
 loadCategories().then(function(){ loadExpenses(); });
+</script>
+<script src="tooltips.js"></script>
+<script>
+/* Figer l'en-tête via translateY au scroll */
+(function() {
+  function initSticky() {
+    document.querySelectorAll('.table-wrap, .scroll-wrap, [class*="wrap"]').forEach(function(wrap) {
+      if (wrap.querySelector('table thead')) {
+        wrap.addEventListener('scroll', function() {
+          var ths = wrap.querySelectorAll('table thead th');
+          var scrollTop = wrap.scrollTop;
+          ths.forEach(function(th) {
+            th.style.transform = 'translateY(' + scrollTop + 'px)';
+          });
+        });
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSticky);
+  } else {
+    initSticky();
+  }
+})();
 </script>
 </body>
 </html>

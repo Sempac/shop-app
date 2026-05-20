@@ -70,7 +70,7 @@ tr:hover td{background:#f8fafc;}
 .c-wa{background:#25d366;color:white;}
 .moverlay{display:none;position:fixed;inset:0;background:#00000070;z-index:1000;align-items:center;justify-content:center;}
 .moverlay.show{display:flex;}
-.modal{background:white;border-radius:14px;padding:22px;width:560px;max-width:96vw;max-height:92vh;overflow-y:auto;}
+.modal{background:white;border-radius:14px;padding:22px;width:560px;max-width:96vw;overflow-y:auto;}
 .modal h3{margin:0 0 14px;font-size:15px;color:#0f172a;border-bottom:2px solid #f1f5f9;padding-bottom:10px;}
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
 .mfg{display:flex;flex-direction:column;gap:3px;}
@@ -130,8 +130,6 @@ tr:hover td{background:#f8fafc;}
 .sup-card .ss{font-size:11px;color:#64748b;margin-top:2px;}
 .sup-manage-btn{padding:4px 9px;background:#e0f2fe;color:#0369a1;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
 
-/* En-têtes de tableau figés */
-.table-wrap { overflow-x: auto; }
 .table-wrap table thead tr th,
 table.sticky thead tr th,
 .items-table thead tr th {
@@ -142,6 +140,20 @@ table.sticky thead tr th,
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
+
+
+
+
+
+
+
+
+/* En-tête figé — translateY sur scroll */
+.table-wrap table thead th {
+  background: #1e293b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  z-index: 2;
+}
 </style>
 <link rel="stylesheet" href="tooltips.css">
 </head>
@@ -1430,5 +1442,26 @@ async function importStockFile(input) {
 })();
 </script>
 <script src="tooltips.js"></script>
+<script>
+/* Figer l'en-tête via translateY au scroll */
+(function() {
+  function initSticky() {
+    var wrap = document.querySelector('.table-wrap');
+    if (!wrap) return;
+    wrap.addEventListener('scroll', function() {
+      var ths = wrap.querySelectorAll('table thead th');
+      var scrollTop = wrap.scrollTop;
+      ths.forEach(function(th) {
+        th.style.transform = 'translateY(' + scrollTop + 'px)';
+      });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSticky);
+  } else {
+    initSticky();
+  }
+})();
+</script>
 </body>
 </html>
