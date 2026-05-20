@@ -267,7 +267,7 @@ table.sticky thead tr th,
           </select>
         </div>
         <div class="mfg"><label>Statut produit</label>
-          <select id="p_statut">
+          <select id="p_statut" onchange="toggleFraisFields()">
             <option value="DISPONIBLE">✅ Disponible</option>
             <option value="EN_TEST">🔍 En test</option>
             <option value="REPARATION">🔧 Réparation</option>
@@ -280,8 +280,9 @@ table.sticky thead tr th,
         <div class="mfg" id="f_client_tel" style="display:none"><label>📞 Tél client</label><input id="p_client_tel" placeholder="06 XX XX XX XX"></div>
         <!-- Lot -->
         <div class="mfg" id="f_lot" style="display:none"><label>📦 Lot</label>
-          <select id="p_lot_id"><option value="">— Choisir un lot —</option></select>
+          <select id="p_lot_id" onchange="toggleFraisFields()"><option value="">— Choisir un lot —</option></select>
         </div>
+
       </div>
     </div>
 
@@ -374,6 +375,16 @@ table.sticky thead tr th,
         <div class="mfg"><label>Prix vente (€) *</label><input type="number" id="p_sell" placeholder="0.00" min="0" step="0.01"></div>
         <div class="mfg"><label>Quantité</label><input type="number" id="p_qty" value="1" min="0"></div>
         <div class="mfg"><label>Seuil alerte</label><input type="number" id="p_alert" value="3" min="0"></div>
+        <div class="mfg" id="f_frais_rep" style="display:none">
+          <label>💸 Frais répar. (€)</label>
+          <input id="p_frais_rep" type="number" min="0" step="0.01" value="0" placeholder="0.00"
+            title="Coût réparation — ajouté aux frais du lot">
+        </div>
+        <div class="mfg" id="f_frais_desc" style="display:none">
+          <label>📝 Description frais</label>
+          <input id="p_frais_desc" type="text" placeholder="Ex: écran, batterie..."
+            title="Description du frais">
+        </div>
       </div>
     </div>
 
@@ -750,10 +761,22 @@ function sellFromStock(id) {
 
 /* MODAL */
 function toggleEntreeFields() {
-  var type = document.getElementById('p_type_entree').value;
+  var type   = document.getElementById('p_type_entree').value;
+  var statut = document.getElementById('p_statut') ? document.getElementById('p_statut').value : '';
   document.getElementById('f_client_nom').style.display = type === 'RACHAT_CLIENT' ? 'block' : 'none';
   document.getElementById('f_client_tel').style.display = type === 'RACHAT_CLIENT' ? 'block' : 'none';
   document.getElementById('f_lot').style.display        = type === 'LOT' ? 'block' : 'none';
+  toggleFraisFields();
+}
+
+function toggleFraisFields(forceLotId) {
+  var lotSel  = document.getElementById('p_lot_id');
+  var lotVal  = forceLotId || (lotSel && lotSel.value) || '';
+  var statut  = document.getElementById('p_statut') ? document.getElementById('p_statut').value : '';
+  /* Afficher frais si produit associé à un lot (peu importe le statut) */
+  var showFrais = !!lotVal;
+  document.getElementById('f_frais_rep').style.display  = showFrais ? 'block' : 'none';
+  document.getElementById('f_frais_desc').style.display = showFrais ? 'block' : 'none';
 }
 
 function toggleIMEIField() {
@@ -846,6 +869,7 @@ function openModal(id) {
       var lotSel = document.getElementById('p_lot_id');
       if (lotSel && p.lot_id) {
         lotSel.value = p.lot_id;
+        toggleFraisFields(p.lot_id);
       }
     }, 500); /* Attendre que fetch('/api/lots') ait rempli le select */
     toggleEntreeFields();
@@ -914,6 +938,28 @@ async function saveProduct() {
   var res = await fetch(url, {method:method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   var d   = await res.json();
   if (d.error) { alert('Erreur : ' + d.error); return; }
+
+  /* Ajouter frais réparation au lot si renseigné */
+  var fraisRep  = Number(document.getElementById('p_frais_rep')?.value||0);
+  var fraisDesc = (document.getElementById('p_frais_desc')?.value||'').trim();
+  var lotId     = document.getElementById('p_lot_id')?.value;
+  var prodId    = d.id || id;
+  if (fraisRep > 0 && lotId) {
+    await fetch('/api/lot-costs', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        lot_id:      Number(lotId),
+        description: fraisDesc || ('Frais réparation — ' + (body.name||'')),
+        amount:      fraisRep,
+        cost_type:   'repair',
+        repair_type: 'manual',
+        product_id:  prodId,
+        quantity:    1
+      })
+    });
+  }
+
   closeModal();
   loadAll();
 }

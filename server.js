@@ -1700,4 +1700,19 @@ app.get('/api/lots/:id/search-all', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+
+/* ── POST lot-costs (frais manuels depuis stock) ── */
+app.post('/api/lot-costs', async(req,res)=>{
+  try{
+    console.log('LOT-COSTS reçu:', JSON.stringify(req.body));
+    const{lot_id,description,amount,cost_type,repair_type,product_id,quantity}=req.body;
+    const r=await pool.query(
+      `INSERT INTO lot_costs(lot_id,description,amount,cost_type,repair_type,product_id,quantity)
+       VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [lot_id,description||'Frais',Number(amount||0),
+       cost_type||'repair',repair_type||'manual',product_id||null,quantity||1]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
