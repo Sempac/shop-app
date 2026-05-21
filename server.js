@@ -967,7 +967,7 @@ app.get('/api/commandes', async(req,res)=>{
     let sql=`SELECT c.*,
       COUNT(ci.id) AS nb_items,
       SUM(ci.quantite_cmd) AS total_qty_cmd,
-      SUM(ci.quantite_reçue) AS total_qty_recu
+      SUM(ci.quantite_recue) AS total_qty_recu
       FROM commandes c
       LEFT JOIN commande_items ci ON ci.commande_id=c.id
       WHERE 1=1`;
@@ -1068,19 +1068,19 @@ app.put('/api/commandes/:id', async(req,res)=>{
 app.put('/api/commandes/:id/reception', async(req,res)=>{
   const client=await pool.connect();
   try{
-    const{items}=req.body; // [{id, quantite_reçue, prix_vente, categorie}]
+    const{items}=req.body; // [{id, quantite_recue, prix_vente, categorie}]
     await client.query('BEGIN');
     let totalRecu=0, totalCmd=0;
     for(const it of items){
       await client.query(
-        `UPDATE commande_items SET quantite_reçue=$1,prix_vente=$2,
+        `UPDATE commande_items SET quantite_recue=$1,prix_vente=$2,
           statut=CASE WHEN $1>=quantite_cmd THEN 'RECU'
                       WHEN $1>0 THEN 'PARTIEL'
                       ELSE 'MANQUANT' END
          WHERE id=$3`,
-        [Number(it.quantite_reçue||0),Number(it.prix_vente||0),it.id]);
+        [Number(it.quantite_recue||0),Number(it.prix_vente||0),it.id]);
       /* Ajouter au stock si reçu */
-      if(Number(it.quantite_reçue)>0){
+      if(Number(it.quantite_recue)>0){
         /* Chercher si produit existe déjà */
         const existing=await client.query(
           'SELECT id FROM products WHERE name ILIKE $1 LIMIT 1',
@@ -1088,7 +1088,7 @@ app.put('/api/commandes/:id/reception', async(req,res)=>{
         if(existing.rows[0]){
           await client.query(
             'UPDATE products SET stock_quantity=stock_quantity+$1 WHERE id=$2',
-            [Number(it.quantite_reçue),existing.rows[0].id]);
+            [Number(it.quantite_recue),existing.rows[0].id]);
         } else {
           await client.query(
             `INSERT INTO products(name,category,condition,purchase_price,sale_price,
@@ -1096,9 +1096,9 @@ app.put('/api/commandes/:id/reception', async(req,res)=>{
              VALUES($1,$2,'NEUF',$3,$4,$5,3,$6)`,
             [it.nom,it.categorie||'Pièce détachée',
              Number(it.prix_ht||0),Number(it.prix_vente||0),
-             Number(it.quantite_reçue),it.fournisseur||null]);
+             Number(it.quantite_recue),it.fournisseur||null]);
         }
-        totalRecu+=Number(it.quantite_reçue);
+        totalRecu+=Number(it.quantite_recue);
       }
       totalCmd+=Number(it.quantite_cmd||1);
     }
