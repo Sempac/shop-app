@@ -1719,4 +1719,40 @@ app.post('/api/lot-costs', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+
+/* ══ TODOS (tâches partagées) ══ */
+app.get('/api/todos', async(req,res)=>{
+  try{
+    const r=await pool.query('SELECT * FROM todos ORDER BY priority ASC, created_at DESC');
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.post('/api/todos', async(req,res)=>{
+  try{
+    const{text,priority,created_by}=req.body;
+    const r=await pool.query(
+      'INSERT INTO todos(text,priority,done,created_by) VALUES($1,$2,false,$3) RETURNING *',
+      [text,priority||'P1',created_by||'']);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.put('/api/todos/:id', async(req,res)=>{
+  try{
+    const{done,text,priority}=req.body;
+    const r=await pool.query(
+      'UPDATE todos SET done=$1,text=COALESCE($2,text),priority=COALESCE($3,priority),updated_at=NOW() WHERE id=$4 RETURNING *',
+      [done,text||null,priority||null,req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.delete('/api/todos/:id', async(req,res)=>{
+  try{
+    await pool.query('DELETE FROM todos WHERE id=$1',[req.params.id]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
