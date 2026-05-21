@@ -76,6 +76,23 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 
 .footer{background:#111827;padding:6px;text-align:center;color:#475569;font-size:11px;}
 
+/* ALERTES COMMANDES */
+.alertes-bar{background:#1a0a00;border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b;padding:10px 24px;display:none;}
+.alertes-title{font-size:12px;font-weight:bold;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.alertes-list{display:flex;gap:8px;flex-wrap:wrap;}
+.alerte-card{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;cursor:pointer;transition:0.15s;text-decoration:none;}
+.alerte-card:hover{filter:brightness(1.15);}
+.alerte-card.rouge{background:#1a0505;border:1px solid #dc2626;}
+.alerte-card.orange{background:#1c1205;border:1px solid #f59e0b;}
+.alerte-card.vert{background:#052e16;border:1px solid #16a34a;}
+.alerte-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.rouge .alerte-dot{background:#dc2626;}
+.orange .alerte-dot{background:#f59e0b;}
+.vert .alerte-dot{background:#16a34a;}
+.alerte-info{font-size:11px;color:#e2e8f0;line-height:1.4;}
+.alerte-num{font-weight:bold;font-size:12px;}
+.alerte-days{font-size:10px;color:#94a3b8;}
+
 /* TODOLIST */
 .todo-wrap{flex:1;background:#111827;border-radius:12px;padding:12px 16px;min-width:260px;max-width:380px;display:flex;flex-direction:column;gap:8px;}
 .todo-section-title{font-size:11px;font-weight:bold;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
@@ -177,6 +194,12 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
     </div>
     <div class="cal-grid" id="calGrid"></div>
   </div>
+</div>
+
+<!-- ALERTES COMMANDES -->
+<div class="alertes-bar" id="alertesBar">
+  <div class="alertes-title">⚠️ Alertes commandes</div>
+  <div class="alertes-list" id="alertesList"></div>
 </div>
 
 <div class="main" id="mainGrid">
@@ -374,6 +397,57 @@ function calPrev() {
   calMonth--;
   if (calMonth < 0) { calMonth = 11; calYear--; }
   renderCalendar();
+/* ══ ALERTES COMMANDES ══ */
+async function loadAlertes() {
+  try {
+    var res  = await fetch('/api/commandes');
+    var cmds = await res.json();
+    var now  = new Date();
+
+    var alertes = cmds.filter(function(cmd) {
+      return cmd.statut === 'EN_ATTENTE' || cmd.statut === 'PARTIELLEMENT_RECU';
+    }).map(function(cmd) {
+      var dateRef = cmd.date_commande || cmd.created_at;
+      /* Comparer les dates en local (ignorer l'heure) */
+      var d = new Date(dateRef);
+      var dateLocale = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      var nowLocale  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var jours = Math.floor((nowLocale - dateLocale) / 86400000);
+      return {cmd: cmd, jours: jours};
+    }).sort(function(a, b) { return b.jours - a.jours; });
+
+    var bar   = document.getElementById('alertesBar');
+    var list  = document.getElementById('alertesList');
+
+    if (!alertes.length) {
+      bar.style.display = 'none';
+      return;
+    }
+
+    bar.style.display = 'block';
+    list.innerHTML = alertes.map(function(a) {
+      var cls   = a.jours >= 7 ? 'rouge' : a.jours >= 3 ? 'orange' : 'vert';
+      var emoji = a.jours >= 7 ? '🔴' : a.jours >= 3 ? '🟡' : '🟢';
+      /* Toujours afficher même si < 3 jours */
+      var statLabel = a.cmd.statut === 'PARTIELLEMENT_RECU' ? 'Partiel' : 'En attente';
+      var facture = a.cmd.numero_facture ? ' | Facture #' + a.cmd.numero_facture : '';
+      return '<a href="commandes.html" class="alerte-card ' + cls + '" title="Cliquer pour ouvrir le module Commandes">' +
+        '<div class="alerte-dot"></div>' +
+        '<div class="alerte-info">' +
+          '<div class="alerte-num">' + emoji + ' ' + (a.cmd.numero||'—') + ' — ' + (a.cmd.fournisseur||'—') + facture + '</div>' +
+          '<div class="alerte-days">' + statLabel + ' depuis <b>' + a.jours + ' jour' + (a.jours > 1 ? 's' : '') + '</b></div>' +
+        '</div>' +
+      '</a>';
+    }).join('');
+  } catch(e) {
+    console.error('Alertes:', e);
+  }
+}
+
+loadAlertes();
+/* Rafraîchir toutes les 5 minutes */
+setInterval(loadAlertes, 5 * 60 * 1000);
+
 }
 function calNext() {
   calMonth++;

@@ -88,6 +88,9 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
   <h2>🛒 Commandes Fournisseurs</h2>
   <div style="display:flex;gap:8px;">
     <button class="btn-green" onclick="showNewCommande()">➕ Nouvelle commande</button>
+    <button onclick="document.getElementById('pdfImportInput').click()" style="padding:9px 14px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;" title="Importer une facture PDF fournisseur (LCD Phone...)">📄 Importer facture PDF</button>
+    <button onclick="toggleHistorique()" id="btnHisto" style="padding:9px 14px;background:#0e7490;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;" title="Voir l'historique de toutes les lignes de commandes">📊 Historique</button>
+    <input type="file" id="pdfImportInput" accept=".pdf" style="display:none" onchange="importFacturePDF(this)">
     <button class="btn-home" onclick="location.href='index.html'">🏠 Accueil</button>
   </div>
 </div>
@@ -99,7 +102,32 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
   <button class="tab"        id="tabAlertes"   onclick="switchTab('alertes')">🔔 Alertes <span id="alerteBadge" style="background:#ef4444;color:white;border-radius:10px;padding:1px 6px;font-size:10px;display:none;">0</span></button>
 </div>
 
-<div class="main">
+<!-- PANNEAU HISTORIQUE -->
+<div id="histoPanel" style="display:none;padding:16px;flex:1;overflow:auto;background:#f8fafc;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+    <input type="date" id="h_from" style="padding:6px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;" title="Date debut">
+    <input type="date" id="h_to"   style="padding:6px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;" title="Date fin">
+    <input type="text" id="h_search" placeholder="Fournisseur, reference..." style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;flex:1;min-width:180px;" oninput="renderHisto()">
+    <select id="h_statut" style="padding:6px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px;" onchange="renderHisto()">
+      <option value="">Tous statuts</option>
+      <option value="EN_ATTENTE">En attente</option>
+      <option value="RECU">Recu</option>
+      <option value="PARTIELLEMENT_RECU">Partiel</option>
+      <option value="ANNULE">Annule</option>
+    </select>
+    <button onclick="renderHisto()" style="padding:6px 12px;background:#3b82f6;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:Arial;">Filtrer</button>
+    <button onclick="exportHistoCSV()" style="padding:6px 12px;background:#16a34a;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:Arial;" title="Exporter en CSV pour Excel">Export CSV</button>
+  </div>
+  <div style="overflow:auto;background:white;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+    <table id="histoTable" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead id="histoHead"></thead>
+      <tbody id="histoBody"></tbody>
+    </table>
+  </div>
+  <div id="histoTotaux" style="margin-top:10px;font-size:13px;color:#475569;"></div>
+</div>
+
+<div class="main" id="mainDiv">
 
   <!-- ══ TAB COMMANDES ══ -->
   <div id="tcCommandes" style="display:flex;flex:1;overflow:hidden;">
@@ -134,9 +162,9 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
   </div>
 
   <!-- ══ TAB ALERTES ══ -->
-  <div id="tcAlertes" style="display:none;flex:1;overflow-y:auto;padding:20px;">
+  <div id="tcAlertes" style="display:none;flex:1;overflow-y:auto;padding:16px;">
     <h3 style="margin:0 0 16px;font-size:15px;">🔔 Commandes en attente de réception</h3>
-    <div id="alertesList"></div>
+    <div id="alertesList" style="width:100%;"></div>
   </div>
 
 </div>
@@ -209,450 +237,531 @@ async function loadCommande(id) {
 }
 
 function renderCommandeDetail(data) {
-  var c     = data.commande;
+  var cmd   = data.commande;
   var items = data.items || [];
   var panel = document.getElementById('commandeDetail');
-  var ST_LABELS = {EN_ATTENTE:'⏳ En attente',PARTIELLEMENT_RECU:'📦 Partiellement reçue',RECU:'✅ Reçue complètement',ANNULE:'❌ Annulée'};
-  var jours = Math.floor((new Date() - new Date(c.created_at)) / 86400000);
 
-  var itemsHtml = items.map(function(it) {
-    var stColor = {EN_ATTENTE:'#3b82f6',RECU:'#22c55e',PARTIEL:'#f59e0b',MANQUANT:'#ef4444'}[it.statut]||'#64748b';
-    return '<tr>' +
-      '<td>' + (it.reference||'—') + '</td>' +
-      '<td style="font-weight:bold">' + it.nom + '</td>' +
-      '<td style="text-align:center">' + it.quantite_cmd + '</td>' +
-      '<td style="text-align:center;color:' + stColor + '">' + (it.quantite_reçue||0) + '</td>' +
-      '<td style="text-align:right">' + Number(it.prix_ht||0).toFixed(2) + ' €</td>' +
-      '<td style="text-align:right;font-weight:bold;color:#22c55e">' + (it.prix_vente>0?Number(it.prix_vente).toFixed(2)+' €':'—') + '</td>' +
+  var ST_LABELS = {
+    EN_ATTENTE:'⏳ En attente',
+    PARTIELLEMENT_RECU:'📦 Partiel',
+    RECU:'✅ Reçu',
+    ANNULE:'❌ Annulé'
+  };
+
+  var fmt = function(n){ return Number(n||0).toFixed(2) + ' €'; };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('fr-FR') : '—'; };
+
+  /* Tableau produits */
+  var itemsHtml = items.length ? items.map(function(it) {
+    var tva = it.taux_tva || 20;
+    var totalHT = Number(it.prix_ht||0) * Number(it.quantite_cmd||1);
+    return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+      '<td style="padding:7px 8px;font-size:11px;color:#64748b;font-weight:bold;">' + (it.reference||'—') + '</td>' +
+      '<td style="padding:7px 8px;font-size:12px;">' + it.nom + '</td>' +
+      '<td style="padding:7px 8px;text-align:center;font-size:11px;color:#64748b;">' + tva + '%</td>' +
+      '<td style="padding:7px 8px;text-align:right;font-size:12px;">' + fmt(it.prix_ht) + '</td>' +
+      '<td style="padding:7px 8px;text-align:center;font-weight:bold;">' + it.quantite_cmd + '</td>' +
+      '<td style="padding:7px 8px;text-align:right;font-weight:bold;color:#0f172a;">' + fmt(totalHT) + '</td>' +
+    '</tr>';
+  }).join('') : '<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8;">Aucun produit</td></tr>';
+
+  var tvaVal = Number(cmd.montant_ttc||0) - Number(cmd.montant_ht||0);
+
+  panel.innerHTML =
+    '<div class="form-card">' +
+
+    /* ── En-tête ── */
+    '<div style="background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #e2e8f0;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">' +
+        '<div>' +
+          '<div style="font-size:17px;font-weight:bold;color:#0f172a;">' + (cmd.numero||'—') + '</div>' +
+          '<div style="font-size:13px;color:#3b82f6;font-weight:bold;margin-top:2px;">🏭 ' + (cmd.fournisseur||'—') + '</div>' +
+        '</div>' +
+        '<span class="st-badge ' + cmd.statut + '" title="Statut de la commande">' + (ST_LABELS[cmd.statut]||cmd.statut) + '</span>' +
+      '</div>' +
+
+      /* Dates + infos */
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:12px;">' +
+        '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;" title="Numéro de la facture fournisseur">' +
+          '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">N° Facture</div>' +
+          '<div style="font-size:13px;font-weight:bold;color:#0f172a;">' + (cmd.numero_facture||'—') + '</div>' +
+        '</div>' +
+        '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;" title="Date de la facture fournisseur">' +
+          '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Date facture</div>' +
+          '<div style="font-size:13px;font-weight:bold;color:#0f172a;">' + fmtDate(cmd.date_facture) + '</div>' +
+        '</div>' +
+        '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;" title="Date à laquelle la commande a été passée">' +
+          '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Date commande</div>' +
+          '<div style="font-size:13px;font-weight:bold;color:#0f172a;">' + fmtDate(cmd.date_commande) + '</div>' +
+        '</div>' +
+        '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;" title="Date de réception des marchandises">' +
+          '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Date réception</div>' +
+          '<div style="font-size:13px;font-weight:bold;color:#0f172a;">' + fmtDate(cmd.date_livraison_prevue) + '</div>' +
+        '</div>' +
+        '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;" title="Moyen de paiement utilisé">' +
+          '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Paiement</div>' +
+          '<div style="font-size:13px;font-weight:bold;color:#0f172a;">' + (cmd.paiement||'—') + '</div>' +
+        '</div>' +
+        '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;" title="Transporteur ou mode de livraison">' +
+          '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Transporteur</div>' +
+          '<div style="font-size:13px;font-weight:bold;color:#0f172a;">' + (cmd.transporteur||'—') + '</div>' +
+        '</div>' +
+      '</div>' +
+
+      /* Montants HT | TVA | TTC */
+      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
+        '<div style="flex:1;background:#f1f5f9;border-radius:6px;padding:8px;text-align:center;" title="Montant hors taxe">' +
+          '<div style="font-size:10px;color:#64748b;text-transform:uppercase;">HT</div>' +
+          '<div style="font-size:15px;font-weight:bold;color:#0f172a;">' + fmt(cmd.montant_ht) + '</div>' +
+        '</div>' +
+        '<div style="flex:1;background:#fef9c3;border-radius:6px;padding:8px;text-align:center;" title="Montant de la TVA">' +
+          '<div style="font-size:10px;color:#64748b;text-transform:uppercase;">TVA</div>' +
+          '<div style="font-size:15px;font-weight:bold;color:#d97706;">' + fmt(tvaVal) + '</div>' +
+        '</div>' +
+        '<div style="flex:1;background:#dcfce7;border-radius:6px;padding:8px;text-align:center;" title="Montant toutes taxes comprises">' +
+          '<div style="font-size:10px;color:#64748b;text-transform:uppercase;">TTC</div>' +
+          '<div style="font-size:15px;font-weight:bold;color:#16a34a;">' + fmt(cmd.montant_ttc) + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    /* ── Tableau produits ── */
+    '<div style="font-size:12px;font-weight:bold;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📦 Produits</div>' +
+    '<div style="overflow-x:auto;">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+      '<thead><tr style="background:#f1f5f9;border-bottom:2px solid #e2e8f0;">' +
+        '<th style="padding:8px;text-align:left;" title="Référence produit fournisseur">Réf.</th>' +
+        '<th style="padding:8px;text-align:left;" title="Désignation du produit">Produit</th>' +
+        '<th style="padding:8px;text-align:center;" title="Taux de TVA applicable">TVA</th>' +
+        '<th style="padding:8px;text-align:right;" title="Prix unitaire hors taxe">Prix HT</th>' +
+        '<th style="padding:8px;text-align:center;" title="Quantité commandée">Qté</th>' +
+        '<th style="padding:8px;text-align:right;" title="Total hors taxe pour cette ligne">Total HT</th>' +
+      '</tr></thead>' +
+      '<tbody>' + itemsHtml + '</tbody>' +
+    '</table>' +
+    '</div>' +
+
+    (cmd.notes ? '<div style="margin-top:12px;padding:8px 12px;background:#f8fafc;border-radius:6px;font-size:12px;color:#64748b;border-left:3px solid #3b82f6;"><b>Notes :</b> ' + cmd.notes + '</div>' : '') +
+
+    /* Boutons changement statut */
+    '<div style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:12px;">' +
+      '<div style="font-size:11px;color:#94a3b8;text-transform:uppercase;margin-bottom:8px;">Modifier le statut</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<button data-id="' + cmd.id + '" data-st="EN_ATTENTE" class="st-btn" style="padding:6px 12px;background:#3b82f6;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:Arial;" title="En attente de réception">⏳ En attente</button>' +
+        '<button data-id="' + cmd.id + '" data-st="PARTIELLEMENT_RECU" class="st-btn" style="padding:6px 12px;background:#f59e0b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:Arial;" title="Commande partiellement recue">Partiel</button>' +
+        '<button data-id="' + cmd.id + '" data-st="RECU" class="st-btn" style="padding:6px 12px;background:#16a34a;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:Arial;" title="Commande entierement recue">Recu</button>' +
+        '<button data-id="' + cmd.id + '" data-st="ANNULE" class="st-btn" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:Arial;" title="Annuler cette commande">Annuler</button>' +
+      '</div>' +
+      '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+        '<label style="font-size:12px;color:#64748b;">Date reception :</label>' +
+        '<input type="date" id="cmd_date_recep" value="' + (cmd.date_livraison_prevue?cmd.date_livraison_prevue.slice(0,10):'') + '" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;" title="Date de reception des marchandises">' +
+        '<label style="font-size:12px;color:#64748b;">Transporteur :</label>' +
+        '<input type="text" id="cmd_transporteur" value="' + (cmd.transporteur||'') + '" placeholder="Ex: Colissimo" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;flex:1;" title="Nom du transporteur">' +
+      '</div>' +
+      '<div style="margin-top:8px;">' +
+        '<label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Notes :</label>' +
+        '<textarea id="cmd_notes" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;font-family:Arial;resize:vertical;min-height:55px;box-sizing:border-box;" title="Ajouter ou modifier les notes" placeholder="Ajouter une note...">' + (cmd.notes||'') + '</textarea>' +
+      '</div>' +
+      '<div style="margin-top:6px;text-align:right;">' +
+        '<button id="btnSaveCmd" data-id="' + cmd.id + '" style="padding:7px 16px;background:#0f172a;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:Arial;font-weight:bold;" title="Enregistrer date reception, transporteur et notes">Sauvegarder</button>' +
+      '</div>' +
+    '</div>' +
+    '</div>';
+
+  /* Event listeners */
+  setTimeout(function() {
+    document.querySelectorAll('.st-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        updateCmdStatut(Number(this.dataset.id), this.dataset.st);
+      };
+    });
+    var saveBtn = document.getElementById('btnSaveCmd');
+    if (saveBtn) saveBtn.onclick = function() { saveCmdDetails(Number(this.dataset.id)); };
+  }, 50);
+}
+
+async function updateCmdStatut(id, statut) {
+  try {
+    await fetch('/api/commandes/' + id, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({statut: statut})
+    });
+    loadCommande(id);
+    loadCommandes();
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+async function saveCmdDetails(id) {
+  try {
+    var date  = document.getElementById('cmd_date_recep')?.value || null;
+    var trans = document.getElementById('cmd_transporteur')?.value || null;
+    var notes = document.getElementById('cmd_notes')?.value || null;
+    await fetch('/api/commandes/' + id, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({date_livraison: date, transporteur: trans, notes: notes})
+    });
+    loadCommande(id);
+    loadCommandes();
+    alert('Sauvegarde OK');
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+
+/* ══ IMPORT FACTURE PDF ══ */
+function closeFactureModal() {
+  var m = document.getElementById('factureModal');
+  if (m) m.remove();
+}
+
+var _factureData = null;
+
+async function importFacturePDF(input) {
+  var file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  var formData = new FormData();
+  formData.append('pdf', file);
+  try {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:#000a;z-index:9999;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-family:Arial;';
+    overlay.innerHTML = 'Analyse de la facture en cours...';
+    document.body.appendChild(overlay);
+    var res  = await fetch('/api/import-facture-pdf/upload', {method:'POST', body:formData});
+    var data = await res.json();
+    overlay.remove();
+    if (data.error) { alert('Erreur: ' + data.error); return; }
+    if (!data.items || !data.items.length) { alert('Aucun produit detecte'); return; }
+    showFacturePreview(data);
+  } catch(e) {
+    document.querySelectorAll('[style*="position:fixed"]').forEach(function(el){ el.remove(); });
+    alert('Erreur: ' + e.message);
+  }
+}
+
+function showFacturePreview(data) {
+  _factureData = data;
+  var modal = document.createElement('div');
+  modal.id  = 'factureModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000c;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:Arial;';
+
+  var rows = (data.items||[]).map(function(it) {
+    return '<tr style="border-bottom:1px solid #e2e8f0;">' +
+      '<td style="padding:8px;font-size:12px;color:#475569;font-family:Arial;">' + it.reference + '</td>' +
+      '<td style="padding:8px;font-size:12px;color:#0f172a;font-family:Arial;">' + it.nom + '</td>' +
+      '<td style="padding:8px;text-align:center;color:#0f172a;font-family:Arial;">' + it.quantite + '</td>' +
+      '<td style="padding:8px;text-align:right;font-weight:bold;color:#0f172a;font-family:Arial;">' + Number(it.prix_ht).toFixed(2) + ' €</td>' +
     '</tr>';
   }).join('');
 
-  panel.innerHTML =
-    '<div class="form-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">' +
+  modal.innerHTML =
+    '<div style="background:white;border-radius:14px;padding:24px;max-width:700px;width:95vw;max-height:90vh;overflow-y:auto;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
         '<div>' +
-          '<div style="font-size:18px;font-weight:bold;">' + (c.numero||'—') + '</div>' +
-          '<div style="font-size:13px;color:#94a3b8;margin-top:3px;">🏭 ' + c.fournisseur + '</div>' +
-          '<div style="font-size:12px;color:#64748b;">📅 ' + new Date(c.created_at).toLocaleDateString('fr-FR') + (jours>0?' — il y a '+jours+' jour(s)':'') + '</div>' +
-          '<span class="st-badge ' + c.statut + '">' + (ST_LABELS[c.statut]||c.statut) + '</span>' +
+          '<div style="font-size:18px;font-weight:bold;color:#0f172a;">Facture #' + data.numero + '</div>' +
+          '<div style="font-size:12px;color:#64748b;">' + data.fournisseur + ' - ' + data.date + '</div>' +
         '</div>' +
-        '<div style="text-align:right;">' +
-          '<div style="font-size:20px;font-weight:bold;color:#22c55e;">' + Number(c.montant_ttc||0).toFixed(2) + ' €</div>' +
-          '<div style="font-size:11px;color:#64748b;">' + (c.numero_facture||'') + '</div>' +
-        '</div>' +
+        '<button id="btnCloseFacture" style="background:#ef4444;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;">X</button>' +
       '</div>' +
-
-      /* Boutons actions */
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">' +
-        (c.statut !== 'RECU' && c.statut !== 'ANNULE' ?
-          '<button class="btn-green btn-sm" onclick="showReception('+c.id+')">📦 Réceptionner</button>' : '') +
-        (c.statut !== 'RECU' && c.statut !== 'ANNULE' ?
-          '<button class="btn-orange btn-sm" onclick="importPDFReception('+c.id+')">📄 Import PDF réception</button>' : '') +
-        '<button class="btn-red btn-sm" onclick="annulerCommande('+c.id+')">❌ Annuler</button>' +
-      '</div>' +
-
-      /* Alerte si en attente */
-      (c.statut === 'EN_ATTENTE' && jours >= 1 ?
-        '<div class="alerte-bar"><div><div class="at">⚠️ Commande en attente depuis ' + jours + ' jour(s)</div>' +
-        '<div class="ad">Avez-vous reçu cette commande ?</div></div>' +
-        '<div style="display:flex;gap:6px;">' +
-          '<button class="btn-green btn-sm" onclick="showReception('+c.id+')">✅ Oui</button>' +
-          '<button class="btn-orange btn-sm" onclick="showReception('+c.id+')">📦 Partiel</button>' +
-          '<button style="background:#475569;color:white;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:bold;cursor:pointer;font-family:Arial;" onclick="relancerCommande('+c.id+')">📞 Réclamer</button>' +
-        '</div></div>' : '') +
-
-      /* Items */
-      '<table class="items-table">' +
-        '<thead><tr><th>Réf.</th><th>Produit</th><th style="text-align:center">Qté cmd</th><th style="text-align:center">Reçu</th><th style="text-align:right">P.U. HT</th><th style="text-align:right">Prix vente</th></tr></thead>' +
-        '<tbody>' + (itemsHtml || '<tr><td colspan="6" style="text-align:center;color:#475569;padding:12px">Aucun article</td></tr>') + '</tbody>' +
+      '<table style="width:100%;border-collapse:collapse;">' +
+        '<thead><tr style="background:#f1f5f9;">' +
+          '<th style="padding:8px;text-align:left;color:#0f172a;font-family:Arial;">Ref.</th>' +
+          '<th style="padding:8px;text-align:left;color:#0f172a;font-family:Arial;">Produit</th>' +
+          '<th style="padding:8px;text-align:center;color:#0f172a;font-family:Arial;">Qte</th>' +
+          '<th style="padding:8px;text-align:right;color:#0f172a;font-family:Arial;">Prix HT</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
       '</table>' +
-
-      (c.notes ? '<div style="background:#0f172a;border-radius:6px;padding:10px;font-size:12px;color:#94a3b8;margin-top:8px;">💬 ' + c.notes + '</div>' : '') +
-    '</div>';
-}
-
-/* ══ NOUVELLE COMMANDE ══ */
-function showNewCommande() {
-  currentCmd = null;
-  var panel = document.getElementById('commandeDetail');
-  panel.innerHTML =
-    '<div class="form-card">' +
-      '<h3>➕ Nouvelle commande</h3>' +
-
-      /* PDF import */
-      '<div class="pdf-zone" id="pdfZone" onclick="document.getElementById(\'pdfInput\').click()">' +
-        '<div style="font-size:24px;margin-bottom:8px;">📄</div>' +
-        '<div style="font-size:13px;color:#94a3b8;">Importer une facture PDF</div>' +
-        '<div style="font-size:11px;color:#475569;margin-top:4px;">Claude extrait automatiquement les informations</div>' +
-        '<input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="extractPDF(this)">' +
-      '</div>' +
-
-      '<div class="fg2">' +
-        '<div class="fg"><label>Fournisseur *</label><input id="n_four" placeholder="LCD Phone, UTOPYA..."></div>' +
-        '<div class="fg"><label>Date commande</label><input type="date" id="n_date" value="' + new Date().toISOString().slice(0,10) + '"></div>' +
-      '</div>' +
-      '<div class="fg2">' +
-        '<div class="fg"><label>N° Facture</label><input id="n_facture" placeholder="FA158522"></div>' +
-        '<div class="fg"><label>Paiement</label>' +
-          '<select id="n_pay">' +
-            '<option value="card">💳 CB</option>' +
-            '<option value="cash">💵 Espèces</option>' +
-            '<option value="virement">🏦 Virement</option>' +
-          '</select>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;">' +
+        '<div style="font-size:13px;color:#0f172a;">HT : <b>' + Number(data.total_ht||0).toFixed(2) + ' €</b> | TTC : <b>' + Number(data.total_ttc||0).toFixed(2) + ' €</b></div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button id="btnAnnulerFacture" style="padding:9px 16px;background:#64748b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Annuler</button>' +
+          '<button id="btnImporterFacture" style="padding:9px 16px;background:#16a34a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;">Importer comme depense</button>' +
         '</div>' +
       '</div>' +
-      '<div class="fg2">' +
-        '<div class="fg"><label>Total HT (€)</label><input type="number" id="n_ht" placeholder="0.00" min="0" step="0.01"></div>' +
-        '<div class="fg"><label>Total TTC (€)</label><input type="number" id="n_ttc" placeholder="0.00" min="0" step="0.01"></div>' +
-      '</div>' +
-      '<div class="fg"><label>Notes</label><textarea id="n_notes" placeholder="Remarques..." style="height:50px;resize:none;"></textarea></div>' +
-
-      '<h4 style="margin:14px 0 10px;font-size:13px;color:#94a3b8;text-transform:uppercase;">Articles commandés</h4>' +
-      '<div id="newItems"></div>' +
-      '<button onclick="addNewItem()" style="width:100%;padding:8px;background:#1e293b;color:#64748b;border:1.5px dashed #334155;border-radius:7px;cursor:pointer;font-size:12px;font-family:Arial;margin-bottom:14px;">➕ Ajouter un article</button>' +
-
-      '<div style="display:flex;gap:8px;">' +
-        '<button class="btn-green" onclick="saveCommande()" style="flex:1;">✅ Enregistrer la commande</button>' +
-        '<button onclick="cancelNew()" style="background:#334155;color:#94a3b8;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">Annuler</button>' +
-      '</div>' +
     '</div>';
 
-  renderNewItems();
+  document.body.appendChild(modal);
+  document.getElementById('btnCloseFacture').onclick  = closeFactureModal;
+  document.getElementById('btnAnnulerFacture').onclick = closeFactureModal;
+  document.getElementById('btnImporterFacture').onclick = importerFactureEnCommande;
 }
 
-var newItems = [];
-
-function renderNewItems() {
-  var div = document.getElementById('newItems');
-  if (!div) return;
-  if (!newItems.length) { div.innerHTML = ''; return; }
-  div.innerHTML = newItems.map(function(it, i) {
-    return '<div style="display:grid;grid-template-columns:80px 1fr 80px 80px 80px 30px;gap:5px;margin-bottom:5px;align-items:center;">' +
-      '<input value="' + (it.reference||'') + '" placeholder="Réf." style="padding:6px;border:1.5px solid #334155;border-radius:5px;font-size:11px;background:#0f172a;color:white;font-family:Arial;" oninput="updateNewItem('+i+',\'reference\',this.value)">' +
-      '<input value="' + (it.nom||'') + '" placeholder="Nom produit *" style="padding:6px;border:1.5px solid #334155;border-radius:5px;font-size:11px;background:#0f172a;color:white;font-family:Arial;" oninput="updateNewItem('+i+',\'nom\',this.value)">' +
-      '<input type="number" value="' + (it.quantite_cmd||1) + '" min="1" placeholder="Qté" style="padding:6px;border:1.5px solid #334155;border-radius:5px;font-size:11px;background:#0f172a;color:white;font-family:Arial;" oninput="updateNewItem('+i+',\'quantite_cmd\',Number(this.value))">' +
-      '<input type="number" value="' + (it.prix_ht||0) + '" min="0" step="0.01" placeholder="P.U HT" style="padding:6px;border:1.5px solid #334155;border-radius:5px;font-size:11px;background:#0f172a;color:white;font-family:Arial;" oninput="updateNewItem('+i+',\'prix_ht\',Number(this.value))">' +
-      '<select style="padding:6px;border:1.5px solid #334155;border-radius:5px;font-size:11px;background:#0f172a;color:white;font-family:Arial;" onchange="updateNewItem('+i+',\'categorie\',this.value)">' +
-        '<option value="Pièce détachée"' + (it.categorie==="Pièce détachée"?" selected":"") + '>Pièce</option>' +
-        '<option value="Smartphone"' + (it.categorie==="Smartphone"?" selected":"") + '>Smartphone</option>' +
-        '<option value="Accessoire"' + (it.categorie==="Accessoire"?" selected":"") + '>Accessoire</option>' +
-        '<option value="Accessoire Info"' + (it.categorie==="Accessoire Info"?" selected":"") + '>Acc. Info</option>' +
-      '</select>' +
-      '<button onclick="removeNewItem('+i+')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:5px;padding:6px;cursor:pointer;font-family:Arial;">✕</button>' +
-    '</div>';
-  }).join('');
-}
-
-function addNewItem() {
-  newItems.push({reference:'',nom:'',quantite_cmd:1,prix_ht:0,categorie:'Pièce détachée'});
-  renderNewItems();
-}
-
-function removeNewItem(i) {
-  newItems.splice(i, 1);
-  renderNewItems();
-}
-
-function updateNewItem(i, field, val) {
-  newItems[i][field] = val;
-}
-
-function cancelNew() {
-  newItems = [];
-  document.getElementById('commandeDetail').innerHTML = '<div class="empty-detail">← Sélectionnez une commande ou créez-en une nouvelle</div>';
-}
-
-/* ══ EXTRACTION PDF ══ */
-async function extractPDF(input) {
-  var file = input.files[0];
-  if (!file) return;
-  var zone = document.getElementById('pdfZone');
-  zone.innerHTML = '<div style="color:#f59e0b;font-size:13px;">⏳ Analyse du PDF en cours...</div>';
-
-  var reader = new FileReader();
-  reader.onload = async function(e) {
-    var base64 = e.target.result.split(',')[1];
-    try {
-      var res  = await fetch('/api/commandes/extract-pdf', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({pdfBase64: base64, filename: file.name})
-      });
-      var data = await res.json();
-      if (data.error) throw new Error(data.error);
-
-      /* Pré-remplir le formulaire */
-      if (document.getElementById('n_four'))    document.getElementById('n_four').value    = data.fournisseur || '';
-      if (document.getElementById('n_facture')) document.getElementById('n_facture').value = data.numero_facture || '';
-      if (document.getElementById('n_ht'))      document.getElementById('n_ht').value      = data.montant_ht || '';
-      if (document.getElementById('n_ttc'))     document.getElementById('n_ttc').value     = data.montant_ttc || '';
-      if (document.getElementById('n_date') && data.date_facture) document.getElementById('n_date').value = data.date_facture;
-
-      /* Remplir les items */
-      newItems = (data.items || []).map(function(it) {
-        return {
-          reference:    it.reference || '',
-          nom:          it.nom || '',
-          quantite_cmd: it.quantite_cmd || 1,
-          prix_ht:      it.prix_ht || 0,
-          prix_ttc:     it.prix_ttc || 0,
-          categorie:    it.categorie || 'Pièce détachée'
-        };
-      });
-      renderNewItems();
-
-      zone.classList.add('loaded');
-      zone.innerHTML = '<div style="color:#22c55e;font-size:13px;">✅ PDF analysé — ' + (data.items||[]).length + ' article(s) extrait(s)</div>';
-    } catch(err) {
-      zone.innerHTML = '<div style="color:#ef4444;font-size:13px;">❌ Erreur : ' + err.message + '</div>';
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-/* ══ SAUVEGARDER ══ */
-async function saveCommande() {
-  var four = document.getElementById('n_four').value.trim();
-  if (!four) { alert('Fournisseur obligatoire'); return; }
-  if (!newItems.length) { alert('Ajoutez au moins un article'); return; }
-
-  var body = {
-    fournisseur:    four,
-    date_commande:  document.getElementById('n_date').value,
-    numero_facture: document.getElementById('n_facture').value || null,
-    paiement:       document.getElementById('n_pay').value,
-    montant_ht:     Number(document.getElementById('n_ht').value||0),
-    montant_ttc:    Number(document.getElementById('n_ttc').value||0),
-    notes:          document.getElementById('n_notes').value || null,
-    origine:        'MANUEL',
-    created_by:     user ? user.name : null,
-    items:          newItems.filter(function(it){ return it.nom; })
-  };
-
+async function importerFactureEnCommande() {
+  var data = _factureData;
+  if (!data) return;
+  closeFactureModal();
   try {
-    var res = await fetch('/api/commandes', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    var d   = await res.json();
-    if (d.error) throw new Error(d.error);
+    var date = data.date ? data.date.split('/').reverse().join('-') : new Date().toISOString().split('T')[0];
 
-    /* Enregistrer aussi comme dépense fournisseur */
-    if (body.montant_ttc > 0) {
+    await fetch('/api/commandes', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        fournisseur:    'LCD Phone',
+        numero_facture: data.numero,
+        date_commande:  date,
+        date_facture:   date,
+        montant_ht:     data.total_ht || 0,
+        montant_ttc:    data.total_ttc || data.total_ht || 0,
+        statut:         'RECU',
+        transporteur:   data.transporteur || '',
+        notes:          'Import facture PDF #' + data.numero,
+        items: data.items.map(function(it){
+          return {
+            reference:    it.reference,
+            nom:          it.nom,
+            categorie:    'Piece detachee',
+            quantite_cmd: it.quantite,
+            prix_ht:      it.prix_ht,
+            prix_ttc:     it.prix_ht * 1.20,
+            prix_vente:   0
+          };
+        })
+      })
+    });
+
+    for (var i = 0; i < data.items.length; i++) {
+      var it = data.items[i];
+      var ttc_ligne = it.prix_ht * it.quantite * 1.20;
       await fetch('/api/expenses', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          description: 'Commande ' + four + ' — ' + (body.numero_facture||d.numero),
-          amount: body.montant_ttc,
-          category: 'Fournisseur',
-          date: body.date_commande
+          description: '[LCD Phone #' + data.numero + '] ' + it.reference + ' - ' + it.nom,
+          amount:      ttc_ligne,
+          amount_ht:   it.prix_ht * it.quantite,
+          amount_ttc:  ttc_ligne,
+          taux_tva:    20,
+          category:    'Fournisseur',
+          date:        date
         })
       });
     }
 
-    alert('✅ Commande ' + d.numero + ' enregistrée !');
-    newItems = [];
-    await loadCommandes();
-    loadCommande(d.id);
-  } catch(e) {
-    alert('❌ ' + e.message);
-  }
+    alert(data.items.length + ' ligne(s) importees - Commande et Depenses creees !');
+    loadCommandes();
+  } catch(e) { alert('Erreur: ' + e.message); }
 }
 
-/* ══ RÉCEPTION ══ */
-async function showReception(cmdId) {
-  var res  = await fetch('/api/commandes/' + cmdId);
-  var data = await res.json();
-  var items = data.items || [];
-  var panel = document.getElementById('commandeDetail');
 
-  var itemsForm = items.map(function(it) {
-    return '<tr>' +
-      '<td style="font-weight:bold">' + it.nom + '</td>' +
-      '<td style="text-align:center">' + it.quantite_cmd + '</td>' +
-      '<td><input type="number" id="recv_' + it.id + '" value="' + it.quantite_cmd + '" min="0" max="' + it.quantite_cmd + '" style="width:60px;padding:5px;border:1.5px solid #334155;border-radius:5px;font-size:12px;background:#0f172a;color:white;font-family:Arial;"></td>' +
-      '<td><input type="number" id="sell_' + it.id + '" value="' + (it.prix_vente||0) + '" min="0" step="0.01" placeholder="Prix vente" style="width:80px;padding:5px;border:1.5px solid #334155;border-radius:5px;font-size:12px;background:#0f172a;color:white;font-family:Arial;"></td>' +
+/* ══ HISTORIQUE COMMANDES ══ */
+var _histoData = [];
+
+function toggleHistorique() {
+  var panel  = document.getElementById('histoPanel');
+  var main   = document.getElementById('mainDiv');
+  var btn    = document.getElementById('btnHisto');
+  var isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  panel.style.flexDirection = 'column';
+  main.style.display  = isOpen ? 'flex' : 'none';
+  btn.style.background = isOpen ? '#0e7490' : '#0f172a';
+  if (!isOpen) loadHisto();
+}
+
+async function loadHisto() {
+  try {
+    var res  = await fetch('/api/commandes');
+    var cmds = await res.json();
+    /* Charger aussi les items de chaque commande */
+    _histoData = [];
+    for (var cmd of cmds) {
+      var r2    = await fetch('/api/commandes/' + cmd.id);
+      var data  = await r2.json();
+      var items = data.items || [];
+      if (items.length === 0) {
+        _histoData.push({cmd: cmd, item: null});
+      } else {
+        items.forEach(function(it) {
+          _histoData.push({cmd: cmd, item: it});
+        });
+      }
+    }
+    renderHisto();
+  } catch(e) { console.error('Histo:', e); }
+}
+
+function renderHisto() {
+  var search = (document.getElementById('h_search')?.value||'').toLowerCase();
+  var from   = document.getElementById('h_from')?.value || '';
+  var to     = document.getElementById('h_to')?.value || '';
+  var statut = document.getElementById('h_statut')?.value || '';
+
+  var filtered = _histoData.filter(function(row) {
+    var cmd = row.cmd;
+    var it  = row.item;
+    if (statut && cmd.statut !== statut) return false;
+    if (from && cmd.date_commande && cmd.date_commande.slice(0,10) < from) return false;
+    if (to   && cmd.date_commande && cmd.date_commande.slice(0,10) > to)   return false;
+    if (search) {
+      var hay = [cmd.numero, cmd.fournisseur, cmd.numero_facture,
+                 it ? it.reference : '', it ? it.nom : ''].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  var fmt = function(n){ return Number(n||0).toFixed(2) + ' EUR'; };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('fr-FR') : '—'; };
+
+  var ST = {EN_ATTENTE:'En attente', RECU:'Recu', PARTIELLEMENT_RECU:'Partiel', ANNULE:'Annule'};
+  var headRow = '<tr style="background:#f1f5f9;border-bottom:2px solid #e2e8f0;">' +
+    '<th style="padding:8px;text-align:left;">N° Cmd</th>' +
+    '<th style="padding:8px;text-align:left;">N° Facture</th>' +
+    '<th style="padding:8px;text-align:left;">Fournisseur</th>' +
+    '<th style="padding:8px;text-align:left;">Date cmd</th>' +
+    '<th style="padding:8px;text-align:left;">Date recep.</th>' +
+    '<th style="padding:8px;text-align:left;">Statut</th>' +
+    '<th style="padding:8px;text-align:left;">Ref.</th>' +
+    '<th style="padding:8px;">Produit</th>' +
+    '<th style="padding:8px;text-align:center;">Qte</th>' +
+    '<th style="padding:8px;text-align:right;">Prix HT</th>' +
+    '<th style="padding:8px;text-align:right;">Total HT</th>' +
+    '<th style="padding:8px;text-align:left;">Transporteur</th>' +
+  '</tr>';
+
+  document.getElementById('histoHead').innerHTML = headRow;
+
+  var totalHT = 0;
+  var rows = filtered.map(function(row) {
+    var cmd = row.cmd;
+    var it  = row.item;
+    var ht  = it ? Number(it.prix_ht||0) * Number(it.quantite_cmd||1) : 0;
+    totalHT += ht;
+    return '<tr style="border-bottom:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;">' +
+      '<td style="padding:7px 8px;font-size:11px;color:#3b82f6;font-weight:bold;cursor:pointer;" onclick="toggleHistorique();loadCommande(' + cmd.id + ')">' + (cmd.numero||'—') + '</td>' +
+      '<td style="padding:7px 8px;font-size:11px;">' + (cmd.numero_facture||'—') + '</td>' +
+      '<td style="padding:7px 8px;font-size:12px;font-weight:bold;">' + (cmd.fournisseur||'—') + '</td>' +
+      '<td style="padding:7px 8px;font-size:11px;">' + fmtDate(cmd.date_commande) + '</td>' +
+      '<td style="padding:7px 8px;font-size:11px;">' + fmtDate(cmd.date_livraison_prevue) + '</td>' +
+      '<td style="padding:7px 8px;">' +
+        '<span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;background:' +
+          ({EN_ATTENTE:'#dbeafe',RECU:'#dcfce7',PARTIELLEMENT_RECU:'#fef9c3',ANNULE:'#fee2e2'}[cmd.statut]||'#f1f5f9') + ';color:' +
+          ({EN_ATTENTE:'#1e40af',RECU:'#166534',PARTIELLEMENT_RECU:'#854d0e',ANNULE:'#991b1b'}[cmd.statut]||'#475569') + ';">' +
+          (ST[cmd.statut]||cmd.statut) + '</span>' +
+      '</td>' +
+      '<td style="padding:7px 8px;font-size:11px;color:#475569;">' + (it ? it.reference||'—' : '—') + '</td>' +
+      '<td style="padding:7px 8px;font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + (it ? it.nom : '') + '">' + (it ? it.nom : '—') + '</td>' +
+      '<td style="padding:7px 8px;text-align:center;">' + (it ? it.quantite_cmd : '—') + '</td>' +
+      '<td style="padding:7px 8px;text-align:right;">' + (it ? fmt(it.prix_ht) : '—') + '</td>' +
+      '<td style="padding:7px 8px;text-align:right;font-weight:bold;">' + (it ? fmt(ht) : '—') + '</td>' +
+      '<td style="padding:7px 8px;font-size:11px;color:#64748b;">' + (cmd.transporteur||'—') + '</td>' +
     '</tr>';
   }).join('');
 
-  panel.innerHTML =
-    '<div class="form-card">' +
-      '<h3>📦 Réception — ' + data.commande.numero + '</h3>' +
-      '<p style="font-size:12px;color:#94a3b8;margin:0 0 12px;">Saisissez les quantités réellement reçues et le prix de vente pour chaque article.</p>' +
-      '<table class="items-table">' +
-        '<thead><tr><th>Produit</th><th style="text-align:center">Commandé</th><th style="text-align:center">Reçu</th><th>Prix vente (€)</th></tr></thead>' +
-        '<tbody>' + itemsForm + '</tbody>' +
-      '</table>' +
-      '<div style="display:flex;gap:8px;margin-top:14px;">' +
-        '<button class="btn-green" onclick="saveReception(' + cmdId + ',' + JSON.stringify(items).replace(/"/g,"'") + ')" style="flex:1;">✅ Confirmer réception</button>' +
-        '<button onclick="loadCommande(' + cmdId + ')" style="background:#334155;color:#94a3b8;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">Annuler</button>' +
-      '</div>' +
-    '</div>';
+  document.getElementById('histoBody').innerHTML = rows || '<tr><td colspan="12" style="text-align:center;padding:20px;color:#94a3b8;">Aucun resultat</td></tr>';
+  document.getElementById('histoTotaux').innerHTML =
+    '<b>' + filtered.length + '</b> lignes affichees — Total HT : <b>' + fmt(totalHT) + '</b>';
 }
 
-async function saveReception(cmdId, items) {
-  var payload = items.map(function(it) {
-    return {
-      id:             it.id,
-      nom:            it.nom,
-      quantite_cmd:   it.quantite_cmd,
-      quantite_reçue: Number(document.getElementById('recv_'+it.id)?.value||0),
-      prix_vente:     Number(document.getElementById('sell_'+it.id)?.value||0),
-      prix_ht:        it.prix_ht,
-      categorie:      it.categorie,
-      fournisseur:    data && data.commande ? data.commande.fournisseur : ''
-    };
+function exportHistoCSV() {
+  var headers = ['N Cmd','N Facture','Fournisseur','Date commande','Date reception','Statut','Reference','Produit','Quantite','Prix HT','Total HT','Transporteur'];
+  var fmt = function(n){ return Number(n||0).toFixed(2); };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('fr-FR') : ''; };
+  var ST = {EN_ATTENTE:'En attente', RECU:'Recu', PARTIELLEMENT_RECU:'Partiel', ANNULE:'Annule'};
+
+  var search = (document.getElementById('h_search')?.value||'').toLowerCase();
+  var from   = document.getElementById('h_from')?.value || '';
+  var to     = document.getElementById('h_to')?.value || '';
+  var statut = document.getElementById('h_statut')?.value || '';
+
+  var filtered = _histoData.filter(function(row) {
+    var cmd = row.cmd;
+    var it  = row.item;
+    if (statut && cmd.statut !== statut) return false;
+    if (from && cmd.date_commande && cmd.date_commande.slice(0,10) < from) return false;
+    if (to   && cmd.date_commande && cmd.date_commande.slice(0,10) > to)   return false;
+    if (search) {
+      var hay = [cmd.numero, cmd.fournisseur, cmd.numero_facture,
+                 it ? it.reference : '', it ? it.nom : ''].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
   });
 
-  try {
-    var res = await fetch('/api/commandes/'+cmdId+'/reception', {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({items: payload})
-    });
-    var d = await res.json();
-    if (d.error) throw new Error(d.error);
-    alert('✅ Réception enregistrée ! Statut : ' + d.statut);
-    await loadCommandes();
-    loadCommande(cmdId);
-  } catch(e) {
-    alert('❌ ' + e.message);
-  }
+  var csv = [headers.join(';')].concat(filtered.map(function(row) {
+    var c = row.cmd;
+    var it = row.item;
+    return [
+      c.numero||'', c.numero_facture||'', c.fournisseur||'',
+      fmtDate(c.date_commande), fmtDate(c.date_livraison_prevue),
+      ST[c.statut]||c.statut,
+      it ? it.reference||'' : '',
+      it ? (it.nom||'').replace(/;/g,',') : '',
+      it ? it.quantite_cmd : '',
+      it ? fmt(it.prix_ht) : '',
+      it ? fmt(Number(it.prix_ht||0)*Number(it.quantite_cmd||1)) : '',
+      c.transporteur||''
+    ].join(';');
+  })).join('\n');
+
+  var blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'historique_commandes_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
-async function importPDFReception(cmdId) {
-  var input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.pdf';
-  input.onchange = async function() {
-    var file = input.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = async function(e) {
-      var base64 = e.target.result.split(',')[1];
-      try {
-        var res  = await fetch('/api/commandes/extract-pdf', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({pdfBase64: base64})
-        });
-        var data = await res.json();
-        if (data.error) throw new Error(data.error);
-        alert('PDF analysé — ' + (data.items||[]).length + ' article(s) trouvé(s). Vérifiez les quantités reçues.');
-        showReception(cmdId);
-      } catch(err) {
-        alert('❌ ' + err.message);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
-}
 
-async function annulerCommande(id) {
-  if (!confirm('Annuler cette commande ?')) return;
-  await fetch('/api/commandes/'+id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({statut:'ANNULE'})});
-  await loadCommandes();
-  document.getElementById('commandeDetail').innerHTML = '<div class="empty-detail">Commande annulée</div>';
-}
-
-async function relancerCommande(id) {
-  alert('Pensez à contacter le fournisseur pour réclamer votre commande !\n\nLCD Phone : +33 1 XX XX XX XX');
-}
-
-/* ══ BESOINS TECHNICIEN ══ */
-async function loadBesoins() {
-  var res  = await fetch('/api/besoins');
-  var data = await res.json();
-  var div  = document.getElementById('besoinsList');
-  if (!data.length) {
-    div.innerHTML = '<div style="text-align:center;color:#475569;padding:30px;font-size:13px;">Aucun besoin enregistré</div>';
-    return;
-  }
-  var ST = {EN_ATTENTE:'⏳ En attente',COMMANDE:'🛒 Commandé',RECU:'✅ Reçu'};
-  var URG = {URGENT:'🔴',NORMAL:'🟡',FAIBLE:'🟢'};
-  div.innerHTML = data.map(function(b) {
-    return '<div class="besoin-card">' +
-      '<div>' +
-        '<div class="bc-name">' + (URG[b.urgence]||'') + ' ' + b.nom + ' × ' + b.quantite + '</div>' +
-        '<div class="bc-meta">' + (b.categorie||'') + (b.notes?' — '+b.notes:'') + '</div>' +
-        '<span class="st-badge EN_ATTENTE" style="' + (b.statut==='RECU'?'background:#166534;color:#86efac;':'') + '">' + (ST[b.statut]||b.statut) + '</span>' +
-      '</div>' +
-      '<div style="display:flex;gap:6px;">' +
-        (b.statut === 'EN_ATTENTE' ?
-          '<button onclick="commanderBesoin('+b.id+',\''+b.nom.replace(/'/g,' ')+'\')" style="padding:5px 10px;background:#16a34a;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">🛒 Commander</button>' : '') +
-        '<button onclick="deleteBesoin('+b.id+')" style="padding:5px 10px;background:#fee2e2;color:#ef4444;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-family:Arial;">🗑</button>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function showAddBesoin() {
-  var nom   = prompt('Produit nécessaire :');
-  if (!nom) return;
-  var qte   = parseInt(prompt('Quantité ?', '1')||'1');
-  var urg   = prompt('Urgence (URGENT / NORMAL / FAIBLE) :', 'NORMAL') || 'NORMAL';
-  var notes = prompt('Notes (optionnel) :') || '';
-  fetch('/api/besoins', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({nom, quantite:qte, urgence:urg.toUpperCase(), notes, created_by: user?user.name:null})
-  }).then(function(){ loadBesoins(); });
-}
-
-function commanderBesoin(id, nom) {
-  /* Pré-remplir une nouvelle commande avec ce besoin */
-  switchTab('commandes');
-  showNewCommande();
-  setTimeout(function() {
-    newItems = [{reference:'',nom:nom,quantite_cmd:1,prix_ht:0,categorie:'Pièce détachée'}];
-    renderNewItems();
-    fetch('/api/besoins/'+id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({statut:'COMMANDE'})});
-  }, 200);
-}
-
-async function deleteBesoin(id) {
-  if (!confirm('Supprimer ce besoin ?')) return;
-  await fetch('/api/besoins/'+id, {method:'DELETE'});
-  loadBesoins();
-}
-
-/* ══ ALERTES ══ */
 async function loadAlertes() {
-  var res  = await fetch('/api/commandes/alertes');
-  var data = await res.json();
-  var div  = document.getElementById('alertesList');
-  var badge = document.getElementById('alerteBadge');
+  try {
+    var res  = await fetch('/api/commandes?statut=EN_ATTENTE');
+    var cmds = await res.json();
+    var res2 = await fetch('/api/commandes?statut=PARTIELLEMENT_RECU');
+    var cmds2 = await res2.json();
+    var all  = cmds.concat(cmds2);
+    var now  = new Date();
 
-  if (data.length > 0) {
-    badge.style.display = 'inline';
-    badge.textContent   = data.length;
-  } else {
-    badge.style.display = 'none';
+    var list = document.getElementById('alertesList');
+    if (!list) return;
+
+    if (!all.length) {
+      list.innerHTML = '<div style="color:#64748b;font-size:13px;text-align:center;padding:30px;">Aucune commande en attente ✅</div>';
+      return;
+    }
+
+    var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('fr-FR') : '—'; };
+
+    list.innerHTML = all.map(function(cmd) {
+      var dateRef   = cmd.date_commande || cmd.created_at;
+      var d         = new Date(dateRef);
+      var dateLocal = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      var nowLocal  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var jours     = Math.floor((nowLocal - dateLocal) / 86400000);
+      var cls  = jours >= 7 ? '#dc2626' : jours >= 3 ? '#d97706' : '#16a34a';
+      var bg   = jours >= 7 ? '#1a0505' : jours >= 3 ? '#1c1205' : '#052e16';
+      var emoji = jours >= 7 ? '🔴' : jours >= 3 ? '🟡' : '🟢';
+      var statLabel = cmd.statut === 'PARTIELLEMENT_RECU' ? 'Partiellement reçue' : 'En attente';
+      var divStyle = 'display:flex;align-items:center;justify-content:space-between;background:' + bg + ';border:1px solid ' + cls + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;cursor:pointer;';
+      return '<div style="' + divStyle + '" data-id="' + cmd.id + '" class="alerte-cmd-row">' +
+        '<div>' +
+          '<div style="font-weight:bold;font-size:13px;color:white;">' + emoji + ' ' + (cmd.numero||'—') + ' — ' + (cmd.fournisseur||'—') + (cmd.numero_facture ? ' | Facture #' + cmd.numero_facture : '') + '</div>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + statLabel + ' · Date commande : ' + fmtDate(cmd.date_commande) + ' · ' + jours + ' jour' + (jours > 1 ? 's' : '') + ' sans réception</div>' +
+        '</div>' +
+        '<div style="font-size:22px;font-weight:900;color:' + cls + ';">' + jours + 'j</div>' +
+      '</div>';
+    }).sort(function(a,b){ return 0; }).join('');
+  } catch(e) {
+    console.error('loadAlertes:', e);
   }
-
-  if (!data.length) {
-    div.innerHTML = '<div style="text-align:center;color:#22c55e;padding:40px;font-size:14px;">✅ Aucune commande en retard</div>';
-    return;
-  }
-
-  div.innerHTML = data.map(function(c) {
-    return '<div class="alerte-bar" style="margin-bottom:10px;">' +
-      '<div>' +
-        '<div class="at">⚠️ ' + (c.numero||'—') + ' — ' + c.fournisseur + '</div>' +
-        '<div class="ad">En attente depuis ' + Math.floor(c.jours_attente||0) + ' jour(s) — ' + Number(c.montant_ttc||0).toFixed(2) + ' €</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:6px;">' +
-        '<button onclick="switchTab(\'commandes\');loadCommande('+c.id+')" style="padding:6px 12px;background:#1e40af;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">Voir</button>' +
-        '<button onclick="relancerCommande('+c.id+')" style="padding:6px 12px;background:#92400e;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📞 Réclamer</button>' +
-      '</div>' +
-    '</div>';
-  }).join('');
+  /* Event listeners */
+  setTimeout(function() {
+    document.querySelectorAll('.alerte-cmd-row').forEach(function(el) {
+      el.onclick = function() {
+        var id = Number(this.dataset.id);
+        switchTab('commandes');
+        loadCommande(id);
+      };
+    });
+  }, 50);
 }
 
-/* ══ INIT ══ */
+
 loadCommandes();
-/* Vérifier alertes toutes les 5 min */
-setInterval(loadAlertes, 300000);
-loadAlertes();
 </script>
 </body>
 </html>

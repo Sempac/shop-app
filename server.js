@@ -310,17 +310,43 @@ app.delete('/api/repairs/:id',async(req,res)=>{
    EXPENSES
 ======================================================= */
 app.get('/api/expenses',async(req,res)=>{try{const{from='2000-01-01',to='2999-12-31',category}=req.query;let q=`SELECT * FROM expenses WHERE DATE(date) BETWEEN $1 AND $2`;const p=[from,to];if(category){q+=` AND category=$3`;p.push(category);}q+=` ORDER BY date DESC`;const r=await pool.query(q,p);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
+app.put('/api/expenses/:id', async(req,res)=>{
+  try{
+    const{description,amount,amount_ht,amount_ttc,taux_tva,category,date}=req.body;
+    const tva=Number(taux_tva||20);
+    const ttc=amount_ttc?Number(amount_ttc):Number(amount||0);
+    const ht=amount_ht?Number(amount_ht):(tva>0?ttc/(1+tva/100):ttc);
+    const r=await pool.query(
+      `UPDATE expenses SET description=$1,amount=$2,amount_ht=$3,amount_ttc=$4,
+       taux_tva=$5,category=$6,date=$7 WHERE id=$8 RETURNING *`,
+      [description||'',ttc,Number(ht.toFixed(2)),Number(ttc.toFixed(2)),
+       tva,category||'Autre',date||new Date().toISOString().split('T')[0],req.params.id]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.delete('/api/expenses/:id', async(req,res)=>{
+  try{
+    await pool.query('DELETE FROM expenses WHERE id=$1',[req.params.id]);
+    res.json({success:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.post('/api/expenses',async(req,res)=>{
   try{
-    const{description,amount,category,date}=req.body;
+    const{description,amount,amount_ht,amount_ttc,taux_tva,category,date}=req.body;
     const dateStr=(date||new Date().toISOString().slice(0,10)).replace(/-/g,'');
     const numRes=await pool.query("SELECT next_numero('DEP',$1,'expenses','numero') AS num",[dateStr]);
     const numero=numRes.rows[0].num;
+    /* Calcul HT/TTC automatique si non fourni */
+    const tva=Number(taux_tva||20);
+    const ht=amount_ht?Number(amount_ht):Number(amount||0)/(1+tva/100);
+    const ttc=amount_ttc?Number(amount_ttc):Number(amount||0);
     const r=await pool.query(
-      `INSERT INTO expenses(numero,description,amount,category,date)
-       VALUES($1,$2,$3,$4,$5) RETURNING *`,
-      [numero,description||'',Number(amount||0),category||'Autre',
-       date||new Date().toISOString().split('T')[0]]);
+      `INSERT INTO expenses(numero,description,amount,amount_ht,amount_ttc,taux_tva,category,date)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [numero,description||'',Number(amount||ttc),Number(ht.toFixed(2)),Number(ttc.toFixed(2)),tva,
+       category||'Autre',date||new Date().toISOString().split('T')[0]]);
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -983,21 +1009,26 @@ app.get('/api/commandes/:id', async(req,res)=>{
 app.post('/api/commandes', async(req,res)=>{
   const client=await pool.connect();
   try{
-    const{fournisseur,fournisseur_id,origine,date_commande,notes,paiement,
-          montant_ht,montant_ttc,numero_facture,fichier_pdf,created_by,items}=req.body;
+    const{fournisseur,fournisseur_id,origine,date_commande,date_facture,date_livraison_prevue,
+          notes,paiement,montant_ht,montant_ttc,numero_facture,fichier_pdf,
+          transporteur,created_by,items}=req.body;
     const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
     const numRes=await client.query("SELECT next_numero('CMD',$1,'commandes','numero') AS num",[dateStr]);
     const numero=numRes.rows[0].num;
+    console.log('CMD import:', {fournisseur,numero_facture,montant_ht,montant_ttc});
     await client.query('BEGIN');
     const cmd=await client.query(
       `INSERT INTO commandes(numero,fournisseur,fournisseur_id,origine,date_commande,
-        notes,paiement,montant_ht,montant_ttc,numero_facture,fichier_pdf,created_by)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+        date_facture,date_livraison_prevue,notes,paiement,montant_ht,montant_ttc,
+        numero_facture,fichier_pdf,transporteur,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
       [numero,fournisseur,fournisseur_id||null,origine||'MANUEL',
        date_commande||new Date().toISOString().slice(0,10),
+       date_facture||null,date_livraison_prevue||null,
        notes||null,paiement||'card',
        Number(montant_ht||0),Number(montant_ttc||0),
-       numero_facture||null,fichier_pdf||null,created_by||null]);
+       numero_facture||null,fichier_pdf||null,
+       transporteur||null,created_by||null]);
     const cmdId=cmd.rows[0].id;
     for(const it of (items||[])){
       await client.query(
@@ -1017,17 +1048,18 @@ app.post('/api/commandes', async(req,res)=>{
 /* ── PUT modifier une commande ── */
 app.put('/api/commandes/:id', async(req,res)=>{
   try{
-    const{statut,date_livraison,notes,numero_facture,fichier_pdf}=req.body;
+    const{statut,date_livraison,notes,numero_facture,fichier_pdf,transporteur}=req.body;
     const r=await pool.query(
       `UPDATE commandes SET statut=COALESCE($1,statut),
-        date_livraison=COALESCE($2,date_livraison),
+        date_livraison_prevue=COALESCE($2::date,date_livraison_prevue),
         notes=COALESCE($3,notes),
         numero_facture=COALESCE($4,numero_facture),
         fichier_pdf=COALESCE($5,fichier_pdf),
+        transporteur=COALESCE($7,transporteur),
         updated_at=NOW()
        WHERE id=$6 RETURNING *`,
       [statut||null,date_livraison||null,notes||null,
-       numero_facture||null,fichier_pdf||null,req.params.id]);
+       numero_facture||null,fichier_pdf||null,req.params.id,transporteur||null]);
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -1753,6 +1785,31 @@ app.delete('/api/todos/:id', async(req,res)=>{
     await pool.query('DELETE FROM todos WHERE id=$1',[req.params.id]);
     res.json({success:true});
   }catch(e){res.status(500).json({error:e.message});}
+});
+
+
+/* ── IMPORT FACTURE PDF LCD PHONE ── */
+app.post('/api/import-facture-pdf/upload', (req,res)=>{
+  const path   = require('path');
+  const fs     = require('fs');
+  const {execSync} = require('child_process');
+  const multer = require('multer');
+  const upload = multer({dest: require('os').tmpdir()}).single('pdf');
+  upload(req, res, function(err){
+    if(err) return res.status(500).json({error:err.message});
+    if(!req.file) return res.status(400).json({error:'Aucun fichier PDF'});
+    const pdfPath  = req.file.path;
+    const pyScript = path.join(__dirname,'parse_invoice.py');
+    try{
+      const out  = execSync('python3 "'+pyScript+'" "'+pdfPath+'"',{encoding:'utf-8'});
+      const data = JSON.parse(out);
+      fs.unlinkSync(pdfPath);
+      res.json(data);
+    }catch(e2){
+      try{fs.unlinkSync(pdfPath);}catch(e3){}
+      res.status(500).json({error:e2.message.slice(0,200)});
+    }
+  });
 });
 
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
