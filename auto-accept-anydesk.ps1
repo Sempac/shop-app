@@ -57,20 +57,20 @@ function TryAccept($hwnd, $L, $T, $W, $H) {
         return
     }
 
-    # 2. Clics cote GAUCHE uniquement (Accept est a gauche dans AnyDesk)
+    # 2. Clics cote DROIT (ACCEPTER est a droite — confirme par logs)
     # STOP des que la fenetre disparait (evite de cliquer sur la session ouverte)
     [AD]::SetForegroundWindow($hwnd) | Out-Null
     Start-Sleep -Milliseconds 500
 
     foreach ($yp in @(0.88, 0.91, 0.94, 0.97)) {
-        foreach ($xp in @(0.12, 0.18, 0.22, 0.28, 0.33)) {
+        foreach ($xp in @(0.60, 0.65, 0.70, 0.75, 0.80)) {
             if (-not [AD]::IsWindowVisible($hwnd)) {
-                "  -> fenetre disparue, arret" | Add-Content $log
+                "  -> fenetre disparue ACCEPTE, arret" | Add-Content $log
                 return
             }
             $px = [int]($L + $W * $xp)
             $py = [int]($T + $H * $yp)
-            "  Click x=$px y=$py" | Add-Content $log
+            "  Click DROIT x=$px y=$py" | Add-Content $log
             Click $px $py
         }
     }
