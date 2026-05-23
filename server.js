@@ -1048,7 +1048,8 @@ app.post('/api/commandes', async(req,res)=>{
 /* ── PUT modifier une commande ── */
 app.put('/api/commandes/:id', async(req,res)=>{
   try{
-    const{statut,date_livraison,notes,numero_facture,fichier_pdf,transporteur}=req.body;
+    const{statut,date_livraison,notes,numero_facture,fichier_pdf,
+          transporteur,fournisseur,date_facture,date_commande,paiement}=req.body;
     const r=await pool.query(
       `UPDATE commandes SET statut=COALESCE($1,statut),
         date_livraison_prevue=COALESCE($2::date,date_livraison_prevue),
@@ -1056,10 +1057,49 @@ app.put('/api/commandes/:id', async(req,res)=>{
         numero_facture=COALESCE($4,numero_facture),
         fichier_pdf=COALESCE($5,fichier_pdf),
         transporteur=COALESCE($7,transporteur),
+        fournisseur=COALESCE($8,fournisseur),
+        date_facture=COALESCE($9::date,date_facture),
+        date_commande=COALESCE($10::date,date_commande),
+        paiement=COALESCE($11,paiement),
         updated_at=NOW()
        WHERE id=$6 RETURNING *`,
       [statut||null,date_livraison||null,notes||null,
-       numero_facture||null,fichier_pdf||null,req.params.id,transporteur||null]);
+       numero_facture||null,fichier_pdf||null,req.params.id,
+       transporteur||null,fournisseur||null,
+       date_facture||null,date_commande||null,paiement||null]);
+
+    /* Si passage en RECU → créer/mettre à jour les produits dans le stock */
+    if(statut==='RECU'){
+      const cmd=r.rows[0];
+      const items=await pool.query('SELECT * FROM commande_items WHERE commande_id=$1',[req.params.id]);
+      for(const it of items.rows){
+        const qty = Number(it.quantite_cmd||1);
+        const nom = it.nom||'Produit';
+        const cat = it.categorie||'Pièce détachée';
+        const prix = Number(it.prix_ht||0);
+        const fournisseur = cmd.fournisseur||'';
+        const noteStr = '['+it.reference+'] '+nom+' — Facture #'+cmd.numero_facture;
+        /* Chercher si une ligne identique existe déjà dans le stock */
+        const existing = await pool.query(
+          `SELECT id, stock_quantity FROM products 
+           WHERE name=$1 AND category=$2 AND type_entree='COMMANDE' AND supplier_name=$3`,
+          [nom, cat, fournisseur]);
+        if(existing.rows.length>0){
+          /* Mettre à jour la quantité existante */
+          await pool.query(
+            `UPDATE products SET stock_quantity=stock_quantity+$1, notes=$2 WHERE id=$3`,
+            [qty, noteStr, existing.rows[0].id]);
+        } else {
+          /* Créer une nouvelle ligne avec la quantité totale */
+          await pool.query(
+            `INSERT INTO products(name,category,condition,purchase_price,sale_price,
+             stock_quantity,stock_alert,supplier_name,statut_produit,type_entree,notes)
+             VALUES($1,$2,'NEUF',$3,0,$4,3,$5,'DISPONIBLE','COMMANDE',$6)`,
+            [nom,cat,prix,qty,fournisseur,noteStr]);
+        }
+      }
+    }
+
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -1810,6 +1850,72 @@ app.post('/api/import-facture-pdf/upload', (req,res)=>{
       res.status(500).json({error:e2.message.slice(0,200)});
     }
   });
+});
+
+
+/* ── PUT commandes/:id/items ── */
+app.put('/api/commandes/:id/items', async(req,res)=>{
+  const client = await pool.connect();
+  try{
+    const {items} = req.body;
+    await client.query('BEGIN');
+    for(const it of (items||[])){
+      await client.query(
+        `UPDATE commande_items SET reference=$1,nom=$2,taux_tva=$3,
+         prix_ht=$4,prix_ttc=$5,quantite_cmd=$6 WHERE id=$7`,
+        [it.reference||null,it.nom||'',Number(it.taux_tva||20),
+         Number(it.prix_ht||0),Number(it.prix_ttc||0),Number(it.quantite_cmd||1),it.id]);
+    }
+    /* Si commande RECU → resynchroniser le stock */
+    const cmdStatus = await client.query('SELECT statut, fournisseur, numero_facture FROM commandes WHERE id=$1',[req.params.id]);
+    if(cmdStatus.rows[0]?.statut === 'RECU'){
+      const cmd = cmdStatus.rows[0];
+      for(const it of (items||[])){
+        const qty = Number(it.quantite_cmd||1);
+        const nom = it.nom||'Produit';
+        const cat = it.categorie||'Pièce détachée';
+        /* Chercher le produit stock lié */
+        const existing = await client.query(
+          `SELECT id FROM products WHERE name=$1 AND category=$2 AND type_entree='COMMANDE' AND supplier_name=$3`,
+          [nom, cat, cmd.fournisseur||'']);
+        if(existing.rows.length>0){
+          /* Mettre à jour la quantité */
+          await client.query(
+            `UPDATE products SET stock_quantity=$1 WHERE id=$2`,
+            [qty, existing.rows[0].id]);
+        }
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({success:true});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* ── DELETE commandes/:id ── */
+app.delete('/api/commandes/:id', async(req,res)=>{
+  const client = await pool.connect();
+  try{
+    await client.query('BEGIN');
+    /* Récupérer le numéro de facture */
+    const cmd = await client.query('SELECT numero_facture FROM commandes WHERE id=$1',[req.params.id]);
+    const numFac = cmd.rows[0]?.numero_facture;
+    /* Supprimer les dépenses liées */
+    if(numFac){
+      await client.query("DELETE FROM expenses WHERE description LIKE $1",['%#'+numFac+'%']);
+    }
+    /* Supprimer les produits stock liés (type_entree=COMMANDE + notes contenant le numéro facture) */
+    if(numFac){
+      await client.query("DELETE FROM products WHERE type_entree='COMMANDE' AND notes LIKE $1",['%#'+numFac+'%']);
+    }
+    /* Supprimer les items et la commande */
+    await client.query('DELETE FROM commande_items WHERE commande_id=$1',[req.params.id]);
+    await client.query('DELETE FROM commandes WHERE id=$1',[req.params.id]);
+    await client.query('COMMIT');
+    res.json({success:true});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
 });
 
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
