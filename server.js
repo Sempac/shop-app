@@ -2134,4 +2134,156 @@ app.get('/api/catalogue', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+/* =======================================================
+   CATALOGUE PUBLIC
+======================================================= */
+
+// Page catalogue publique
+app.get('/catalogue', (req,res) => {
+  res.sendFile(path.join(__dirname,'catalogue.html'));
+});
+
+// Données catalogue (public)
+app.get('/api/catalogue/data', async(req,res) => {
+  try {
+    const settings = await pool.query('SELECT key,value FROM catalogue_settings');
+    const cfg = {};
+    settings.rows.forEach(r => cfg[r.key]=r.value);
+
+    const products = await pool.query(`
+      SELECT id, name, category, condition, grade, color,
+             COALESCE(catalogue_price, sale_price) as price,
+             stock_quantity, catalogue_description
+      FROM products
+      WHERE catalogue_visible=true AND stock_quantity>0 AND statut_produit='DISPONIBLE'
+      ORDER BY category, price DESC
+    `);
+
+    const services = await pool.query(`
+      SELECT * FROM catalogue_services WHERE visible=true ORDER BY category, sort_order
+    `);
+
+    res.json({ settings: cfg, products: products.rows, services: services.rows });
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// QR code (retourne SVG inline)
+app.get('/api/catalogue/qrcode', async(req,res) => {
+  try {
+    const QRCode = require('qrcode');
+    const s = await pool.query("SELECT value FROM catalogue_settings WHERE key='catalogue_url'");
+    const url = s.rows[0]?.value || `http://localhost:3000/catalogue`;
+    const svg = await QRCode.toString(url, {type:'svg', margin:1});
+    res.setHeader('Content-Type','image/svg+xml');
+    res.send(svg);
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* =======================================================
+   CATALOGUE ADMIN — gestion produits/services/settings
+======================================================= */
+
+// Page admin catalogue
+app.get('/catalogue-admin', (req,res) => {
+  res.sendFile(path.join(__dirname,'catalogue-admin.html'));
+});
+
+// Lister tous les produits pour admin (avec filtre)
+app.get('/api/catalogue-admin/products', async(req,res) => {
+  try {
+    const {search,category} = req.query;
+    let sql = `SELECT id, name, category, condition, grade, color,
+                      sale_price, catalogue_price, catalogue_visible,
+                      stock_quantity, catalogue_description
+               FROM products WHERE statut_produit='DISPONIBLE'`;
+    const p = [];
+    if(search){ p.push('%'+search+'%'); sql+=` AND name ILIKE $${p.length}`; }
+    if(category){ p.push(category); sql+=` AND category=$${p.length}`; }
+    sql += ' ORDER BY catalogue_visible DESC, category, name LIMIT 200';
+    const r = await pool.query(sql,p);
+    res.json(r.rows);
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// Modifier un produit catalogue
+app.patch('/api/catalogue-admin/products/:id', async(req,res) => {
+  try {
+    const {catalogue_visible, catalogue_price, stock_quantity, catalogue_description} = req.body;
+    const fields = [], vals = [];
+    if(catalogue_visible !== undefined){ vals.push(catalogue_visible); fields.push(`catalogue_visible=$${vals.length}`); }
+    if(catalogue_price  !== undefined){ vals.push(catalogue_price);   fields.push(`catalogue_price=$${vals.length}`); }
+    if(stock_quantity   !== undefined){ vals.push(stock_quantity);    fields.push(`stock_quantity=$${vals.length}`); }
+    if(catalogue_description !== undefined){ vals.push(catalogue_description); fields.push(`catalogue_description=$${vals.length}`); }
+    if(!fields.length) return res.json({ok:true});
+    vals.push(req.params.id);
+    await pool.query(`UPDATE products SET ${fields.join(',')} WHERE id=$${vals.length}`, vals);
+    res.json({ok:true});
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// Services catalogue (réparations, impression)
+app.get('/api/catalogue-admin/services', async(req,res) => {
+  try {
+    const r = await pool.query('SELECT * FROM catalogue_services ORDER BY category, sort_order');
+    res.json(r.rows);
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/catalogue-admin/services/:id', async(req,res) => {
+  try {
+    const {name, price, price_market, delay, visible, sort_order} = req.body;
+    const fields=[], vals=[];
+    if(name         !== undefined){ vals.push(name);         fields.push(`name=$${vals.length}`); }
+    if(price        !== undefined){ vals.push(price);        fields.push(`price=$${vals.length}`); }
+    if(price_market !== undefined){ vals.push(price_market); fields.push(`price_market=$${vals.length}`); }
+    if(delay        !== undefined){ vals.push(delay);        fields.push(`delay=$${vals.length}`); }
+    if(visible      !== undefined){ vals.push(visible);      fields.push(`visible=$${vals.length}`); }
+    if(sort_order   !== undefined){ vals.push(sort_order);   fields.push(`sort_order=$${vals.length}`); }
+    if(!fields.length) return res.json({ok:true});
+    vals.push(req.params.id);
+    await pool.query(`UPDATE catalogue_services SET ${fields.join(',')} WHERE id=$${vals.length}`, vals);
+    res.json({ok:true});
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/catalogue-admin/services', async(req,res) => {
+  try {
+    const {category,name,price,price_market,delay,sort_order} = req.body;
+    const r = await pool.query(
+      'INSERT INTO catalogue_services(category,name,price,price_market,delay,sort_order) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',
+      [category,name,price||0,price_market||null,delay||null,sort_order||0]
+    );
+    res.json(r.rows[0]);
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.delete('/api/catalogue-admin/services/:id', async(req,res) => {
+  try {
+    await pool.query('DELETE FROM catalogue_services WHERE id=$1',[req.params.id]);
+    res.json({ok:true});
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// Settings catalogue
+app.get('/api/catalogue-admin/settings', async(req,res) => {
+  try {
+    const r = await pool.query('SELECT key,value FROM catalogue_settings ORDER BY key');
+    const cfg = {};
+    r.rows.forEach(row => cfg[row.key]=row.value);
+    res.json(cfg);
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/catalogue-admin/settings', async(req,res) => {
+  try {
+    for(const [key,value] of Object.entries(req.body)){
+      await pool.query(
+        'INSERT INTO catalogue_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=$2',
+        [key, value]
+      );
+    }
+    res.json({ok:true});
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));

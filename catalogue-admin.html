@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Catalogue — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f0f2f5;color:#222}
+header{background:#1a1a2e;color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px}
+header h1{font-size:1.1rem}
+.tabs{display:flex;gap:0;border-bottom:2px solid #ddd;background:#fff;padding:0 24px}
+.tab{padding:12px 20px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;color:#666;transition:.2s}
+.tab.active{border-bottom-color:#e91e63;color:#e91e63}
+.section{display:none;padding:24px}
+.section.active{display:block}
+
+/* Produits */
+.toolbar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:.9rem}
+.toolbar input{flex:1;min-width:200px}
+.stats{background:#e3f2fd;border-radius:8px;padding:10px 16px;font-size:.9rem;color:#1565c0}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+th{background:#f5f5f5;padding:10px 12px;text-align:left;font-size:.82rem;color:#555;font-weight:600}
+td{padding:9px 12px;border-top:1px solid #f0f0f0;font-size:.88rem;vertical-align:middle}
+tr:hover td{background:#fafafa}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:600}
+.badge-neuf{background:#e8f5e9;color:#2e7d32}
+.badge-occ{background:#fff3e0;color:#e65100}
+.badge-rec{background:#e3f2fd;color:#1565c0}
+.toggle{width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;transition:.2s;position:relative}
+.toggle.on{background:#4caf50}
+.toggle.off{background:#ccc}
+.price-input{width:80px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;text-align:right;font-size:.9rem}
+.price-input:focus{outline:none;border-color:#e91e63}
+.qty-input{width:60px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;text-align:center;font-size:.9rem}
+.save-btn{background:#e91e63;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.82rem}
+.save-btn:hover{background:#c2185b}
+.saved{color:#4caf50;font-size:.8rem;margin-left:6px}
+
+/* Services */
+.services-grid{display:grid;gap:16px}
+.service-row{background:#fff;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.service-row input[type=text],.service-row input[type=number]{padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:.88rem}
+.service-row input[type=text]{flex:1}
+.service-row input[type=number]{width:90px}
+.svc-label{font-size:.75rem;color:#888;display:block;margin-bottom:2px}
+.del-btn{background:#ff5252;color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem}
+.add-btn{background:#4caf50;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;margin-top:12px}
+.cat-header{font-weight:700;color:#1a1a2e;padding:8px 0 4px;font-size:.95rem;border-bottom:2px solid #f0f0f0;margin-bottom:8px}
+
+/* Settings */
+.settings-form{background:#fff;border-radius:12px;padding:24px;max-width:600px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:4px}
+.field input,.field textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:.9rem}
+.field textarea{resize:vertical;min-height:60px}
+.btn-primary{background:#e91e63;color:#fff;border:none;padding:12px 28px;border-radius:8px;cursor:pointer;font-weight:600;font-size:.95rem}
+.qr-box{margin-top:24px;background:#fff;border-radius:12px;padding:24px;max-width:320px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.qr-box h3{margin-bottom:12px;color:#1a1a2e}
+#qr-img{width:200px;height:200px}
+.qr-url{font-size:.8rem;color:#888;margin-top:8px;word-break:break-all}
+.btn-dl{background:#1a1a2e;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;margin-top:10px;font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:1.5rem">🛍️</span>
+  <h1>Admin Catalogue — The SMARTPHONE</h1>
+  <a href="/catalogue" target="_blank" style="margin-left:auto;color:#fff;font-size:.85rem;text-decoration:none;background:rgba(255,255,255,.15);padding:6px 14px;border-radius:6px">👁 Voir le catalogue</a>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('produits')">📱 Produits</div>
+  <div class="tab" onclick="showTab('services')">🔧 Services & Réparations</div>
+  <div class="tab" onclick="showTab('settings')">⚙️ Paramètres & QR Code</div>
+</div>
+
+<!-- PRODUITS -->
+<div id="tab-produits" class="section active">
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="🔍 Rechercher un produit..." oninput="loadProducts()">
+    <select id="cat-filter" onchange="loadProducts()">
+      <option value="">Toutes catégories</option>
+      <option value="Smartphone">Smartphones</option>
+      <option value="Tablette">Tablettes</option>
+      <option value="Accessoire">Accessoires</option>
+      <option value="Carte SIM">Cartes SIM</option>
+      <option value="Audio">Audio</option>
+      <option value="Chargeur">Chargeurs</option>
+      <option value="Cable">Câbles</option>
+    </select>
+    <div class="stats" id="stats">Chargement...</div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Afficher</th>
+        <th>Produit</th>
+        <th>Catégorie</th>
+        <th>État</th>
+        <th>Prix catalogue (€)</th>
+        <th>Prix interne</th>
+        <th>Stock</th>
+        <th>Sauver</th>
+      </tr>
+    </thead>
+    <tbody id="products-tbody"></tbody>
+  </table>
+</div>
+
+<!-- SERVICES -->
+<div id="tab-services" class="section">
+  <div id="services-container"></div>
+  <button class="add-btn" onclick="addService()">+ Ajouter un service</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="tab-settings" class="section">
+  <div class="settings-form">
+    <h3 style="margin-bottom:16px;color:#1a1a2e">Informations boutique</h3>
+    <div class="field"><label>Nom</label><input id="s-shop_name" type="text"></div>
+    <div class="field"><label>Adresse</label><input id="s-shop_address" type="text"></div>
+    <div class="field"><label>Téléphone</label><input id="s-shop_phone" type="text"></div>
+    <div class="field"><label>URL du catalogue</label><input id="s-catalogue_url" type="text" placeholder="http://[ip-tailscale]:3000/catalogue"></div>
+    <div class="field"><label>Note Google</label><input id="s-google_rating" type="text"></div>
+    <div class="field"><label>Nombre d'avis Google</label><input id="s-google_reviews" type="text"></div>
+    <button class="btn-primary" onclick="saveSettings()">💾 Sauvegarder</button>
+    <span id="settings-saved" class="saved" style="display:none">✓ Sauvegardé</span>
+  </div>
+
+  <div class="qr-box" style="margin-top:24px">
+    <h3>📱 QR Code Vitrine</h3>
+    <img id="qr-img" src="/api/catalogue/qrcode" alt="QR Code">
+    <div class="qr-url" id="qr-url-text"></div>
+    <br>
+    <button class="btn-dl" onclick="downloadQR()">⬇ Télécharger QR Code</button>
+    <p style="font-size:.78rem;color:#aaa;margin-top:8px">À imprimer et placer en vitrine</p>
+  </div>
+</div>
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['produits','services','settings'][i]===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='services') loadServices();
+  if(name==='settings') loadSettings();
+}
+
+// ---- PRODUITS ----
+async function loadProducts(){
+  const search=document.getElementById('search').value;
+  const cat=document.getElementById('cat-filter').value;
+  const params=new URLSearchParams();
+  if(search) params.set('search',search);
+  if(cat) params.set('category',cat);
+  const r=await fetch('/api/catalogue-admin/products?'+params);
+  const rows=await r.json();
+  const tbody=document.getElementById('products-tbody');
+  const visible=rows.filter(r=>r.catalogue_visible).length;
+  document.getElementById('stats').textContent=`${rows.length} produits — ${visible} affichés dans le catalogue`;
+  tbody.innerHTML=rows.map(p=>`
+    <tr id="row-${p.id}">
+      <td><button class="toggle ${p.catalogue_visible?'on':'off'}" onclick="toggleVis(${p.id},this)" title="${p.catalogue_visible?'Affiché':'Masqué'}"></button></td>
+      <td><strong>${p.name}</strong>${p.color?' · '+p.color:''}</td>
+      <td>${p.category||''}</td>
+      <td><span class="badge badge-${(p.condition||'').toLowerCase().startsWith('n')?'neuf':(p.condition||'').toLowerCase().startsWith('r')?'rec':'occ'}">${p.condition||''}</span>${p.grade?' '+p.grade:''}</td>
+      <td><input class="price-input" type="number" value="${p.catalogue_price||p.sale_price||''}" id="cp-${p.id}" min="0" step="0.01" placeholder="${p.sale_price||0}"></td>
+      <td style="color:#999">${p.sale_price||0} €</td>
+      <td><input class="qty-input" type="number" value="${p.stock_quantity}" id="qty-${p.id}" min="0"></td>
+      <td><button class="save-btn" onclick="saveProduct(${p.id})">💾</button><span class="saved" id="sv-${p.id}" style="display:none">✓</span></td>
+    </tr>`).join('');
+}
+
+async function toggleVis(id, btn){
+  const on=btn.classList.contains('off');
+  await fetch('/api/catalogue-admin/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({catalogue_visible:on})});
+  btn.classList.toggle('on',on); btn.classList.toggle('off',!on);
+  loadProducts();
+}
+
+async function saveProduct(id){
+  const cp=document.getElementById('cp-'+id).value;
+  const qty=document.getElementById('qty-'+id).value;
+  await fetch('/api/catalogue-admin/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({catalogue_price:cp?parseFloat(cp):null,stock_quantity:parseInt(qty)})});
+  const sv=document.getElementById('sv-'+id); sv.style.display='inline';
+  setTimeout(()=>sv.style.display='none',2000);
+}
+
+// ---- SERVICES ----
+let services=[];
+async function loadServices(){
+  const r=await fetch('/api/catalogue-admin/services');
+  services=await r.json();
+  renderServices();
+}
+
+function renderServices(){
+  const cats={reparation:'🔧 Réparations',impression:'🖨️ Impression & Photocopie'};
+  const container=document.getElementById('services-container');
+  let html='';
+  for(const [cat,label] of Object.entries(cats)){
+    const items=services.filter(s=>s.category===cat);
+    html+=`<div class="cat-header">${label}</div><div class="services-grid">`;
+    items.forEach(s=>{
+      html+=`<div class="service-row" id="svc-${s.id}">
+        <div style="flex:1">
+          <span class="svc-label">Nom</span>
+          <input type="text" value="${s.name}" id="sn-${s.id}" style="width:100%">
+        </div>
+        <div>
+          <span class="svc-label">Notre prix (€)</span>
+          <input type="number" value="${s.price||0}" id="sp-${s.id}" min="0" step="0.01">
+        </div>
+        <div>
+          <span class="svc-label">Marché (€)</span>
+          <input type="number" value="${s.price_market||''}" id="sm-${s.id}" min="0" step="0.01" placeholder="—">
+        </div>
+        <div>
+          <span class="svc-label">Délai</span>
+          <input type="text" value="${s.delay||''}" id="sd-${s.id}" style="width:70px" placeholder="1h">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span class="svc-label">Visible</span>
+          <button class="toggle ${s.visible?'on':'off'}" onclick="toggleSvc(${s.id},this)"></button>
+        </div>
+        <button class="save-btn" onclick="saveSvc(${s.id})">💾</button>
+        <button class="del-btn" onclick="delSvc(${s.id})">×</button>
+      </div>`;
+    });
+    html+='</div><br>';
+  }
+  container.innerHTML=html;
+}
+
+async function saveSvc(id){
+  const body={name:document.getElementById('sn-'+id).value,price:parseFloat(document.getElementById('sp-'+id).value)||0,price_market:parseFloat(document.getElementById('sm-'+id).value)||null,delay:document.getElementById('sd-'+id).value};
+  await fetch('/api/catalogue-admin/services/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  loadServices();
+}
+
+async function toggleSvc(id,btn){
+  const on=btn.classList.contains('off');
+  await fetch('/api/catalogue-admin/services/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({visible:on})});
+  btn.classList.toggle('on',on); btn.classList.toggle('off',!on);
+}
+
+async function delSvc(id){
+  if(!confirm('Supprimer ce service ?')) return;
+  await fetch('/api/catalogue-admin/services/'+id,{method:'DELETE'});
+  loadServices();
+}
+
+async function addService(){
+  const cat=prompt('Catégorie : reparation ou impression ?','reparation');
+  if(!cat) return;
+  const name=prompt('Nom du service :','');
+  if(!name) return;
+  await fetch('/api/catalogue-admin/services',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:cat,name,price:0,sort_order:99})});
+  loadServices();
+}
+
+// ---- SETTINGS ----
+async function loadSettings(){
+  const r=await fetch('/api/catalogue-admin/settings');
+  const cfg=await r.json();
+  Object.entries(cfg).forEach(([k,v])=>{
+    const el=document.getElementById('s-'+k);
+    if(el) el.value=v||'';
+  });
+  document.getElementById('qr-url-text').textContent=cfg.catalogue_url||'';
+  document.getElementById('qr-img').src='/api/catalogue/qrcode?t='+Date.now();
+}
+
+async function saveSettings(){
+  const keys=['shop_name','shop_address','shop_phone','catalogue_url','google_rating','google_reviews'];
+  const body={};
+  keys.forEach(k=>{const el=document.getElementById('s-'+k);if(el) body[k]=el.value;});
+  await fetch('/api/catalogue-admin/settings',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const sv=document.getElementById('settings-saved'); sv.style.display='inline';
+  setTimeout(()=>sv.style.display='none',2000);
+  document.getElementById('qr-img').src='/api/catalogue/qrcode?t='+Date.now();
+  document.getElementById('qr-url-text').textContent=body.catalogue_url||'';
+}
+
+function downloadQR(){
+  const img=document.getElementById('qr-img');
+  const a=document.createElement('a'); a.href=img.src; a.download='qrcode-catalogue.svg'; a.click();
+}
+
+loadProducts();
+</script>
+</body>
+</html>
