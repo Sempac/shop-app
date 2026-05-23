@@ -221,6 +221,187 @@ app.get('/api/rapport-comptable',async(req,res)=>{
 });
 
 /* =======================================================
+   RAPPORT COMPTABLE — GENERER PDF + EMAIL
+======================================================= */
+app.get('/api/rapport-comptable/generer', async(req,res)=>{
+  try{
+    const date=req.query.date||new Date().toISOString().split('T')[0];
+
+    /* ── mêmes requêtes que /api/rapport-comptable ── */
+    const ventes=await pool.query(`
+      SELECT p.name AS nom, COALESCE(p.supplier_name,'—') AS fournisseur,
+        oi.quantity AS qty, oi.price AS prix_unit,
+        (oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity) AS total_ligne,
+        o.payment_method
+      FROM orders o JOIN order_items oi ON oi.order_id=o.id JOIN products p ON p.id=oi.product_id
+      WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
+      ORDER BY o.id DESC,oi.id ASC`,[date]);
+    const reps=await pool.query(`
+      SELECT TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')||' '||COALESCE(device_type,'')) AS nom,
+        1 AS qty,COALESCE(final_price,estimated_price,0) AS total_ligne,payment_method
+      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
+    const totVentes=await pool.query(`
+      SELECT COALESCE(SUM((oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity)),0) AS total_ventes
+      FROM orders o JOIN order_items oi ON oi.order_id=o.id
+      WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'`,[date]);
+    const totVPay=await pool.query(`
+      SELECT
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0) WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0) WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp
+      FROM orders WHERE DATE(created_at)=$1 AND (status IS NULL OR status!='cancelled') AND payment_method!='credit'`,[date]);
+    const totR=await pool.query(`
+      SELECT COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS total_reps,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 THEN amount_cb WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_cb,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
+      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
+    const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
+
+    const t={
+      total_ventes:parseFloat(totVentes.rows[0].total_ventes),
+      total_reps:  parseFloat(totR.rows[0].total_reps),
+      total_cb:    parseFloat(totVPay.rows[0].total_cb)+parseFloat(totR.rows[0].total_cb),
+      total_esp:   parseFloat(totVPay.rows[0].total_esp)+parseFloat(totR.rows[0].total_esp),
+      total_dep:   parseFloat(totDep.rows[0].total_depenses)
+    };
+    const totalCA   = t.total_ventes + t.total_reps;
+    const netCaisse = totalCA - t.total_dep;
+    const fmt = n => Number(n||0).toFixed(2)+' EUR';
+
+    /* ── Nom du fichier ── */
+    const dateStr   = date.replace(/-/g,'');
+    const dateLabel = new Date(date+'T00:00:00').toLocaleDateString('fr-FR',
+      {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const filename  = `Rapport Comptable - The SMARTPHONE - ${dateStr}.pdf`;
+    const rapportDir= process.env.RAPPORT_DIR||'C:\\Users\\PC\\OneDrive\\Documents\\Rapport Comptable';
+    const fs   = require('fs');
+    const path = require('path');
+    fs.mkdirSync(rapportDir,{recursive:true});
+    const filePath = path.join(rapportDir,filename);
+
+    /* ── Génération PDF (pdfkit) ── */
+    const PDFDocument=require('pdfkit');
+    const doc=new PDFDocument({margin:40,size:'A4'});
+    const chunks=[];
+    doc.on('data',chunk=>chunks.push(chunk));
+    const pdfDone=new Promise((resolve,reject)=>{doc.on('end',resolve);doc.on('error',reject);});
+
+    /* En-tête */
+    doc.font('Helvetica-Bold').fontSize(14).text('The SMARTPHONE',40,40);
+    doc.font('Helvetica').fontSize(9).fillColor('#444')
+       .text("1 Avenue d'Italie, 75013 Paris",40,57)
+       .text('01 47 07 18 66  |  smartphonesatelier4@gmail.com',40,68);
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#000')
+       .text('Rapport Comptable',0,40,{align:'right'})
+       .font('Helvetica').fontSize(10)
+       .text(date.split('-').reverse().join('/'),0,57,{align:'right'})
+       .text(dateLabel,0,69,{align:'right'});
+    doc.moveTo(40,85).lineTo(555,85).lineWidth(1.5).stroke('#000');
+
+    /* Tableau détail */
+    const colX=[40,220,370,430,480];
+    const colW=[180,150, 60, 50, 75];
+    let y=95;
+    /* En-têtes colonnes */
+    doc.rect(40,y,515,16).fill('#1e293b');
+    doc.font('Helvetica-Bold').fontSize(8).fillColor('white');
+    ['Nom','Fournisseur','Qté','Type','CA'].forEach((h,i)=>{
+      const align=i>=2?'right':'left';
+      doc.text(h,colX[i],y+4,{width:colW[i],align});
+    });
+    y+=16;
+    doc.fillColor('#000').font('Helvetica').fontSize(8);
+
+    const allRows=[
+      ...ventes.rows.map(l=>({nom:l.nom,four:l.fournisseur,qty:l.qty,type:'Vente',  ca:l.total_ligne})),
+      ...reps.rows  .map(l=>({nom:l.nom||'Réparation',four:'—',qty:l.qty,type:'Réparation',ca:l.total_ligne}))
+    ];
+
+    if(allRows.length===0){
+      doc.fillColor('#888').text('Aucune opération ce jour',40,y+4,{width:515,align:'center'});
+      y+=16;
+    } else {
+      allRows.forEach((row,idx)=>{
+        const bg=idx%2===0?'#f8fafc':'#ffffff';
+        doc.rect(40,y,515,14).fill(bg);
+        doc.fillColor('#000')
+           .text(row.nom,   colX[0],y+3,{width:colW[0]-4,align:'left'})
+           .text(row.four,  colX[1],y+3,{width:colW[1]-4,align:'left'})
+           .text(String(row.qty),colX[2],y+3,{width:colW[2],align:'right'})
+           .text(row.type,  colX[3],y+3,{width:colW[3],align:'right'})
+           .text(fmt(row.ca),colX[4],y+3,{width:colW[4],align:'right'});
+        y+=14;
+      });
+    }
+
+    /* Séparateur + sous-totaux */
+    doc.moveTo(40,y).lineTo(555,y).lineWidth(0.5).stroke('#888'); y+=4;
+    [
+      ['Total Ventes', t.total_ventes, false],
+      ['Total Réparations', t.total_reps, false],
+      ['Total CA', totalCA, true]
+    ].forEach(([lbl,val,bold])=>{
+      if(bold){doc.rect(40,y,515,16).fill('#f0f0f0');doc.moveTo(40,y).lineTo(555,y).lineWidth(1).stroke('#000');}
+      doc.font(bold?'Helvetica-Bold':'Helvetica').fontSize(bold?10:8).fillColor('#000')
+         .text(lbl,40,y+3,{width:420,align:'left'})
+         .text(fmt(val),colX[4],y+3,{width:colW[4],align:'right'});
+      y+=bold?16:14;
+    });
+
+    /* Récap paiements */
+    y+=8;
+    doc.moveTo(40,y).lineTo(555,y).lineWidth(1).stroke('#000'); y+=6;
+    doc.font('Helvetica-Bold').fontSize(9).text('Récapitulatif paiements',40,y); y+=14;
+    [
+      ['CB',                 fmt(t.total_cb)],
+      ['Espèces (ES)',       fmt(t.total_esp)],
+      ['Dépenses (DP)',    '− '+fmt(t.total_dep)],
+    ].forEach(([lbl,val])=>{
+      doc.font('Helvetica').fontSize(9).fillColor('#000')
+         .text(lbl,40,y,{width:420}).text(val,colX[4],y,{width:colW[4],align:'right'});
+      y+=14;
+    });
+    doc.moveTo(40,y).lineTo(555,y).lineWidth(1).stroke('#000'); y+=4;
+    doc.rect(40,y,515,18).fill('#1e293b');
+    doc.font('Helvetica-Bold').fontSize(11).fillColor('white')
+       .text('Net Caisse',42,y+3,{width:420})
+       .text(fmt(netCaisse),colX[4],y+3,{width:colW[4],align:'right'});
+    y+=18;
+
+    /* Pied de page */
+    y+=14;
+    doc.font('Helvetica').fontSize(8).fillColor('#aaa')
+       .text('Généré le '+new Date().toLocaleString('fr-FR'),40,y,{align:'right'});
+
+    doc.end();
+    await pdfDone;
+    const pdfBuffer=Buffer.concat(chunks);
+
+    /* ── Sauvegarde fichier ── */
+    fs.writeFileSync(filePath,pdfBuffer);
+
+    /* ── Envoi email ── */
+    let emailSent=false, emailError=null;
+    try{
+      const nodemailer=require('nodemailer');
+      const transporter=nodemailer.createTransport({
+        host:'smtp.gmail.com',port:465,secure:true,
+        auth:{user:process.env.EMAIL_USER,pass:process.env.EMAIL_PASS}
+      });
+      await transporter.sendMail({
+        from:`"The SMARTPHONE" <${process.env.EMAIL_USER}>`,
+        to:process.env.EMAIL_TO||'ittech75013@gmail.com',
+        subject:`Rapport Comptable – The SMARTPHONE – ${date}`,
+        text:`Bonjour,\n\nVeuillez trouver en pièce jointe le rapport comptable du ${dateLabel}.\n\nThe SMARTPHONE\n1 Avenue d'Italie, 75013 Paris`,
+        attachments:[{filename,content:pdfBuffer,contentType:'application/pdf'}]
+      });
+      emailSent=true;
+    }catch(emailErr){emailError=emailErr.message;}
+
+    res.json({success:true,saved:filePath,filename,emailSent,emailError});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* =======================================================
    REPAIRS — /search AVANT /:id
 ======================================================= */
 app.get('/api/repairs',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs ORDER BY id DESC`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});

@@ -77,9 +77,9 @@ table.sticky thead tr th,
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;">
     <button onclick="window.print()" style="background:#475569;">🖨️ Imprimer</button>
-    <button onclick="savePDF()" style="background:#7c3aed;">💾 Enregistrer PDF</button>
+    <button onclick="savePDF(this)" style="background:#7c3aed;">💾 Enregistrer PDF</button>
     <button onclick="exportExcelRapport()" style="background:#16a34a;">📊 Export Excel</button>
-    <button onclick="sendEmailRapport()" style="background:#0891b2;">✉️ Email</button>
+    <button onclick="sendEmailRapport(this)" style="background:#0891b2;">✉️ Email</button>
     <button onclick="sendWhatsAppRapport()" style="background:#25d366;">💬 WhatsApp</button>
     <button onclick="location.href='index.html'" style="background:#1e40af;">🏠 Accueil</button>
   </div>
@@ -206,12 +206,25 @@ function renderRapport(date,data){
 
 loadRapport();
 
-/* ══ ENREGISTRER PDF ══ */
-function savePDF() {
+/* ══ ENREGISTRER PDF (serveur → fichier + email) ══ */
+async function savePDF(btn) {
   var content = document.getElementById('content');
-  if (!content || content.style.display === 'none') { alert('Generez d abord le rapport'); return; }
-  alert('Dans la boite d impression qui va s ouvrir:\n\n1. Choisissez "Enregistrer en PDF" comme imprimante\n2. Cliquez sur Enregistrer');
-  window.print();
+  if (!content || content.style.display === 'none') { alert('Générez d\'abord le rapport.'); return; }
+  var date = document.getElementById('datePicker').value;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération…'; }
+  try {
+    var res  = await fetch('/api/rapport-comptable/generer?date=' + date);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    var msg = '✅ PDF enregistré :\n' + data.filename;
+    if (data.emailSent)  msg += '\n\n✉️ Email envoyé à ' + (data.emailTo || '');
+    if (data.emailError) msg += '\n\n⚠️ Email non envoyé : ' + data.emailError;
+    alert(msg);
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Enregistrer PDF'; }
+  }
 }
 
 /* ══ EXPORT EXCEL ══ */
@@ -267,46 +280,24 @@ function exportExcelRapport() {
   URL.revokeObjectURL(url);
 }
 
-/* ══ EMAIL ══ */
-function sendEmailRapport() {
+/* ══ EMAIL (même route serveur que savePDF) ══ */
+async function sendEmailRapport(btn) {
   var content = document.getElementById('content');
-  if (!content || content.style.display === 'none') { alert('Generez d abord le rapport'); return; }
-  var date  = document.getElementById('datePicker').value;
-  var dl    = new Date(date+'T00:00:00').toLocaleDateString('fr-FR',
-    {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-
-  /* Collecter les données */
-  var lignes = [];
-  content.querySelectorAll('tbody tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
-    if (tds.length >= 5) {
-      lignes.push(tds[0].textContent.trim() + ' | ' + tds[3].textContent.trim() + ' | ' + tds[4].textContent.trim());
-    }
-  });
-
-  var totals = [];
-  content.querySelectorAll('tfoot tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
-    if (tds.length >= 2) totals.push(tds[0].textContent.trim() + ' : ' + tds[tds.length-1].textContent.trim());
-  });
-
-  var recap = [];
-  content.querySelectorAll('.totals-table tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
-    if (tds.length >= 2) recap.push(tds[0].textContent.trim() + ' : ' + tds[1].textContent.trim());
-  });
-
-  var subject = encodeURIComponent('Rapport Comptable - The SMARTPHONE - ' + date);
-  var bodyText = 'Rapport Comptable - The SMARTPHONE\n' +
-    dl + '\n\n' +
-    '=== DETAIL ===\n' + lignes.join('\n') + '\n\n' +
-    '=== TOTAUX ===\n' + totals.join('\n') + '\n\n' +
-    '=== RECAP PAIEMENTS ===\n' + recap.join('\n') + '\n\n' +
-    'The SMARTPHONE\n1 Avenue d\'Italie, 75013 Paris\n01 47 07 18 66';
-
-  var email = prompt('Email destinataire :') || '';
-  if (!email) return;
-  window.open('mailto:' + email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText));
+  if (!content || content.style.display === 'none') { alert('Générez d\'abord le rapport.'); return; }
+  if (!confirm('Envoyer le rapport par email à ittech75013@gmail.com ?')) return;
+  var date = document.getElementById('datePicker').value;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
+  try {
+    var res  = await fetch('/api/rapport-comptable/generer?date=' + date);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    if (data.emailSent)  alert('✅ Email envoyé avec succès !\n' + data.filename);
+    else                 alert('⚠️ PDF généré mais email non envoyé :\n' + (data.emailError||''));
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✉️ Email'; }
+  }
 }
 
 /* ══ WHATSAPP ══ */
