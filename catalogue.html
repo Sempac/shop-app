@@ -154,6 +154,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
     <div class="chip on" onclick="setPF('type','',this)">Tout</div>
     <div class="chip" onclick="setPF('type','Smartphone',this)">📱 Smartphone</div>
     <div class="chip" onclick="setPF('type','Tablette',this)">📟 Tablette</div>
+    <div class="chip" onclick="setPF('type','PC Portable',this)">💻 PC Portable</div>
     <div class="chip" onclick="setPF('type','Accessoire',this)">🎧 Accessoire</div>
   </div>
   <div class="sub-chips-wrap" id="accSubChips" style="display:none">
@@ -161,12 +162,11 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
     <div class="sub-chip on" onclick="setAccSub('',this)">Tout</div>
     <div class="sub-chip" onclick="setAccSub('cable',this)">🔌 Câble</div>
     <div class="sub-chip" onclick="setAccSub('chargeur',this)">⚡ Chargeur</div>
-    <div class="sub-chip" onclick="setAccSub('ecouteur',this)">🎧 Écouteurs</div>
+    <div class="sub-chip" onclick="setAccSub('ecouteur',this)">🎧 Audio</div>
     <div class="sub-chip" onclick="setAccSub('coque',this)">📱 Coque</div>
-    <div class="sub-chip" onclick="setAccSub('vitre',this)">🔲 Vitre protec.</div>
-    <div class="sub-chip" onclick="setAccSub('batterie',this)">🔋 Batterie</div>
-    <div class="sub-chip" onclick="setAccSub('support',this)">🗂️ Support</div>
-    <div class="sub-chip" onclick="setAccSub('autre',this)">📦 Autre</div>
+    <div class="sub-chip" onclick="setAccSub('vitre',this)">🔲 Protection écran</div>
+    <div class="sub-chip" onclick="setAccSub('sim',this)">📶 Carte SIM</div>
+    <div class="sub-chip" onclick="setAccSub('autre',this)">📦 Autres</div>
   </div>
   <div class="chips-wrap" id="brandChips" style="display:none">
     <span class="chips-label" id="t_lbrand">Marque</span>
@@ -347,7 +347,10 @@ var ISSUES={Smartphone:[{id:"ecran",icon:"🔲",label:"Écran / Vitre",sub:["Vit
 var lang="fr",allProducts=[],allServices=[],shopPhone="33686648279",shopEmail="smartphonesatelier4@gmail.com";
 var pf={type:"",brand:"",grade:"",cond:"",storage:"",sim:"",accSub:""};
 var dState={step:1,type:"",brand:"",model:"",issue:"",subIssue:"",desc:""};
-var ACC_SUB_KEYWORDS={cable:["cable","câble","cordon","usb","lightning","type-c","typec"],chargeur:["chargeur","adaptateur","secteur","charge rapide","fast charge"],ecouteur:["ecouteur","écouteur","airpod","earbud","casque","oreillette"],coque:["coque","housse","etui","étui","bumper","cover"],vitre:["vitre","verre","tempered","film","protecteur","screen protector"],batterie:["batterie externe","power bank","batterie portable"],support:["support","holder","bras"],autre:[]};
+/* Mapping type → catégories DB exactes */
+var TYPE_CATS={Smartphone:["Smartphone"],Tablette:["Tablette"],"PC Portable":["PC Portable"],Accessoire:["Accessoire Info","Coque","Protection écran","Câble","Audio","Chargeur","Carte SIM"]};
+/* Mapping sous-catégorie accessoire → catégories DB */
+var ACC_SUB_CATS={cable:["Câble"],chargeur:["Chargeur"],ecouteur:["Audio"],coque:["Coque"],vitre:["Protection écran"],sim:["Carte SIM"],autre:["Accessoire Info"]};
 
 function setLang(l,btn){lang=l;document.querySelectorAll(".lb").forEach(function(b){b.classList.remove("on")});btn.classList.add("on");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";applyT();renderProducts();renderRepairs();renderPrint();}
 function applyT(){
@@ -366,7 +369,8 @@ function setPF(key,val,btn){pf[key]=val;btn.parentElement.querySelectorAll(".chi
 function setAccSub(val,btn){pf.accSub=val;document.querySelectorAll("#accSubChips .sub-chip").forEach(function(c){c.classList.remove("on")});btn.classList.add("on");renderProducts();}
 function toggleAdv(btn){btn.classList.toggle("open");document.getElementById("advBody").classList.toggle("open");}
 function buildBrandChips(){
-  var filtered=pf.type?allProducts.filter(function(p){return p.category===pf.type;}):allProducts;
+  var cats=pf.type?(TYPE_CATS[pf.type]||[pf.type]):null;
+  var filtered=cats?allProducts.filter(function(p){return cats.includes(p.category);}):allProducts;
   var bset=new Set();filtered.forEach(function(p){var b=extractBrand(p.name);if(b)bset.add(b);});
   var brands=Array.from(bset).sort();
   var wrap=document.getElementById("brandChips");
@@ -398,15 +402,14 @@ function renderProducts(){
   var t=T[lang];
   var f=allProducts.filter(function(p){
     var price=Number(p.catalogue_price||p.sale_price||0);
-    if(pf.type&&p.category!==pf.type)return false;
+    if(pf.type){var cats=TYPE_CATS[pf.type]||[pf.type];if(!cats.includes(p.category))return false;}
     if(pf.brand&&extractBrand(p.name)!==pf.brand)return false;
     if(pf.grade&&p.grade!==pf.grade)return false;
     if(pf.cond&&p.condition!==pf.cond)return false;
     if(pf.storage){var s=extractStorage(p.name);if(s!==pf.storage)return false;}
     if(pf.sim==="dual"&&!isDualSim(p.name))return false;
     if(pf.sim==="single"&&isDualSim(p.name))return false;
-    if(pf.accSub&&pf.accSub!=="autre"){var kws=ACC_SUB_KEYWORDS[pf.accSub]||[];var nm=(p.name||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");if(!kws.some(function(k){return nm.includes(k);}))return false;}
-    if(pf.accSub==="autre"&&pf.type==="Accessoire"){var allKws=[];Object.values(ACC_SUB_KEYWORDS).forEach(function(a){allKws=allKws.concat(a);});var nm2=(p.name||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");if(allKws.some(function(k){return nm2.includes(k);}))return false;}
+    if(pf.accSub){var subCats=ACC_SUB_CATS[pf.accSub]||[];if(subCats.length&&!subCats.includes(p.category))return false;}
     if(price<pmin||price>pmax)return false;
     var n=(p.name||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
     if(search&&!n.includes(search)&&!(p.color||"").toLowerCase().includes(search))return false;
