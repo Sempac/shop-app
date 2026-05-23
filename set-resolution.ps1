@@ -25,9 +25,9 @@ $dm.dmSize = [System.Runtime.InteropServices.Marshal]::SizeOf($dm)
 
 $before = "$($dm.dmPelsWidth)x$($dm.dmPelsHeight)"
 
-# Passer a 1280x720 — texte ~50% plus grand
-$dm.dmPelsWidth  = 1280
-$dm.dmPelsHeight = 720
+# Passer a 1024x768 — texte encore plus grand
+$dm.dmPelsWidth  = 1024
+$dm.dmPelsHeight = 768
 $dm.dmFields     = 0x180000   # DM_PELSWIDTH | DM_PELSHEIGHT
 
 $result = [DisplayHelper]::ChangeDisplaySettings([ref]$dm, 0)
