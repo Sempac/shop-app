@@ -1427,12 +1427,17 @@ app.post('/api/products/import-csv', async(req,res)=>{
   try{
     const{rows}=req.body; // Array of product objects
     await client.query('BEGIN');
-    var imported=0, errors=[];
+    var imported=0, errors=[], skipped=0;
     for(var i=0;i<rows.length;i++){
       var row=rows[i];
       if(!row.name||!row.category||!row.prix_vente){
         errors.push({line:i+2,error:'Champs obligatoires manquants (nom, categorie, prix_vente)'});
         continue;
+      }
+      /* Anti-doublon IMEI */
+      if(row.imei&&row.imei.trim()){
+        const existing=await client.query('SELECT id FROM products WHERE imei=$1',[row.imei.trim()]);
+        if(existing.rows[0]){skipped++;continue;}
       }
       try{
         await client.query(`
@@ -1916,6 +1921,24 @@ app.delete('/api/commandes/:id', async(req,res)=>{
     res.json({success:true});
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
   finally{client.release();}
+});
+
+
+/* ── CATALOGUE PUBLIC ── */
+app.get('/api/catalogue', async(req,res)=>{
+  try{
+    const{category,search,lang}=req.query;
+    let sql=`SELECT id,name,category,condition,color,grade,sale_price,
+             statut_produit,supplier_name,notes,imei
+             FROM products 
+             WHERE statut_produit='DISPONIBLE' AND sale_price>0`;
+    const p=[];
+    if(category){p.push(category);sql+=` AND category=$${p.length}`;}
+    if(search){p.push('%'+search+'%');sql+=` AND name ILIKE $${p.length}`;}
+    sql+=' ORDER BY category,name ASC';
+    const r=await pool.query(sql,p);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
 });
 
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));

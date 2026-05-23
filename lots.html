@@ -72,8 +72,10 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 /* Badge statut */
 .st-badge{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:bold;white-space:nowrap;}
 .st-EN_TEST      {background:#dbeafe;color:#1e40af;}
-.st-EN_REPARATION{background:#fef3c7;color:#92400e;}
-.st-EN_STOCK     {background:#dcfce7;color:#166534;}
+.st-REPARATION   {background:#fef3c7;color:#92400e;}
+.st-EN_REPARATION{background:#fef3c7;color:#92400e;} /* compat ancien */
+.st-DISPONIBLE   {background:#dcfce7;color:#166534;}
+.st-EN_STOCK     {background:#dcfce7;color:#166534;} /* compat ancien */
 .st-VENDU        {background:#f1f5f9;color:#374151;}
 .st-IRREPARABLE  {background:#fee2e2;color:#991b1b;}
 
@@ -157,6 +159,7 @@ table.sticky thead tr th,
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="tooltips.css">
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="topbar">
@@ -521,7 +524,7 @@ function renderDetail(data, stockProds, statsData){
         :costs.map(c=>{
           const cls={piece:'ct-piece',main_oeuvre:'ct-mo',reparateur_externe:'ct-ext',autre:'ct-autre'}[c.cost_type]||'ct-autre';
           const lbl={piece:'Pièce',main_oeuvre:'M.O.',reparateur_externe:'Ext.',transport:'Transport',autre:'Autre'}[c.cost_type]||'—';
-          const itName=c.lot_item_id?(currentItems.find(i=>i.id===c.lot_item_id)?.name||'—'):'Lot entier';
+          const itName=c.product_id?(c.product_name||'Produit #'+c.product_id):'Lot entier';
           return `<div class="cost-row">
             <div><span class="ctag ${cls}">${lbl}</span><b style="margin-left:6px">${c.description}</b><span style="font-size:10px;color:#94a3b8;margin-left:6px">${itName}</span></div>
             <div style="display:flex;align-items:center;gap:8px">
@@ -695,20 +698,36 @@ async function changeStatutStock(prodId, newStatut) {
   } catch(e) { alert('Erreur: ' + e.message); }
 }
 
-/* ══ STATUT ══ */
-async function changeStatus(id,status){
-  const body={status};
+/* ══ STATUT (appareils dans products) ══ */
+async function changeStatus(prodId,status){
+  /* Ancienne API lot_items supprimée — on passe par products */
+  const body={statut_produit:status};
   if(status==='VENDU'){const p=prompt('Prix de vente (€) ?');if(p===null){loadLot(currentLot.id);return;}body.sale_price=Number(p);}
-  await fetch('/api/lots/items/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  loadLot(currentLot.id);
+  try{
+    const r=await fetch('/api/products/'+prodId+'/statut',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    loadLot(currentLot.id);
+  }catch(e){alert('❌ '+e.message);}
 }
 
-async function editNote(id){
-  const it=currentItems.find(i=>i.id===id);
+async function editNote(prodId){
+  /* Les appareils sont dans products — on utilise le champ notes */
+  const it=window._currentStockProds&&window._currentStockProds.find(i=>i.id===prodId);
   const n=prompt('Note sur cet appareil :',it?.notes||'');
   if(n===null)return;
-  await fetch('/api/lots/items/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:it?.status||'EN_TEST',notes:n})});
-  loadLot(currentLot.id);
+  try{
+    /* Mettre à jour via PUT /api/products/full/:id en passant uniquement notes */
+    const r=await fetch('/api/products/full/'+prodId,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:it?.name||'',category:it?.category||'Smartphone',condition:it?.condition||'NEUF',
+        color:it?.color||null,grade:it?.grade||null,purchase_price:it?.purchase_price||0,
+        sale_price:it?.sale_price||0,stock_quantity:it?.stock_quantity||1,stock_alert:it?.stock_alert||3,
+        statut_produit:it?.statut_produit||'EN_TEST',type_entree:it?.type_entree||'LOT',
+        lot_id:it?.lot_id||currentLot?.id,notes:n
+      })});
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    loadLot(currentLot.id);
+  }catch(e){alert('❌ '+e.message);}
 }
 
 /* ══ MODAL LOT ══ */
@@ -844,7 +863,22 @@ async function saveItem(){
       if(!name){alert('⚠️ Nom obligatoire');return;}
       body={name,category:document.getElementById('i_cat').value,color:document.getElementById('i_color').value,grade:document.getElementById('i_grade').value||null,supplier_name:document.getElementById('i_supplier').value,purchase_price:Number(document.getElementById('i_price_n').value||0),sale_price:Number(document.getElementById('i_sell_n').value||0),notes:document.getElementById('i_notes_n').value};
     }
-    const res=await fetch('/api/lots/'+currentLot.id+'/items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    /* Route lot_items supprimée → on crée directement dans products */
+    const prodBody = itemMode==='exist'
+      ? {lot_id:currentLot.id, purchase_price:body.purchase_price, sale_price:body.sale_price, notes:body.notes}
+      : {name:body.name,category:body.category||'Smartphone',condition:'OCCASION',color:body.color||null,
+         grade:body.grade||null,supplier_name:body.supplier_name||null,
+         purchase_price:body.purchase_price||0,sale_price:body.sale_price||0,
+         stock_quantity:1,stock_alert:3,statut_produit:'EN_TEST',type_entree:'LOT',
+         lot_id:currentLot.id,notes:body.notes||null};
+    let res;
+    if(itemMode==='exist'){
+      /* Lier le produit existant au lot */
+      res=await fetch('/api/products/full/'+selProdId,{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...allProducts.find(p=>p.id===selProdId),...prodBody})});
+    } else {
+      res=await fetch('/api/products/full',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(prodBody)});
+    }
     const d=await res.json();if(d.error)throw new Error(d.error);
     closeModal('mItem');allProducts=await fetch('/api/products').then(r=>r.json());
     loadLot(currentLot.id);
@@ -858,10 +892,13 @@ function fillPiecesSelect(){
   sel.innerHTML='<option value="">— Choisir —</option>'+pieces.map(p=>`<option value="${p.id}" data-price="${p.purchase_price||0}">${p.name} (${p.stock_quantity})</option>`).join('');
 }
 
-function openModalCost(itemId){
+function openModalCost(prodId){
+  /* c_item → product_id de l'appareil concerné (ou vide = frais sur lot entier) */
   const sel=document.getElementById('c_item');
-  sel.innerHTML='<option value="">— Lot entier —</option>'+currentItems.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
-  if(itemId)sel.value=itemId;
+  const prods = window._currentStockProds || [];
+  sel.innerHTML='<option value="">— Lot entier —</option>'+prods.map(p=>`<option value="${p.id}">${p.name||'Produit #'+p.id}</option>`).join('');
+  if(prodId)sel.value=prodId;
+  var itemId = prodId; /* garder compat nom local */
   ['c_desc','c_amount'].forEach(x=>document.getElementById(x).value='');
   document.getElementById('c_qty').value='1';document.getElementById('c_type').value='piece';
   document.getElementById('rowStock').style.display='block';
@@ -874,8 +911,9 @@ async function saveCost(){
   const type=document.getElementById('c_type').value;
   const pid=type==='piece'?document.getElementById('c_prod').value:null;
   try{
+    const selProdCout = document.getElementById('c_item').value || null;
     const res=await fetch('/api/lots/'+currentLot.id+'/costs',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({lot_item_id:document.getElementById('c_item').value||null,description:desc,amount:Number(document.getElementById('c_amount').value||0),cost_type:type,repair_type:type==='reparateur_externe'?'externe':'interne',product_id:pid||null,quantity:Number(document.getElementById('c_qty').value||1)})});
+      body:JSON.stringify({description:desc,amount:Number(document.getElementById('c_amount').value||0),cost_type:type,repair_type:type==='reparateur_externe'?'externe':'interne',product_id:pid||selProdCout||null,quantity:Number(document.getElementById('c_qty').value||1)})});
     const d=await res.json();if(d.error)throw new Error(d.error);
     closeModal('mCost');allProducts=await fetch('/api/products').then(r=>r.json());fillPiecesSelect();loadLot(currentLot.id);
   }catch(e){alert('❌ '+e.message);}
@@ -977,73 +1015,42 @@ async function importStockFile(input) {
   reader.readAsArrayBuffer(file);
 }
 
-/* ══ TRANSFERT LOT → STOCK / ATELIER ══ */
-async function lotItemToStock(itemId, mode) {
-  /* Récupérer les infos de l'item */
-  var item = null;
-  try {
-    var res  = await fetch('/api/lot-items/' + itemId);
-    item = await res.json();
-  } catch(e) {
-    alert('Erreur chargement item'); return;
-  }
+/* ══ TRANSFERT LOT → STOCK / ATELIER ══
+   Ces fonctions opèrent directement sur products (lot_items supprimé)
+   itemId = products.id
+============================================================ */
+async function lotItemToStock(prodId, mode) {
+  /* Récupérer le produit depuis la liste en mémoire */
+  var item = (window._currentStockProds || []).find(function(p){ return p.id === prodId; });
+  if (!item) { alert('Produit non trouvé'); return; }
 
-  var name = item.name || '';
-  var cat  = mode === 'pieces' ? 'Pièce détachée' : 'Smartphone';
-  var cond = mode === 'pieces' ? 'OCCASION' : 'RECONDITIONNE';
-
-  /* Modal de saisie */
-  var sellPrice = prompt('Transfert → Stock (' + (mode==='pieces'?'Pièces':'Vente directe') + ')\nProduit : ' + name + '\nPrix de vente (€) ?');
+  var sellPrice = prompt(
+    'Transfert → Stock (' + (mode==='pieces'?'Pièces':'Vente directe') + ')\n' +
+    'Produit : ' + (item.name||'') + '\nPrix de vente (€) ?',
+    item.sale_price || ''
+  );
   if (sellPrice === null) return;
   sellPrice = parseFloat(sellPrice) || 0;
 
-  var qty = parseInt(prompt('Quantité ?', '1') || '1');
-  if (qty < 1) qty = 1;
-
   try {
-    /* Créer dans le stock */
-    var res2 = await fetch('/api/products/quick', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        name:           name,
-        category:       cat,
-        condition:      cond,
-        purchase_price: item.purchase_price || 0,
-        sale_price:     sellPrice,
-        stock_quantity: qty,
-        stock_alert:    2,
-        supplier_name:  'Lot #' + (item.lot_id || (currentLot?currentLot.id:'')),
-        notes:          'Issu du lot #' + (item.lot_id || (currentLot?currentLot.id:''))
-      })
-    });
-    var d2 = await res2.json();
-    if (d2.error) throw new Error(d2.error);
-
-    /* Mettre à jour le statut de l'item */
-    await fetch('/api/lot-items/' + itemId, {
+    /* Passer le produit en DISPONIBLE avec le prix de vente */
+    var r = await fetch('/api/products/'+prodId+'/statut', {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({status: mode === 'pieces' ? 'EN_STOCK' : 'EN_STOCK'})
+      body: JSON.stringify({statut_produit:'DISPONIBLE', sale_price:sellPrice})
     });
-
-    alert('✅ ' + name + ' ajouté au stock !');
-    /* Recharger le lot */
-    var lotId = document.querySelector('[data-active-lot]');
+    var d = await r.json();
+    if (d.error) throw new Error(d.error);
+    alert('✅ ' + (item.name||'Produit') + ' disponible en stock au prix ' + sellPrice.toFixed(2) + ' €');
     if (currentLot) loadLot(currentLot.id);
   } catch(e) {
     alert('❌ Erreur : ' + e.message);
   }
 }
 
-async function lotItemToRepair(itemId) {
-  var item = null;
-  try {
-    var res  = await fetch('/api/lot-items/' + itemId);
-    item = await res.json();
-  } catch(e) {
-    alert('Erreur chargement item'); return;
-  }
+async function lotItemToRepair(prodId) {
+  var item = (window._currentStockProds || []).find(function(p){ return p.id === prodId; });
+  if (!item) { alert('Produit non trouvé'); return; }
 
   var panne = prompt('Envoyer en atelier\nProduit : ' + (item.name||'') + '\nPanne / réparation à faire ?');
   if (!panne) return;
@@ -1051,33 +1058,15 @@ async function lotItemToRepair(itemId) {
   var prixEstime = parseFloat(prompt('Prix estimé réparation (€) ?', '0') || '0');
 
   try {
-    /* Créer la réparation */
-    var res2 = await fetch('/api/repairs', {
+    /* Utiliser la route dédiée qui crée la fiche réparation et met à jour le produit */
+    var r = await fetch('/api/products/' + prodId + '/to-repair', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        customer_name:   'LOT #' + (item.lot_id || itemId),
-        phone:           '',
-        device_type:     'Smartphone',
-        brand:           (item.name || '').split(' ')[0] || '',
-        model:           (item.name || '').split(' ').slice(1).join(' ') || item.name || '',
-        issue:           panne,
-        estimated_price: prixEstime,
-        comment:         'Issu du lot #' + (item.lot_id || (currentLot?currentLot.id:'')) + ' — item #' + itemId,
-        status:          'EN_ATTENTE'
-      })
+      body: JSON.stringify({panne: panne, prix_estime: prixEstime})
     });
-    var d2 = await res2.json();
-    if (d2.error) throw new Error(d2.error);
-
-    /* Mettre à jour statut item */
-    await fetch('/api/lot-items/' + itemId, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({status: 'EN_REPARATION'})
-    });
-
-    alert('✅ Réparation créée ! REP#' + (d2.numero_rep || d2.id) + '\nStatut : EN_ATTENTE');
+    var d = await r.json();
+    if (d.error) throw new Error(d.error);
+    alert('✅ Réparation créée ! REP#' + (d.repair.numero_rep || d.repair.id) + '\nStatut : EN_ATTENTE');
     if (currentLot) loadLot(currentLot.id);
   } catch(e) {
     alert('❌ Erreur : ' + e.message);

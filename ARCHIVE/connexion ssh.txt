@@ -1,1 +1,70 @@
 100.126.44.43
+
+
+
+git add index.html sales.html repairs.html devis.html add_fournisseur_vendeur.sql
+git status
+Vérifiez que tout est bon puis :
+
+git commit -m "feature: harmonisation ventes/repairs/devis + filtres repairs + calendrier lundi + ordre modules"
+git push origin master
+
+
+cmd pc dev:
+
+ssh pc@100.126.44.43
+
+cd C:\apps\shop-app
+git pull origin master
+npm install
+Puis psql :
+sql
+SET search_path TO public;
+\i 'C:/apps/shop-app/add_fournisseur_vendeur.sql'
+Puis redémarrez :
+cmd
+node server.js
+
+cd C:\apps\shop-app
+git pull origin master
+Puis psql :
+"C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d shop_db
+
+DANS PSQL: 
+SET search_path TO public;
+\i 'C:/apps/shop-app/add_fournisseur_vendeur.sql'
+\q
+
+Puis redémarrer le serveur :
+cmd
+taskkill /F /IM node.exe
+node server.js
+
+
+*****************acces distant via https***********
+
+tailscale funnel status
+Si ça affiche :
+# Funnel on:
+https://desktop-dpd7qn6.taild4a8c6.ts.net/
+|-- proxy http://127.0.0.1:3000
+→ il tourne ✅
+Si ça affiche No serve config → il est arrêté, relance tailscale funnel 3000.Vous avez dit : pc@DESKTOP-DPD7QN6 C:\Users\PC>tailscale funnel statuspc@DESKTOP-DPD7QN6 C:\Users\PC>tailscale funnel status
+No serve config14:05Claude a répondu : Arrêté !Arrêté ! Relance :
+bashtailscale funnel 3000Vous avez dit : pc@DESKTOP-DPD7QN6 C:\Users\PC>tailscale funnel 3000pc@DESKTOP-DPD7QN6 C:\Users\PC>tailscale funnel 3000
+Available on the internet:
+https://desktop-dpd7qn6.taild4a8c6.ts.net/
+|-- proxy http://127.0.0.1:300014:06Claude a répondu : Parfait, c'est reparti !Parfait, c'est reparti ! 🎉
+Reteste l'URL :
+https://desktop-dpd7qn6.taild4a8c6.ts.net/login.html
+
+Pour éviter ce problème à l'avenir, lance le funnel en arrière-plan de façon permanente :
+bashtailscale funnel --bg 3000
+Comme ça il redémarre automatiquement même après un reboot.Vous avez dit : Cette page ne fonctionne pasCette page ne fonctionne pas
+Impossible de traiter cette demande via desktop-dpd7qn6.taild4a8c6.ts.net à l'heure actuelle.
+HTTP ERROR 50214:07Claude a répondu : L'erreur 502 signifie que le funnel tourne mais que Node.L'erreur 502 signifie que le funnel tourne mais que Node.js est arrêté. Relance le serveur :
+bashcd C:\apps\shop-app
+node server.js
+
+
+****************************************************
