@@ -13,6 +13,14 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 .logo{font-size:24px;font-weight:800;letter-spacing:-.5px;position:relative;}.logo span{color:var(--ac);}
 .rating{display:inline-flex;align-items:center;gap:5px;background:rgba(232,255,0,.1);border:1px solid rgba(232,255,0,.25);border-radius:20px;padding:3px 11px;margin-top:7px;font-size:12px;color:var(--ac);}
 .tagline{font-size:12px;color:var(--mu);margin-top:5px;}.hero-addr{font-size:11px;color:var(--mu);margin-top:3px;}
+/* PROMO BANNER */
+.promo-bar{display:flex;justify-content:center;align-items:center;gap:0;background:linear-gradient(90deg,#0d1a0d,#131a13,#0d1a0d);border-top:1px solid rgba(0,230,118,.2);border-bottom:1px solid rgba(0,230,118,.2);overflow:hidden;}
+.promo-scroll{display:flex;gap:32px;padding:9px 24px;animation:scroll-promo 18s linear infinite;white-space:nowrap;}
+.promo-bar:hover .promo-scroll{animation-play-state:paused;}
+@keyframes scroll-promo{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.promo-item{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:#a0d0a0;}
+.promo-item strong{color:var(--gr);font-size:13px;font-weight:700;}
+.promo-sep{color:rgba(0,230,118,.3);font-size:16px;}
 .lang-bar{display:flex;justify-content:center;gap:4px;flex-wrap:wrap;padding:8px 12px;background:var(--s);border-bottom:1px solid var(--brd);}
 .lb{padding:3px 10px;border-radius:20px;border:1px solid var(--brd);background:0;color:var(--mu);cursor:pointer;font-size:11px;transition:all .2s;}
 .lb:hover,.lb.on{background:var(--ac);color:#000;border-color:var(--ac);font-weight:700;}
@@ -130,6 +138,28 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
   <div><span class="rating" id="heroRating">⭐ 4.8 · 485 avis Google</span></div>
   <div class="tagline" id="heroTagline">Réparation · Vente · Impression — Paris 13e</div>
   <div class="hero-addr" id="heroAddr">📍 1 Avenue d'Italie, 75013 Paris</div>
+</div>
+<!-- PROMO BANNER -->
+<div class="promo-bar">
+  <div class="promo-scroll" id="promoBand">
+    <span class="promo-item">⚡ Réparation express <strong>en 30 min</strong></span>
+    <span class="promo-sep">·</span>
+    <span class="promo-item">🔬 Diagnostic <strong>offert</strong> sur place</span>
+    <span class="promo-sep">·</span>
+    <span class="promo-item">⭐ <strong>4.8/5</strong> — 485 avis Google</span>
+    <span class="promo-sep">·</span>
+    <span class="promo-item">📍 Paris 13e — <strong>Sans rendez-vous</strong></span>
+    <span class="promo-sep">·</span>
+    <!-- Duplicate pour boucle fluide -->
+    <span class="promo-item">⚡ Réparation express <strong>en 30 min</strong></span>
+    <span class="promo-sep">·</span>
+    <span class="promo-item">🔬 Diagnostic <strong>offert</strong> sur place</span>
+    <span class="promo-sep">·</span>
+    <span class="promo-item">⭐ <strong>4.8/5</strong> — 485 avis Google</span>
+    <span class="promo-sep">·</span>
+    <span class="promo-item">📍 Paris 13e — <strong>Sans rendez-vous</strong></span>
+    <span class="promo-sep">·</span>
+  </div>
 </div>
 <div class="lang-bar">
   <button class="lb on" onclick="setLang('fr',this)">🇫🇷 FR</button>
@@ -352,7 +382,23 @@ var TYPE_CATS={Smartphone:["Smartphone"],Tablette:["Tablette"],"PC Portable":["P
 /* Mapping sous-catégorie accessoire → catégories DB */
 var ACC_SUB_CATS={cable:["Câble"],chargeur:["Chargeur"],ecouteur:["Audio"],coque:["Coque"],vitre:["Protection écran"],sim:["Carte SIM"],autre:["Accessoire Info"]};
 
-function setLang(l,btn){lang=l;document.querySelectorAll(".lb").forEach(function(b){b.classList.remove("on")});btn.classList.add("on");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";applyT();renderProducts();renderRepairs();renderPrint();}
+var PROMO={
+  fr:["⚡ Réparation express <strong>en 30 min</strong>","🔬 Diagnostic <strong>offert</strong> sur place","⭐ <strong>4.8/5</strong> — 485 avis Google","📍 Paris 13e — <strong>Sans rendez-vous</strong>"],
+  en:["⚡ Express repair <strong>in 30 min</strong>","🔬 <strong>Free diagnostic</strong> in store","⭐ <strong>4.8/5</strong> — 485 Google reviews","📍 Paris 13 — <strong>No appointment needed</strong>"],
+  ar:["⚡ إصلاح سريع <strong>في 30 دقيقة</strong>","🔬 تشخيص <strong>مجاني</strong> في المحل","⭐ <strong>4.8/5</strong> — 485 تقييم","📍 باريس 13 — <strong>بدون موعد</strong>"],
+  zh:["⚡ 快速维修 <strong>30分钟</strong>","🔬 店内<strong>免费诊断</strong>","⭐ <strong>4.8/5</strong> — 485条谷歌评价","📍 巴黎13区 — <strong>无需预约</strong>"],
+  es:["⚡ Reparación express <strong>en 30 min</strong>","🔬 Diagnóstico <strong>gratuito</strong> en tienda","⭐ <strong>4.8/5</strong> — 485 reseñas","📍 París 13 — <strong>Sin cita previa</strong>"],
+  it:["⚡ Riparazione express <strong>in 30 min</strong>","🔬 Diagnosi <strong>gratuita</strong> in negozio","⭐ <strong>4.8/5</strong> — 485 recensioni","📍 Parigi 13 — <strong>Senza appuntamento</strong>"],
+  de:["⚡ Express-Reparatur <strong>in 30 Min</strong>","🔬 <strong>Kostenlose Diagnose</strong> im Laden","⭐ <strong>4.8/5</strong> — 485 Bewertungen","📍 Paris 13 — <strong>Ohne Termin</strong>"]
+};
+function updatePromoBand(l){
+  var items=PROMO[l]||PROMO.fr;
+  var sep='<span class="promo-sep">·</span>';
+  var inner=items.map(function(t){return'<span class="promo-item">'+t+'</span>';}).join(sep);
+  var band=inner+sep+inner+sep;
+  document.getElementById("promoBand").innerHTML=band;
+}
+function setLang(l,btn){lang=l;document.querySelectorAll(".lb").forEach(function(b){b.classList.remove("on")});btn.classList.add("on");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";applyT();updatePromoBand(l);renderProducts();renderRepairs();renderPrint();}
 function applyT(){
   var t=T[lang];
   var map={t_tp:"tp",t_tr:"tr",t_ti:"ti",t_td:"td",t_ltype:"ltype",t_lbrand:"lbrand",t_lgr:"lgr",t_lcond:"lcond",t_lprice:"lprice",t_lstorage:"lstorage",t_lsim:"lsim",t_rep_title:"rep_title",t_rh1:"rh1",t_rh2:"rh2",t_rh3:"rh3",t_rh4:"rh4",t_print_title:"print_title",t_ds1:"ds1",t_ds2:"ds2",t_ds3:"ds3",t_ds4:"ds4",t_ds5:"ds5",t_q_name:"q_name",t_q_phone:"q_phone",t_q_sent:"q_sent",sl1:"sl1",sl2:"sl2",sl3:"sl3",sl4:"sl4",sl5:"sl5",t_subissue:"subissue",t_desc_lbl:"desc_lbl"};
