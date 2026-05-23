@@ -1,226 +1,225 @@
 ﻿<!DOCTYPE html>
-<html lang="fr" dir="ltr">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The SMARTPHONE — Catalogue</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--pink:#e91e63;--dark:#1a1a2e;--gray:#f5f5f5}
-body{font-family:system-ui,sans-serif;background:#f0f2f5;color:#222}
-header{background:var(--dark);color:#fff;padding:16px 20px}
-.header-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.shop-name{font-size:1.4rem;font-weight:800;letter-spacing:-0.5px}
-.shop-name span{color:var(--pink)}
-.rating{background:rgba(255,255,255,.12);padding:5px 12px;border-radius:20px;font-size:.85rem}
-.rating strong{color:#ffd700}
-.tagline{font-size:.88rem;color:#aaa;margin-top:4px}
-.lang-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.lang-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 10px;border-radius:16px;cursor:pointer;font-size:.8rem;transition:.2s}
-.lang-btn.active,.lang-btn:hover{background:var(--pink);border-color:var(--pink)}
-.cat-nav{display:flex;gap:0;overflow-x:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08);scrollbar-width:none}
-.cat-nav::-webkit-scrollbar{display:none}
-.cat-btn{flex:none;padding:14px 20px;border:none;background:none;cursor:pointer;font-weight:600;color:#666;font-size:.88rem;border-bottom:3px solid transparent;white-space:nowrap;transition:.2s}
-.cat-btn.active,.cat-btn:hover{color:var(--pink);border-bottom-color:var(--pink)}
-.section{display:none;padding:16px 20px;max-width:1100px;margin:0 auto}
-.section.active{display:block}
-.section-title{font-size:1.1rem;font-weight:700;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:.15s}
-.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12);transform:translateY(-2px)}
-.card-cat{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:#aaa;margin-bottom:4px}
-.card-name{font-weight:700;font-size:.9rem;color:var(--dark);margin-bottom:4px;line-height:1.3}
-.card-sub{font-size:.78rem;color:#888;margin-bottom:8px}
-.card-price{font-size:1.25rem;font-weight:800;color:var(--pink)}
-.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.7rem;font-weight:700;margin-top:6px}
-.badge-neuf{background:#e8f5e9;color:#2e7d32}
-.badge-occ{background:#fff3e0;color:#e65100}
-.badge-rec{background:#e3f2fd;color:#1565c0}
-.svc-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)}
-.svc-table th{background:#f5f5f5;padding:10px 14px;text-align:left;font-size:.82rem;color:#555}
-.svc-table td{padding:11px 14px;border-top:1px solid #f0f0f0;font-size:.9rem}
-.svc-table tr:hover td{background:#fafafa}
-.our-price{font-weight:800;color:var(--pink);font-size:1rem}
-.market-price{text-decoration:line-through;color:#bbb;font-size:.82rem;margin-left:6px}
-.economy{background:#e8f5e9;color:#2e7d32;font-size:.75rem;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px}
-.delay-badge{background:#e3f2fd;color:#1565c0;font-size:.75rem;padding:2px 8px;border-radius:10px}
-.devis-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.07);max-width:500px;margin:0 auto}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:.83rem;font-weight:600;color:#555;margin-bottom:4px}
-.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.9rem;transition:.2s}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--pink)}
-.field textarea{resize:vertical;min-height:70px}
-.submit-btn{width:100%;background:var(--pink);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer}
-.submit-btn:hover{background:#c2185b}
-.success-msg{display:none;background:#e8f5e9;color:#2e7d32;padding:12px;border-radius:8px;text-align:center;margin-top:12px;font-weight:600}
-.why-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.why-card{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.07)}
-.why-icon{font-size:2rem;margin-bottom:6px}
-.why-text{font-size:.82rem;font-weight:600;color:var(--dark)}
-.why-sub{font-size:.75rem;color:#888;margin-top:2px}
-html[dir=rtl] .card{text-align:right}
-@media(max-width:480px){.grid{grid-template-columns:repeat(2,1fr)}.section{padding:12px}}
-footer{background:var(--dark);color:#aaa;text-align:center;padding:20px;font-size:.82rem;margin-top:24px}
-footer strong{color:#fff}
+:root{
+  --bg:#0a0a0f;--surface:#13131a;--card:#1a1a24;--border:#2a2a3a;
+  --accent:#e8ff00;--accent2:#00d4ff;--text:#f0f0f0;--muted:#6b6b85;
+  --green:#00e676;--red:#ff5252;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;}
+.hero{background:linear-gradient(135deg,#0a0a0f 0%,#13131a 50%,#0d0d1a 100%);padding:32px 20px 24px;text-align:center;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 60% 40%,rgba(232,255,0,0.05) 0%,transparent 60%),radial-gradient(ellipse at 30% 70%,rgba(0,212,255,0.04) 0%,transparent 60%);pointer-events:none;}
+.logo{font-size:26px;font-weight:800;letter-spacing:-0.5px;}
+.logo span{color:var(--accent);}
+.rating{display:inline-flex;align-items:center;gap:6px;background:rgba(232,255,0,0.1);border:1px solid rgba(232,255,0,0.2);border-radius:20px;padding:4px 12px;margin-top:8px;font-size:12px;color:var(--accent);}
+.tagline{font-size:13px;color:var(--muted);margin-top:6px;}
+.hero-addr{font-size:12px;color:var(--muted);margin-top:4px;}
+.lang-bar{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);}
+.lang-btn{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;transition:all 0.2s;}
+.lang-btn:hover,.lang-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{flex:1;min-width:80px;padding:12px 10px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.section{display:none;}
+.section.active{display:block;}
+.filters{padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.search-box{flex:1;min-width:160px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;transition:border 0.2s;}
+.search-box:focus{border-color:var(--accent);}
+.filter-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-size:12px;transition:all 0.2s;white-space:nowrap;}
+.filter-btn:hover,.filter-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
+.count-badge{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:20px 16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform 0.2s,border-color 0.2s;display:flex;flex-direction:column;}
+.card:hover{transform:translateY(-4px);border-color:var(--accent);}
+.card-photo{width:100%;aspect-ratio:1;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:48px;opacity:0.35;}
+.card-body{padding:11px;flex:1;display:flex;flex-direction:column;gap:5px;}
+.card-cat{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.card-name{font-size:13px;font-weight:600;line-height:1.3;}
+.card-badges{display:flex;gap:4px;flex-wrap:wrap;}
+.badge{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;}
+.badge-cond{background:#1e3a8a;color:#93c5fd;}
+.badge-grade{background:#1a2e1a;color:#86efac;}
+.card-price{margin-top:auto;font-size:20px;font-weight:800;color:var(--accent);}
+.card-contact{margin-top:8px;display:flex;gap:5px;}
+.btn-wa{flex:1;padding:8px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:3px;}
+.btn-call{padding:8px 10px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;}
+.empty{text-align:center;padding:60px 24px;color:var(--muted);grid-column:1/-1;}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.services-wrap{padding:20px 16px;}
+.services-title{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--accent);}
+.services-table{width:100%;border-collapse:collapse;}
+.services-table th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);}
+.services-table td{padding:11px 12px;border-bottom:1px solid rgba(42,42,58,0.6);font-size:13px;vertical-align:middle;}
+.services-table tr:last-child td{border-bottom:none;}
+.services-table tr:hover td{background:var(--card);}
+.price-our{font-weight:700;color:var(--accent);font-size:15px;}
+.price-market{font-size:11px;color:var(--muted);text-decoration:line-through;display:block;}
+.eco-badge{display:inline-block;padding:2px 7px;background:rgba(0,230,118,0.15);color:var(--green);border-radius:4px;font-size:10px;font-weight:700;}
+.delay-badge{display:inline-block;padding:2px 8px;background:rgba(0,212,255,0.1);color:var(--accent2);border-radius:4px;font-size:11px;}
+.cta-rep{margin:16px;padding:14px;background:rgba(232,255,0,0.06);border:1px solid rgba(232,255,0,0.15);border-radius:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.cta-rep p{flex:1;font-size:13px;color:var(--muted);}
+.cta-rep p strong{color:var(--text);}
+.print-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:20px 16px;}
+.print-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.print-card-icon{font-size:28px;}
+.print-card-name{font-size:14px;font-weight:600;}
+.print-card-price{font-size:22px;font-weight:800;color:var(--accent2);}
+.print-card-unit{font-size:11px;color:var(--muted);}
+.quote-wrap{padding:20px 16px;max-width:560px;margin:0 auto;}
+.quote-title{font-size:16px;font-weight:700;margin-bottom:16px;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block;}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border 0.2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
+.form-select option{background:var(--card);}
+.form-textarea{resize:vertical;min-height:90px;}
+.btn-submit{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+.btn-submit:hover{opacity:0.88;}
+.quote-note{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;}
+.quote-success{display:none;text-align:center;padding:30px;color:var(--green);}
+.quote-success-icon{font-size:48px;margin-bottom:12px;}
+.footer{text-align:center;padding:24px 16px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);margin-top:24px;line-height:1.8;}
+[dir=rtl] .services-table th,[dir=rtl] .services-table td{text-align:right;}
+@media(max-width:480px){
+  .grid{grid-template-columns:repeat(2,1fr);gap:10px;padding:12px;}
+  .hero{padding:22px 12px 18px;}
+  .tab{font-size:11px;padding:10px 6px;}
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="header-top">
-    <div>
-      <div class="shop-name">The <span>SMARTPHONE</span></div>
-      <div class="tagline" id="tagline">Reparation - Vente - Impression</div>
-    </div>
-    <div class="rating" id="rating-badge">- <strong>4.8</strong> / 5 - 485 avis</div>
+<div class="hero">
+  <div class="logo">📱 The <span>SMARTPHONE</span></div>
+  <div><span class="rating" id="heroRating">⭐ 4.8 · 485 avis Google</span></div>
+  <div class="tagline" id="heroTagline">Réparation · Vente · Impression — Paris 13e</div>
+  <div class="hero-addr" id="heroAddr">📍 1 Avenue d'Italie, 75013 Paris</div>
+</div>
+<div class="lang-bar">
+  <button class="lang-btn active" onclick="setLang('fr',this)">🇫🇷 FR</button>
+  <button class="lang-btn" onclick="setLang('en',this)">🇬🇧 EN</button>
+  <button class="lang-btn" onclick="setLang('ar',this)">🇸🇦 AR</button>
+  <button class="lang-btn" onclick="setLang('zh',this)">🇨🇳 ZH</button>
+  <button class="lang-btn" onclick="setLang('es',this)">🇪🇸 ES</button>
+  <button class="lang-btn" onclick="setLang('it',this)">🇮🇹 IT</button>
+  <button class="lang-btn" onclick="setLang('de',this)">🇩🇪 DE</button>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="setTab('products',this)">📱 <span id="t_tab_phones">Téléphones</span></div>
+  <div class="tab" onclick="setTab('repairs',this)">🔧 <span id="t_tab_repairs">Réparations</span></div>
+  <div class="tab" onclick="setTab('print',this)">🖨️ <span id="t_tab_print">Impression</span></div>
+  <div class="tab" onclick="setTab('quote',this)">💬 <span id="t_tab_quote">Devis</span></div>
+</div>
+<div class="section active" id="sec_products">
+  <div class="filters">
+    <input class="search-box" id="searchInput" placeholder="🔍 Rechercher..." oninput="renderProducts()">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Tout</button>
+    <button class="filter-btn" onclick="setFilter('Smartphone',this)">📱</button>
+    <button class="filter-btn" onclick="setFilter('Tablette',this)">📟</button>
+    <button class="filter-btn" onclick="setFilter('Accessoire',this)">🎧</button>
+    <span class="count-badge" id="countBadge"></span>
   </div>
-  <div class="lang-bar">
-    <button class="lang-btn active" onclick="setLang('fr')">FR</button>
-    <button class="lang-btn" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" onclick="setLang('ar')">AR</button>
-    <button class="lang-btn" onclick="setLang('zh')">ZH</button>
-    <button class="lang-btn" onclick="setLang('de')">DE</button>
-    <button class="lang-btn" onclick="setLang('es')">ES</button>
-    <button class="lang-btn" onclick="setLang('it')">IT</button>
+  <div class="grid" id="catalogueGrid"></div>
+</div>
+<div class="section" id="sec_repairs">
+  <div class="services-wrap">
+    <div class="services-title" id="t_rep_title">🔧 Nos réparations</div>
+    <table class="services-table">
+      <thead><tr>
+        <th id="t_rep_service">Réparation</th>
+        <th id="t_rep_price">Notre prix</th>
+        <th id="t_rep_market">Marché</th>
+        <th id="t_rep_delay">Délai</th>
+      </tr></thead>
+      <tbody id="repairBody"></tbody>
+    </table>
   </div>
-</header>
-<nav class="cat-nav">
-  <button class="cat-btn active" onclick="showCat('phones',this)">Telephones</button>
-  <button class="cat-btn" onclick="showCat('repairs',this)">Reparations</button>
-  <button class="cat-btn" onclick="showCat('print',this)">Impression</button>
-  <button class="cat-btn" onclick="showCat('accessories',this)">Accessoires</button>
-  <button class="cat-btn" onclick="showCat('devis',this)">Devis</button>
-  <button class="cat-btn" onclick="showCat('why',this)">Pourquoi nous</button>
-</nav>
-<div class="section active" id="sec-phones"><div class="section-title" id="t-phones">Telephones</div><div class="grid" id="phones-grid"><div style="color:#aaa;padding:20px">Chargement...</div></div></div>
-<div class="section" id="sec-repairs"><div class="section-title" id="t-repairs">Reparations</div><table class="svc-table"><thead><tr><th id="t-device">Appareil</th><th id="t-service">Service</th><th id="t-price">Prix</th><th id="t-delay">Delai</th></tr></thead><tbody id="repairs-body"></tbody></table><p style="margin-top:12px;font-size:.82rem;color:#888" id="t-diag"></p></div>
-<div class="section" id="sec-print"><div class="section-title" id="t-print">Impression</div><table class="svc-table"><thead><tr><th id="t-print-svc">Service</th><th id="t-print-price">Prix</th></tr></thead><tbody id="print-body"></tbody></table></div>
-<div class="section" id="sec-accessories"><div class="section-title" id="t-acc">Accessoires</div><div class="grid" id="accessories-grid"></div></div>
-<div class="section" id="sec-devis">
-  <div class="section-title" id="t-quote">Devis</div>
-  <div class="devis-card">
-    <div class="field"><label id="t-name">Nom</label><input id="dv-name" type="text"></div>
-    <div class="field"><label id="t-phone">Telephone</label><input id="dv-phone" type="tel"></div>
-    <div class="field"><label id="t-svctype">Service</label>
-      <select id="dv-type">
-        <option value="" id="t-choose">--</option>
-        <option value="reparation" id="t-repair-opt">Reparation</option>
-        <option value="achat" id="t-buy-opt">Achat</option>
-        <option value="impression" id="t-print-opt">Impression</option>
-      </select>
-    </div>
-    <div class="field"><label id="t-desc">Description</label><textarea id="dv-desc"></textarea></div>
-    <button class="submit-btn" id="t-send" onclick="submitDevis()">Envoyer</button>
-    <div class="success-msg" id="devis-ok">Demande envoyee!</div>
+  <div class="cta-rep">
+    <span style="font-size:28px">💬</span>
+    <p id="t_rep_cta"><strong>Diagnostic gratuit</strong> — Apportez votre appareil, on vous conseille sans engagement.</p>
+    <button class="btn-wa" onclick="openWA('')" style="flex:0;padding:10px 16px;font-size:12px;">WhatsApp</button>
   </div>
 </div>
-<div class="section" id="sec-why">
-  <div class="section-title" id="t-why">Pourquoi nous</div>
-  <div class="why-grid">
-    <div class="why-card"><div class="why-icon">-</div><div class="why-text" id="t-fast">Reparation rapide</div><div class="why-sub" id="t-fast-sub">30 min a 1h</div></div>
-    <div class="why-card"><div class="why-icon">-</div><div class="why-text" id="t-price2">Meilleur prix</div><div class="why-sub" id="t-price2-sub">-20% vs marche</div></div>
-    <div class="why-card"><div class="why-icon">-</div><div class="why-text" id="t-warranty">Garantie</div><div class="why-sub" id="t-warranty-sub">3 mois</div></div>
-    <div class="why-card"><div class="why-icon">-</div><div class="why-text" id="t-lang">7 langues</div><div class="why-sub">FR EN AR ZH DE ES IT</div></div>
-    <div class="why-card"><div class="why-icon">-</div><div class="why-text" id="t-stars">4,8/5</div><div class="why-sub" id="t-stars-sub">485 avis Google</div></div>
-    <div class="why-card"><div class="why-icon">-</div><div class="why-text" id="t-diag2">Diagnostic offert</div><div class="why-sub" id="t-diag2-sub">Sans engagement</div></div>
+<div class="section" id="sec_print">
+  <div class="services-wrap">
+    <div class="services-title" id="t_print_title">🖨️ Impression &amp; Photocopie</div>
+    <div class="print-cards" id="printCards"></div>
+  </div>
+  <div class="cta-rep">
+    <span style="font-size:28px">📞</span>
+    <p id="t_print_cta"><strong>Service rapide</strong> — Apportez votre fichier ou envoyez-le par WhatsApp.</p>
+    <button class="btn-wa" onclick="openWA('impression')" style="flex:0;padding:10px 16px;font-size:12px;">WhatsApp</button>
   </div>
 </div>
-<footer><strong id="footer-name">The SMARTPHONE</strong><br><span id="footer-addr">1 Avenue d Italie, 75013 Paris</span><br><span id="footer-phone"></span></footer>
+<div class="section" id="sec_quote">
+  <div class="quote-wrap">
+    <div class="quote-title" id="t_quote_title">💬 Demande de devis gratuit</div>
+    <div id="quoteForm">
+      <div class="form-group">
+        <label class="form-label" id="t_q_name">Votre prénom</label>
+        <input class="form-input" id="q_name" type="text" placeholder="ex: Ahmed">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="t_q_phone">Votre téléphone (WhatsApp)</label>
+        <input class="form-input" id="q_phone" type="tel" placeholder="+33 6 ...">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="t_q_type">Type de demande</label>
+        <select class="form-select" id="q_type">
+          <option value="reparation" id="t_q_opt_rep">Réparation</option>
+          <option value="achat" id="t_q_opt_buy">Achat téléphone / accessoire</option>
+          <option value="impression" id="t_q_opt_print">Impression / photocopie</option>
+          <option value="autre" id="t_q_opt_other">Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="t_q_desc">Description</label>
+        <textarea class="form-textarea" id="q_desc" placeholder="Décrivez votre appareil et la panne..."></textarea>
+      </div>
+      <button class="btn-submit" id="t_q_submit" onclick="submitQuote()">📩 Envoyer le devis par WhatsApp</button>
+      <p class="quote-note" id="t_q_note">Réponse sous 30 min aux heures d'ouverture</p>
+    </div>
+    <div class="quote-success" id="quoteSuccess">
+      <div class="quote-success-icon">✅</div>
+      <div id="t_q_sent">Votre demande a été envoyée !</div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  <div>The SMARTPHONE © 2026 · <span id="footAddr">1 Avenue d'Italie, 75013 Paris</span></div>
+  <div id="footContact">📞 01 47 07 18 66 · ✉️ smartphonesatelier4@gmail.com</div>
+</div>
 <script>
 var T={
-fr:{phones:'Telephones',repairs:'Reparations',print:'Impression',accessories:'Accessoires',quote:'Devis gratuit',why:'Pourquoi nous?',device:'Appareil',service:'Service',price:'Notre prix',delay:'Delai',diag:'Diagnostic gratuit - Sans engagement',name:'Votre prenom',phone:'Votre telephone',svctype:'Type de service',choose:'-- Choisir --',repair_opt:'Reparation',buy_opt:'Achat',print_opt:'Impression',desc:'Description',send:'Envoyer ma demande',sent:'Demande envoyee! Nous vous contactons.',fast:'Reparation rapide',fast_sub:'30 min a 1h',price2:'Meilleur prix',price2_sub:'-20% vs marche',warranty:'Garantie',warranty_sub:'3 mois',lang:'7 langues',stars:'4,8/5 etoiles',diag2:'Diagnostic offert',diag2_sub:'Sans engagement',neuf:'Neuf',occ:'Occasion',rec:'Reconditionne',economy:'economie',market:'Marche:',tagline:'Reparation - Vente - Impression'},
-en:{phones:'Phones',repairs:'Repairs',print:'Printing',accessories:'Accessories',quote:'Free quote',why:'Why us?',device:'Device',service:'Service',price:'Our price',delay:'Time',diag:'Free diagnostic - No commitment',name:'Your name',phone:'Your phone',svctype:'Service type',choose:'-- Choose --',repair_opt:'Repair',buy_opt:'Buy a phone',print_opt:'Printing',desc:'Description',send:'Send my request',sent:'Request sent! We will contact you.',fast:'Fast repair',fast_sub:'30 min to 1h',price2:'Best price',price2_sub:'-20% vs market',warranty:'Warranty',warranty_sub:'3 months',lang:'7 languages',stars:'4.8/5 stars',diag2:'Free diagnostic',diag2_sub:'No commitment',neuf:'New',occ:'Used',rec:'Refurbished',economy:'saving',market:'Market:',tagline:'Repair - Sales - Printing'},
-ar:{phones:'هواتف',repairs:'إصلاح',print:'طباعة',accessories:'إكسسوارات',quote:'طلب تقدير',why:'لماذا نحن؟',device:'الجهاز',service:'الخدمة',price:'سعرنا',delay:'الوقت',diag:'تشخيص مجاني',name:'اسمك',phone:'هاتفك',svctype:'نوع الخدمة',choose:'-- اختر --',repair_opt:'إصلاح',buy_opt:'شراء',print_opt:'طباعة',desc:'الوصف',send:'إرسال',sent:'تم الإرسال!',fast:'إصلاح سريع',fast_sub:'30 دقيقة - ساعة',price2:'أفضل سعر',price2_sub:'20%- مقارنة',warranty:'ضمان',warranty_sub:'3 أشهر',lang:'7 لغات',stars:'4.8/5',diag2:'تشخيص مجاني',diag2_sub:'بدون التزام',neuf:'جديد',occ:'مستعمل',rec:'مُجدَّد',economy:'توفير',market:'السوق:',tagline:'إصلاح - بيع - طباعة'},
-zh:{phones:'手机',repairs:'维修',print:'打印',accessories:'配件',quote:'免费报价',why:'为什么选择我们?',device:'设备',service:'服务',price:'我们的价格',delay:'时间',diag:'免费诊断',name:'您的姓名',phone:'您的电话',svctype:'服务类型',choose:'-- 选择 --',repair_opt:'维修',buy_opt:'购买',print_opt:'打印',desc:'描述',send:'发送',sent:'已发送!',fast:'快速维修',fast_sub:'30分钟-1小时',price2:'最优价格',price2_sub:'比市场低20%',warranty:'保修',warranty_sub:'3个月',lang:'7种语言',stars:'4.8/5星',diag2:'免费诊断',diag2_sub:'无需承诺',neuf:'全新',occ:'二手',rec:'翻新',economy:'节省',market:'市场价:',tagline:'维修 - 销售 - 打印'},
-de:{phones:'Handys',repairs:'Reparaturen',print:'Druck',accessories:'Zubehor',quote:'Kostenlose Beratung',why:'Warum wir?',device:'Gerat',service:'Service',price:'Unser Preis',delay:'Zeit',diag:'Kostenlose Diagnose',name:'Ihr Name',phone:'Ihr Telefon',svctype:'Serviceart',choose:'-- Wahlen --',repair_opt:'Reparatur',buy_opt:'Handy kaufen',print_opt:'Druck',desc:'Beschreibung',send:'Anfrage senden',sent:'Gesendet!',fast:'Schnelle Reparatur',fast_sub:'30 Min - 1 Std',price2:'Bester Preis',price2_sub:'-20% vs Markt',warranty:'Garantie',warranty_sub:'3 Monate',lang:'7 Sprachen',stars:'4,8/5 Sterne',diag2:'Kostenlose Diagnose',diag2_sub:'Ohne Verpflichtung',neuf:'Neu',occ:'Gebraucht',rec:'Generaluberholt',economy:'Ersparnis',market:'Markt:',tagline:'Reparatur - Verkauf - Druck'},
-es:{phones:'Telefonos',repairs:'Reparaciones',print:'Impresion',accessories:'Accesorios',quote:'Presupuesto gratis',why:'Por que nosotros?',device:'Dispositivo',service:'Servicio',price:'Nuestro precio',delay:'Tiempo',diag:'Diagnostico gratuito',name:'Tu nombre',phone:'Tu telefono',svctype:'Tipo de servicio',choose:'-- Elegir --',repair_opt:'Reparacion',buy_opt:'Comprar',print_opt:'Impresion',desc:'Descripcion',send:'Enviar',sent:'Enviado!',fast:'Reparacion rapida',fast_sub:'30 min a 1 hora',price2:'Mejor precio',price2_sub:'-20% vs mercado',warranty:'Garantia',warranty_sub:'3 meses',lang:'7 idiomas',stars:'4,8/5 estrellas',diag2:'Diagnostico gratuito',diag2_sub:'Sin compromiso',neuf:'Nuevo',occ:'Usado',rec:'Reacondicionado',economy:'ahorro',market:'Mercado:',tagline:'Reparacion - Venta - Impresion'},
-it:{phones:'Telefoni',repairs:'Riparazioni',print:'Stampa',accessories:'Accessori',quote:'Preventivo gratis',why:'Perche noi?',device:'Dispositivo',service:'Servizio',price:'Il nostro prezzo',delay:'Tempo',diag:'Diagnosi gratuita',name:'Il tuo nome',phone:'Il tuo telefono',svctype:'Tipo di servizio',choose:'-- Scegli --',repair_opt:'Riparazione',buy_opt:'Acquisto',print_opt:'Stampa',desc:'Descrizione',send:'Invia',sent:'Inviato!',fast:'Riparazione rapida',fast_sub:'30 min - 1 ora',price2:'Miglior prezzo',price2_sub:'-20% vs mercato',warranty:'Garanzia',warranty_sub:'3 mesi',lang:'7 lingue',stars:'4,8/5 stelle',diag2:'Diagnosi gratuita',diag2_sub:'Senza impegno',neuf:'Nuovo',occ:'Usato',rec:'Ricondizionato',economy:'risparmio',market:'Mercato:',tagline:'Riparazione - Vendita - Stampa'}
+  fr:{tagline:"Réparation · Vente · Impression — Paris 13e",search:"Rechercher...",nostock:"Aucun produit pour l'instant",tab_phones:"Téléphones",tab_repairs:"Réparations",tab_print:"Impression",tab_quote:"Devis",rep_title:"🔧 Nos réparations",rep_service:"Réparation",rep_price:"Notre prix",rep_market:"Marché",rep_delay:"Délai",rep_cta:"<strong>Diagnostic gratuit</strong> — Apportez votre appareil, on vous conseille sans engagement.",print_title:"🖨️ Impression & Photocopie",print_cta:"<strong>Service rapide</strong> — Apportez votre fichier ou envoyez-le par WhatsApp.",quote_title:"💬 Demande de devis gratuit",q_name:"Votre prénom",q_phone:"Votre téléphone (WhatsApp)",q_type:"Type de demande",q_desc:"Description",q_opt_rep:"Réparation",q_opt_buy:"Achat téléphone / accessoire",q_opt_print:"Impression / photocopie",q_opt_other:"Autre",q_submit:"📩 Envoyer le devis par WhatsApp",q_note:"Réponse sous 30 min aux heures d'ouverture",q_sent:"Votre demande a été envoyée !",wa_msg:"Bonjour, je suis intéressé par : ",free_diag:"Gratuit",cond:{NEUF:"Neuf",OCCASION:"Occasion",RECONDITIONNE:"Reconditionné"}},
+  en:{tagline:"Repair · Sales · Printing — Paris 13",search:"Search...",nostock:"No products yet",tab_phones:"Phones",tab_repairs:"Repairs",tab_print:"Printing",tab_quote:"Quote",rep_title:"🔧 Our repairs",rep_service:"Repair",rep_price:"Our price",rep_market:"Market",rep_delay:"Delay",rep_cta:"<strong>Free diagnostic</strong> — Bring your device, no commitment.",print_title:"🖨️ Printing & Photocopying",print_cta:"<strong>Fast service</strong> — Bring your file or send it by WhatsApp.",quote_title:"💬 Free quote request",q_name:"Your name",q_phone:"Your phone (WhatsApp)",q_type:"Request type",q_desc:"Description",q_opt_rep:"Repair",q_opt_buy:"Buy phone / accessory",q_opt_print:"Printing / photocopy",q_opt_other:"Other",q_submit:"📩 Send quote by WhatsApp",q_note:"Reply within 30 min during opening hours",q_sent:"Your request was sent!",wa_msg:"Hello, I am interested in: ",free_diag:"Free",cond:{NEUF:"New",OCCASION:"Used",RECONDITIONNE:"Refurbished"}},
+  ar:{tagline:"إصلاح · بيع · طباعة — باريس 13",search:"ابحث...",nostock:"لا توجد منتجات",tab_phones:"الهواتف",tab_repairs:"الإصلاح",tab_print:"الطباعة",tab_quote:"طلب سعر",rep_title:"🔧 خدمات الإصلاح",rep_service:"الإصلاح",rep_price:"سعرنا",rep_market:"سعر السوق",rep_delay:"المدة",rep_cta:"<strong>تشخيص مجاني</strong> — أحضر جهازك، نصيحة بلا التزام.",print_title:"🖨️ الطباعة والتصوير",print_cta:"<strong>خدمة سريعة</strong> — أحضر ملفك أو أرسله عبر واتساب.",quote_title:"💬 طلب تقدير مجاني",q_name:"اسمك",q_phone:"هاتفك (واتساب)",q_type:"نوع الطلب",q_desc:"الوصف",q_opt_rep:"إصلاح",q_opt_buy:"شراء هاتف / ملحق",q_opt_print:"طباعة / تصوير",q_opt_other:"أخرى",q_submit:"📩 إرسال الطلب عبر واتساب",q_note:"رد خلال 30 دقيقة خلال ساعات العمل",q_sent:"تم إرسال طلبك!",wa_msg:"مرحبا، أنا مهتم بـ: ",free_diag:"مجاني",cond:{NEUF:"جديد",OCCASION:"مستعمل",RECONDITIONNE:"مُجدَّد"}},
+  zh:{tagline:"维修 · 销售 · 打印 — 巴黎13区",search:"搜索...",nostock:"暂无产品",tab_phones:"手机",tab_repairs:"维修",tab_print:"打印",tab_quote:"报价",rep_title:"🔧 我们的维修服务",rep_service:"维修项目",rep_price:"我们的价格",rep_market:"市场价",rep_delay:"时间",rep_cta:"<strong>免费诊断</strong> — 带来您的设备，无需承诺。",print_title:"🖨️ 打印与复印服务",print_cta:"<strong>快速服务</strong> — 带来文件或通过WhatsApp发送。",quote_title:"💬 免费报价申请",q_name:"您的姓名",q_phone:"您的电话 (WhatsApp)",q_type:"申请类型",q_desc:"描述",q_opt_rep:"维修",q_opt_buy:"购买手机/配件",q_opt_print:"打印/复印",q_opt_other:"其他",q_submit:"📩 通过WhatsApp发送报价",q_note:"营业时间内30分钟内回复",q_sent:"您的申请已发送！",wa_msg:"您好，我对以下感兴趣：",free_diag:"免费",cond:{NEUF:"全新",OCCASION:"二手",RECONDITIONNE:"翻新"}},
+  es:{tagline:"Reparación · Venta · Impresión — París 13",search:"Buscar...",nostock:"Sin productos",tab_phones:"Teléfonos",tab_repairs:"Reparaciones",tab_print:"Impresión",tab_quote:"Presupuesto",rep_title:"🔧 Nuestras reparaciones",rep_service:"Reparación",rep_price:"Nuestro precio",rep_market:"Mercado",rep_delay:"Plazo",rep_cta:"<strong>Diagnóstico gratuito</strong> — Trae tu dispositivo, sin compromiso.",print_title:"🖨️ Impresión y Fotocopias",print_cta:"<strong>Servicio rápido</strong> — Trae tu archivo o envíalo por WhatsApp.",quote_title:"💬 Solicitud de presupuesto",q_name:"Tu nombre",q_phone:"Tu teléfono (WhatsApp)",q_type:"Tipo de solicitud",q_desc:"Descripción",q_opt_rep:"Reparación",q_opt_buy:"Compra teléfono / accesorio",q_opt_print:"Impresión / fotocopia",q_opt_other:"Otro",q_submit:"📩 Enviar presupuesto por WhatsApp",q_note:"Respuesta en 30 min en horario laboral",q_sent:"¡Tu solicitud fue enviada!",wa_msg:"Hola, estoy interesado en: ",free_diag:"Gratis",cond:{NEUF:"Nuevo",OCCASION:"Usado",RECONDITIONNE:"Reacondicionado"}},
+  it:{tagline:"Riparazione · Vendita · Stampa — Parigi 13",search:"Cerca...",nostock:"Nessun prodotto",tab_phones:"Telefoni",tab_repairs:"Riparazioni",tab_print:"Stampa",tab_quote:"Preventivo",rep_title:"🔧 Le nostre riparazioni",rep_service:"Riparazione",rep_price:"Nostro prezzo",rep_market:"Mercato",rep_delay:"Tempi",rep_cta:"<strong>Diagnosi gratuita</strong> — Porta il tuo dispositivo, senza impegno.",print_title:"🖨️ Stampa e Fotocopie",print_cta:"<strong>Servizio rapido</strong> — Porta il tuo file o invialo su WhatsApp.",quote_title:"💬 Richiesta preventivo gratuito",q_name:"Il tuo nome",q_phone:"Il tuo telefono (WhatsApp)",q_type:"Tipo di richiesta",q_desc:"Descrizione",q_opt_rep:"Riparazione",q_opt_buy:"Acquisto telefono / accessorio",q_opt_print:"Stampa / fotocopia",q_opt_other:"Altro",q_submit:"📩 Invia preventivo su WhatsApp",q_note:"Risposta entro 30 min durante l'orario di apertura",q_sent:"La tua richiesta è stata inviata!",wa_msg:"Ciao, sono interessato a: ",free_diag:"Gratuito",cond:{NEUF:"Nuovo",OCCASION:"Usato",RECONDITIONNE:"Ricondizionato"}},
+  de:{tagline:"Reparatur · Verkauf · Druck — Paris 13",search:"Suchen...",nostock:"Keine Produkte",tab_phones:"Telefone",tab_repairs:"Reparaturen",tab_print:"Druck",tab_quote:"Angebot",rep_title:"🔧 Unsere Reparaturen",rep_service:"Reparatur",rep_price:"Unser Preis",rep_market:"Marktpreis",rep_delay:"Dauer",rep_cta:"<strong>Kostenlose Diagnose</strong> — Bringen Sie Ihr Gerät, ohne Verpflichtung.",print_title:"🖨️ Drucken & Kopieren",print_cta:"<strong>Schneller Service</strong> — Bringen Sie Ihre Datei oder senden Sie sie per WhatsApp.",quote_title:"💬 Kostenloses Angebot",q_name:"Ihr Name",q_phone:"Ihr Telefon (WhatsApp)",q_type:"Anfragetyp",q_desc:"Beschreibung",q_opt_rep:"Reparatur",q_opt_buy:"Telefon / Zubehör kaufen",q_opt_print:"Druck / Fotokopie",q_opt_other:"Sonstiges",q_submit:"📩 Angebot per WhatsApp senden",q_note:"Antwort innerhalb 30 Min. während der Öffnungszeiten",q_sent:"Ihre Anfrage wurde gesendet!",wa_msg:"Hallo, ich interessiere mich für: ",free_diag:"Kostenlos",cond:{NEUF:"Neu",OCCASION:"Gebraucht",RECONDITIONNE:"Generalüberholt"}}
 };
-var lang='fr',DATA={products:[],services:[],settings:{}};
-function tr(k){return(T[lang]||T.fr)[k]||k;}
-function setLang(l){
-  lang=l;
-  document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.toggle('active',b.textContent.trim()===l.toUpperCase()||(l==='zh'&&b.textContent==='ZH'));});
-  document.documentElement.lang=l;
-  document.documentElement.dir=l==='ar'?'rtl':'ltr';
-  applyTr();renderAll();
+var lang="fr",currentFilter="all",allProducts=[],allServices=[],shopPhone="33686648279";
+function setLang(l,btn){lang=l;document.querySelectorAll(".lang-btn").forEach(function(b){b.classList.remove("active")});btn.classList.add("active");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";applyT();renderProducts();renderRepairs();renderPrint();}
+function applyT(){var t=T[lang];document.getElementById("heroTagline").textContent=t.tagline;document.getElementById("searchInput").placeholder="🔍 "+t.search;["tab_phones","tab_repairs","tab_print","tab_quote","rep_title","rep_service","rep_price","rep_market","rep_delay","print_title","quote_title","t_q_name","t_q_phone","t_q_type","t_q_desc","t_q_note","t_q_sent"].forEach(function(id){var el=document.getElementById("t_"+id)||document.getElementById(id);if(el&&t[id])el.textContent=t[id];});["rep_cta","print_cta"].forEach(function(id){var el=document.getElementById("t_"+id);if(el&&t[id])el.innerHTML=t[id];});["q_opt_rep","q_opt_buy","q_opt_print","q_opt_other"].forEach(function(id){var el=document.getElementById("t_"+id);if(el&&t[id])el.textContent=t[id];});var sb=document.getElementById("t_q_submit");if(sb)sb.textContent="📩 "+t.q_submit.replace(/^📩\s*/,"");}
+function setTab(tab,btn){document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("active")});document.querySelectorAll(".section").forEach(function(s){s.classList.remove("active")});btn.classList.add("active");document.getElementById("sec_"+tab).classList.add("active");}
+function setFilter(cat,btn){currentFilter=cat;document.querySelectorAll(".filter-btn").forEach(function(b){b.classList.remove("active")});btn.classList.add("active");renderProducts();}
+function renderProducts(){var s=(document.getElementById("searchInput").value||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");var t=T[lang];var f=allProducts.filter(function(p){if(currentFilter!=="all"&&p.category!==currentFilter)return false;var n=(p.name||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");var c=(p.color||"").toLowerCase();return !s||(n.includes(s)||c.includes(s));});document.getElementById("countBadge").textContent=f.length+" produit"+(f.length>1?"s":"");if(!f.length){document.getElementById("catalogueGrid").innerHTML='<div class="empty"><div class="empty-icon">📭</div><div>'+t.nostock+"</div></div>";return;}var cond=t.cond||{};document.getElementById("catalogueGrid").innerHTML=f.map(function(p){var cl=cond[p.condition]||p.condition||"";var price=Number(p.catalogue_price||p.sale_price||0);var icon=p.category==="Tablette"?"📟":p.category==="Accessoire"?"🎧":"📱";var msg=encodeURIComponent((t.wa_msg||"Bonjour, je suis intéressé par : ")+p.name+(p.color?" ("+p.color+")":"")+(" à "+price.toFixed(0)+"€"));return'<div class="card"><div class="card-photo">'+icon+'</div><div class="card-body"><div class="card-cat">'+(p.category||"")+'</div><div class="card-name">'+p.name+(p.color?" — "+p.color:"")+'</div><div class="card-badges">'+(cl?'<span class="badge badge-cond">'+cl+"</span>":"")+(p.grade?'<span class="badge badge-grade">Grade '+p.grade+"</span>":"")+'</div><div class="card-price">'+price.toFixed(0)+' €</div><div class="card-contact"><button class="btn-wa" onclick="window.open(\'https://wa.me/'+shopPhone+"?text="+msg+"','_blank')\">💬 WhatsApp</button>"+'<button class="btn-call" onclick="window.location.href=\'tel:+'+shopPhone+'\'" title="Appeler">📞</button></div></div></div>';}).join("");}
+function renderRepairs(){var t=T[lang];var r=allServices.filter(function(s){return s.category==="reparation";});if(!r.length){document.getElementById("repairBody").innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:30px">—</td></tr>';return;}document.getElementById("repairBody").innerHTML=r.map(function(s){var name=s["name_"+lang]||s.name;var price=Number(s.price||0);var pm=s.price_market?Number(s.price_market):null;var eco=pm&&price>0?Math.round((pm-price)/pm*100):0;var ph=price===0?'<span class="price-our" style="color:var(--green)">'+t.free_diag+"</span>":'<span class="price-our">'+price.toFixed(0)+" €</span>"+(pm?'<span class="price-market">'+pm.toFixed(0)+" €</span>":"");return"<tr><td>"+name+"</td><td>"+ph+"</td><td>"+(eco>0?'<span class="eco-badge">-'+eco+"%</span>":"—")+"</td><td>"+(s.delay?'<span class="delay-badge">'+s.delay+"</span>":"—")+"</td></tr>";}).join("");}
+function renderPrint(){var p=allServices.filter(function(s){return s.category==="impression";});var icons={"Impression A4 N&B":"📄","Impression A4 couleur":"🎨","Photocopie A4":"📋","Impression A3":"📰"};document.getElementById("printCards").innerHTML=p.map(function(s){var name=s["name_"+lang]||s.name;var price=Number(s.price||0);return'<div class="print-card"><div class="print-card-icon">'+(icons[s.name]||"🖨️")+'</div><div class="print-card-name">'+name+'</div><div class="print-card-price">'+price.toFixed(2)+'€</div><div class="print-card-unit">/ page</div></div>';}).join("");}
+function submitQuote(){var name=document.getElementById("q_name").value.trim();var desc=document.getElementById("q_desc").value.trim();if(!name||!desc){alert("Merci de remplir au moins votre prénom et la description.");return;}var phone=document.getElementById("q_phone").value.trim();var type=document.getElementById("q_type").value;var tl={reparation:"Réparation",achat:"Achat",impression:"Impression",autre:"Autre"};var msg="📋 *Devis The SMARTPHONE*\n\n👤 Nom: "+name+"\n"+(phone?"📱 Tel: "+phone+"\n":"")+"🏷️ Type: "+(tl[type]||type)+"\n📝 Description: "+desc;window.open("https://wa.me/"+shopPhone+"?text="+encodeURIComponent(msg),"_blank");document.getElementById("quoteForm").style.display="none";document.getElementById("quoteSuccess").style.display="block";}
+function openWA(ctx){var msg=ctx==="impression"?"Bonjour The SMARTPHONE, je voudrais un service d'impression.":"Bonjour The SMARTPHONE, je voudrais un devis réparation.";window.open("https://wa.me/"+shopPhone+"?text="+encodeURIComponent(msg),"_blank");}
+async function loadAll(){
+  try{var r=await fetch("/api/catalogue");allProducts=await r.json();if(!Array.isArray(allProducts))allProducts=[];}catch(e){allProducts=[];}
+  try{var r2=await fetch("/api/catalogue/data");var d=await r2.json();allServices=d.services||[];if(d.settings){var s=d.settings;if(s.shop_phone&&s.shop_phone.length>5)shopPhone=s.shop_phone.replace(/\D/g,"");if(s.google_rating&&s.google_reviews)document.getElementById("heroRating").textContent="⭐ "+s.google_rating+" · "+s.google_reviews+" avis Google";if(s.shop_address){document.getElementById("heroAddr").textContent="📍 "+s.shop_address;document.getElementById("footAddr").textContent=s.shop_address;}}}catch(e){allServices=[];}
+  renderProducts();renderRepairs();renderPrint();
 }
-function applyTr(){
-  var cfg=DATA.settings;
-  document.getElementById('tagline').textContent=cfg['shop_tagline_'+lang]||tr('tagline');
-  var navBtns=document.querySelectorAll('.cat-btn');
-  var keys=['phones','repairs','print','accessories','quote','why'];
-  navBtns.forEach(function(b,i){if(keys[i])b.textContent=tr(keys[i]);});
-  var ids={phones:'t-phones',repairs:'t-repairs',print:'t-print',acc:'t-acc'};
-  setEl('t-phones',tr('phones'));setEl('t-repairs',tr('repairs'));setEl('t-print',tr('print'));setEl('t-acc',tr('accessories'));setEl('t-quote',tr('quote'));setEl('t-why',tr('why'));
-  setEl('t-device',tr('device'));setEl('t-service',tr('service'));setEl('t-price',tr('price'));setEl('t-delay',tr('delay'));setEl('t-diag',tr('diag'));
-  setEl('t-print-svc',tr('service'));setEl('t-print-price',tr('price'));
-  setEl('t-name',tr('name'));setEl('t-phone',tr('phone'));setEl('t-svctype',tr('svctype'));setEl('t-choose',tr('choose'));setEl('t-repair-opt',tr('repair_opt'));setEl('t-buy-opt',tr('buy_opt'));setEl('t-print-opt',tr('print_opt'));setEl('t-desc',tr('desc'));setEl('t-send',tr('send'));
-  setEl('t-fast',tr('fast'));setEl('t-fast-sub',tr('fast_sub'));setEl('t-price2',tr('price2'));setEl('t-price2-sub',tr('price2_sub'));setEl('t-warranty',tr('warranty'));setEl('t-warranty-sub',tr('warranty_sub'));setEl('t-lang',tr('lang'));
-  var r=DATA.settings.google_rating||'4.8',n=DATA.settings.google_reviews||'485';
-  setEl('t-stars',r+'/5');setEl('t-stars-sub',n+' avis Google');
-  setEl('t-diag2',tr('diag2'));setEl('t-diag2-sub',tr('diag2_sub'));
-}
-function setEl(id,txt){var e=document.getElementById(id);if(e)e.textContent=txt;}
-function showCat(cat,btn){
-  document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active');});
-  if(btn)btn.classList.add('active');
-  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
-  var sec=document.getElementById('sec-'+cat);if(sec)sec.classList.add('active');
-}
-function condBadge(cond){
-  var c=(cond||'').toLowerCase();
-  if(c.startsWith('n'))return '<span class="badge badge-neuf">'+tr('neuf')+'</span>';
-  if(c.startsWith('r'))return '<span class="badge badge-rec">'+tr('rec')+'</span>';
-  return '<span class="badge badge-occ">'+tr('occ')+'</span>';
-}
-function renderPhones(){
-  var phones=DATA.products.filter(function(p){return p.category==='Smartphone';});
-  document.getElementById('phones-grid').innerHTML=phones.length?phones.map(function(p){
-    return '<div class="card"><div class="card-cat">'+p.category+'</div><div class="card-name">'+p.name+'</div><div class="card-sub">'+(p.color||'')+''+(p.grade?' '+p.grade:'')+'</div><div class="card-price">'+parseFloat(p.price).toFixed(0)+' EUR</div>'+condBadge(p.condition)+'</div>';
-  }).join(''):'<div style="color:#aaa;padding:20px">Aucun produit</div>';
-}
-function renderAccessories(){
-  var acc=DATA.products.filter(function(p){return p.category!=='Smartphone'&&p.category!=='Tablette';});
-  document.getElementById('accessories-grid').innerHTML=acc.length?acc.map(function(p){
-    return '<div class="card"><div class="card-cat">'+p.category+'</div><div class="card-name">'+p.name+'</div><div class="card-sub">'+(p.color||'')+'</div><div class="card-price">'+parseFloat(p.price||0).toFixed(2)+' EUR</div>'+condBadge(p.condition)+'</div>';
-  }).join(''):'<div style="color:#aaa;padding:20px">Aucun produit</div>';
-}
-function renderRepairs(){
-  var svcs=DATA.services.filter(function(s){return s.category==='reparation';});
-  document.getElementById('repairs-body').innerHTML=svcs.map(function(s){
-    var name=lang==='en'&&s.name_en?s.name_en:lang==='ar'&&s.name_ar?s.name_ar:lang==='zh'&&s.name_zh?s.name_zh:lang==='de'&&s.name_de?s.name_de:lang==='es'&&s.name_es?s.name_es:lang==='it'&&s.name_it?s.name_it:s.name;
-    var eco=s.price_market&&s.price_market>s.price?'<span class="economy">-'+Math.round((s.price_market-s.price)/s.price_market*100)+'% '+tr('economy')+'</span>':'';
-    var mkt=s.price_market?'<span class="market-price">'+s.price_market+' EUR '+tr('market')+'</span>':'';
-    var parts=name.split(' ');var dv=parts.slice(0,parts.length>2?2:1).join(' ');var svc=parts.slice(parts.length>2?2:1).join(' ');
-    return '<tr><td>'+dv+'</td><td>'+svc+'</td><td><span class="our-price">'+parseFloat(s.price).toFixed(0)+' EUR</span>'+mkt+eco+'</td><td>'+(s.delay?'<span class="delay-badge">'+s.delay+'</span>':'')+'</td></tr>';
-  }).join('');
-}
-function renderPrint(){
-  var svcs=DATA.services.filter(function(s){return s.category==='impression';});
-  document.getElementById('print-body').innerHTML=svcs.map(function(s){
-    return '<tr><td>'+s.name+'</td><td><span class="our-price">'+parseFloat(s.price).toFixed(2)+' EUR</span></td></tr>';
-  }).join('');
-}
-function renderAll(){renderPhones();renderAccessories();renderRepairs();renderPrint();}
-async function load(){
-  var r=await fetch('/api/catalogue/data');
-  DATA=await r.json();
-  var cfg=DATA.settings;
-  if(cfg.google_rating&&cfg.google_reviews)document.getElementById('rating-badge').innerHTML='<strong>'+cfg.google_rating+'</strong> / 5 &nbsp;·&nbsp; '+cfg.google_reviews+' avis';
-  document.getElementById('footer-name').textContent=cfg.shop_name||'The SMARTPHONE';
-  document.getElementById('footer-addr').textContent=cfg.shop_address||'';
-  document.getElementById('footer-phone').textContent=cfg.shop_phone||'';
-  applyTr();renderAll();
-}
-async function submitDevis(){
-  var name=document.getElementById('dv-name').value.trim();
-  var phone=document.getElementById('dv-phone').value.trim();
-  if(!name||!phone){alert('Veuillez remplir nom et telephone');return;}
-  document.getElementById('devis-ok').textContent=tr('sent');
-  document.getElementById('devis-ok').style.display='block';
-  setTimeout(function(){document.getElementById('devis-ok').style.display='none';},4000);
-}
-load();
+loadAll();
 </script>
 </body>
 </html>
