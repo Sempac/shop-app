@@ -272,11 +272,11 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
     const dateLabel = new Date(date+'T00:00:00').toLocaleDateString('fr-FR',
       {weekday:'long',year:'numeric',month:'long',day:'numeric'});
     const filename  = `Rapport Comptable - The SMARTPHONE - ${dateStr}.pdf`;
+    const fs   = require('fs');
+    const path = require('path');
     /* Dossier principal (toujours accessible, même en Session 0) */
     const fallbackDir = path.join(__dirname,'rapports');
     const rapportDir  = process.env.RAPPORT_DIR||fallbackDir;
-    const fs   = require('fs');
-    const path = require('path');
     /* On essaie le répertoire demandé ; si inaccessible on bascule sur ./rapports */
     let saveDir = rapportDir;
     try{ fs.mkdirSync(rapportDir,{recursive:true}); fs.accessSync(rapportDir,fs.constants.W_OK); }
