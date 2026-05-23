@@ -58,14 +58,18 @@ function TryAccept($hwnd, $L, $T, $W, $H) {
     }
 
     # 2. Clics cote DROIT (ACCEPTER est a droite — confirme par logs)
-    # STOP des que la fenetre disparait (evite de cliquer sur la session ouverte)
+    # STOP des que la fenetre disparait + curseur en zone neutre (0,0)
     [AD]::SetForegroundWindow($hwnd) | Out-Null
     Start-Sleep -Milliseconds 500
 
     foreach ($yp in @(0.88, 0.91, 0.94, 0.97)) {
         foreach ($xp in @(0.60, 0.65, 0.70, 0.75, 0.80)) {
             if (-not [AD]::IsWindowVisible($hwnd)) {
-                "  -> fenetre disparue ACCEPTE, arret" | Add-Content $log
+                # Connexion acceptee — deplacer curseur loin des boutons IMMEDIATEMENT
+                [AD]::SetCursorPos(0, 0) | Out-Null
+                $script:lastAcceptAttempt = [datetime]::Now   # cooldown demarre ici
+                "  -> ACCEPTE! Curseur (0,0), cooldown 60s" | Add-Content $log
+                Start-Sleep -Milliseconds 2000   # laisser la session s'ouvrir sans interference
                 return
             }
             $px = [int]($L + $W * $xp)
@@ -74,13 +78,15 @@ function TryAccept($hwnd, $L, $T, $W, $H) {
             Click $px $py
         }
     }
+    # Fallback : deplacer curseur de toute facon
+    [AD]::SetCursorPos(0, 0) | Out-Null
 }
 
 while ($true) {
     Start-Sleep -Seconds 2
 
-    # Cooldown 25s apres chaque tentative (evite de cliquer sur la fenetre de session)
-    if (([datetime]::Now - $lastAcceptAttempt).TotalSeconds -lt 25) { continue }
+    # Cooldown 60s apres chaque acceptation (evite de cliquer sur la fenetre de session)
+    if (([datetime]::Now - $lastAcceptAttempt).TotalSeconds -lt 60) { continue }
 
     try {
         $dialogs = [System.Collections.Generic.List[IntPtr]]::new()
@@ -112,8 +118,10 @@ while ($true) {
                 [AD]::GetWindowText($dlg, $sb, 512) | Out-Null
                 "[$([datetime]::Now)] Dialog: '$($sb)' W=$W H=$H" | Add-Content $log
                 TryAccept $dlg $r.L $r.T $W $H
-                $script:lastAcceptAttempt = [datetime]::Now
-                "[$([datetime]::Now)] Done, cooldown 25s" | Add-Content $log
+                if (([datetime]::Now - $script:lastAcceptAttempt).TotalSeconds -gt 5) {
+                    $script:lastAcceptAttempt = [datetime]::Now  # si pas encore set dans TryAccept
+                }
+                "[$([datetime]::Now)] Done, cooldown 60s" | Add-Content $log
             }
         }
         $cutoff = (Get-Date).AddSeconds(-60)
