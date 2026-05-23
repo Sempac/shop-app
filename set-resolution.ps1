@@ -30,7 +30,7 @@ $dm.dmPelsWidth  = 1024
 $dm.dmPelsHeight = 768
 $dm.dmFields     = 0x180000   # DM_PELSWIDTH | DM_PELSHEIGHT
 
-$result = [DisplayHelper]::ChangeDisplaySettings([ref]$dm, 0)
+$result = [DisplayHelper]::ChangeDisplaySettings([ref]$dm, 1)  # 1 = CDS_UPDATEREGISTRY (persistant)
 # 0 = DISP_CHANGE_SUCCESSFUL
 
 "Resolution avant : $before"  | Out-Host
