@@ -277,10 +277,9 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
     /* Dossier principal (toujours accessible, même en Session 0) */
     const fallbackDir = path.join(__dirname,'rapports');
     const rapportDir  = process.env.RAPPORT_DIR||fallbackDir;
-    /* On essaie le répertoire demandé ; si inaccessible on bascule sur ./rapports */
+    fs.mkdirSync(fallbackDir,{recursive:true});
+    /* On essaie RAPPORT_DIR ; si l'écriture échoue (ex: OneDrive Session 0) → fallback ./rapports */
     let saveDir = rapportDir;
-    try{ fs.mkdirSync(rapportDir,{recursive:true}); fs.accessSync(rapportDir,fs.constants.W_OK); }
-    catch(_){ saveDir = fallbackDir; fs.mkdirSync(fallbackDir,{recursive:true}); }
     const filePath = path.join(saveDir,filename);
 
     /* ── Génération PDF (pdfkit) ── */
@@ -381,8 +380,16 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
     await pdfDone;
     const pdfBuffer=Buffer.concat(chunks);
 
-    /* ── Sauvegarde fichier ── */
-    fs.writeFileSync(filePath,pdfBuffer);
+    /* ── Sauvegarde fichier (fallback si RAPPORT_DIR inaccessible) ── */
+    let finalPath = filePath;
+    try{
+      fs.mkdirSync(saveDir,{recursive:true});
+      fs.writeFileSync(filePath,pdfBuffer);
+    }catch(_){
+      saveDir   = fallbackDir;
+      finalPath = path.join(fallbackDir,filename);
+      fs.writeFileSync(finalPath,pdfBuffer);
+    }
 
     /* ── Envoi email ── */
     let emailSent=false, emailError=null;
@@ -402,7 +409,7 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
       emailSent=true;
     }catch(emailErr){emailError=emailErr.message;}
 
-    res.json({success:true,saved:filePath,saveDir,filename,emailSent,emailError});
+    res.json({success:true,saved:finalPath,saveDir,filename,emailSent,emailError});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
