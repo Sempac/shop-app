@@ -272,11 +272,16 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
     const dateLabel = new Date(date+'T00:00:00').toLocaleDateString('fr-FR',
       {weekday:'long',year:'numeric',month:'long',day:'numeric'});
     const filename  = `Rapport Comptable - The SMARTPHONE - ${dateStr}.pdf`;
-    const rapportDir= process.env.RAPPORT_DIR||'C:\\Users\\PC\\OneDrive\\Documents\\Rapport Comptable';
+    /* Dossier principal (toujours accessible, même en Session 0) */
+    const fallbackDir = path.join(__dirname,'rapports');
+    const rapportDir  = process.env.RAPPORT_DIR||fallbackDir;
     const fs   = require('fs');
     const path = require('path');
-    fs.mkdirSync(rapportDir,{recursive:true});
-    const filePath = path.join(rapportDir,filename);
+    /* On essaie le répertoire demandé ; si inaccessible on bascule sur ./rapports */
+    let saveDir = rapportDir;
+    try{ fs.mkdirSync(rapportDir,{recursive:true}); fs.accessSync(rapportDir,fs.constants.W_OK); }
+    catch(_){ saveDir = fallbackDir; fs.mkdirSync(fallbackDir,{recursive:true}); }
+    const filePath = path.join(saveDir,filename);
 
     /* ── Génération PDF (pdfkit) ── */
     const PDFDocument=require('pdfkit');
@@ -397,7 +402,7 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
       emailSent=true;
     }catch(emailErr){emailError=emailErr.message;}
 
-    res.json({success:true,saved:filePath,filename,emailSent,emailError});
+    res.json({success:true,saved:filePath,saveDir,filename,emailSent,emailError});
   }catch(e){res.status(500).json({error:e.message});}
 });
 

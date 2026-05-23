@@ -216,8 +216,8 @@ async function savePDF(btn) {
     var res  = await fetch('/api/rapport-comptable/generer?date=' + date);
     var data = await res.json();
     if (data.error) throw new Error(data.error);
-    var msg = '✅ PDF enregistré :\n' + data.filename;
-    if (data.emailSent)  msg += '\n\n✉️ Email envoyé à ' + (data.emailTo || '');
+    var msg = '✅ PDF enregistré :\n' + data.saved;
+    if (data.emailSent)  msg += '\n\n✉️ Email envoyé à ittech75013@gmail.com';
     if (data.emailError) msg += '\n\n⚠️ Email non envoyé : ' + data.emailError;
     alert(msg);
   } catch(e) {
