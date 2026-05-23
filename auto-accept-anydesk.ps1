@@ -62,19 +62,21 @@ function TryAccept($hwnd, $L, $T, $W, $H) {
     [AD]::SetForegroundWindow($hwnd) | Out-Null
     Start-Sleep -Milliseconds 500
 
+    # Autoriser est symetrique a Refuser (18% gauche) => ~82% droite
+    # On balaye large : 75% a 92%
     foreach ($yp in @(0.88, 0.91, 0.94, 0.97)) {
-        foreach ($xp in @(0.60, 0.65, 0.70, 0.75, 0.80)) {
+        foreach ($xp in @(0.75, 0.78, 0.80, 0.82, 0.84, 0.86, 0.88, 0.90, 0.92)) {
             if (-not [AD]::IsWindowVisible($hwnd)) {
                 # Connexion acceptee — deplacer curseur loin des boutons IMMEDIATEMENT
                 [AD]::SetCursorPos(0, 0) | Out-Null
                 $script:lastAcceptAttempt = [datetime]::Now   # cooldown demarre ici
-                "  -> ACCEPTE! Curseur (0,0), cooldown 60s" | Add-Content $log
+                "  -> AUTORISE! Curseur (0,0), cooldown 60s" | Add-Content $log
                 Start-Sleep -Milliseconds 2000   # laisser la session s'ouvrir sans interference
                 return
             }
             $px = [int]($L + $W * $xp)
             $py = [int]($T + $H * $yp)
-            "  Click DROIT x=$px y=$py" | Add-Content $log
+            "  Click x=$px y=$py" | Add-Content $log
             Click $px $py
         }
     }
