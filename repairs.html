@@ -7,7 +7,7 @@
 <title>SAV - Réparations</title>
 <style>
 *{box-sizing:border-box;}
-body{margin:0;font-family:Arial;background:#0f172a;color:white;}
+body{margin:0;font-family:Arial;background:#f1f5f9;color:#0f172a;}
 .container{display:flex;height:100vh;}
 .left{width:52%;border-right:2px solid #e2e8f0;padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px;background:#ffffff;color:#0f172a;}
 .home-btn{width:100%;padding:14px;background:#1e40af;color:white;border:none;font-size:15px;font-weight:bold;border-radius:8px;cursor:pointer;font-family:Arial;}
@@ -16,7 +16,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;}
 .search-row input::placeholder{color:#9ca3af;}
 .search-btn{padding:9px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-family:Arial;}
 table.rl{width:100%;border-collapse:collapse;font-size:12px;}
-table.rl th{background:#1e293b;color:#cbd5e1;padding:8px 10px;text-align:left;border-bottom:2px solid #334155;white-space:nowrap;}
+table.rl th{background:#f1f5f9;color:#374151;padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;}
 table.rl td{padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#374151;cursor:pointer;}
 table.rl tr:hover td{background:#eff6ff;}
 table.rl tr.selected td{background:#dbeafe;}
@@ -27,16 +27,16 @@ table.rl tr.selected td{background:#dbeafe;}
 .LIVRE     {background:#7c3aed;color:white;}
 .right{flex:1;padding:16px 20px;overflow:auto;}
 .tabs{display:flex;gap:6px;margin-bottom:14px;}
-.tab-btn{padding:9px 18px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;background:#1e293b;color:#94a3b8;font-family:Arial;}
+.tab-btn{padding:9px 18px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;background:#e2e8f0;color:#64748b;font-family:Arial;}
 .tab-btn.active{background:#3b82f6;color:white;}
 .form-section{display:none;}
 .form-section.active{display:block;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .fg{display:flex;flex-direction:column;gap:4px;}
 .fg.full{grid-column:1/span 2;}
-.fg label{font-size:11px;color:#94a3b8;font-weight:bold;text-transform:uppercase;}
-.fg input,.fg select,.fg textarea{width:100%;padding:9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:white;font-size:13px;font-family:Arial;}
-.fg select option{background:#1e293b;color:white;}
+.fg label{font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px;border-radius:6px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:13px;font-family:Arial;}
+.fg select option{background:#fff;color:#0f172a;}
 .fg textarea{height:65px;resize:vertical;}
 button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px 16px;font-size:13px;font-family:Arial;}
 .btn-green{background:#22c55e;color:white;}
@@ -44,19 +44,19 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 .btn-red  {background:#ef4444;color:white;}
 .btn-orange{background:#f59e0b;color:white;}
 .btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
-hr{border:1px solid #334155;margin:12px 0;}
-.dbox{background:#1e293b;padding:10px 12px;border-radius:6px;font-size:13px;margin-bottom:6px;}
-.dbox .lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:bold;margin-bottom:3px;}
-.contact-bar{background:#1e293b;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.contact-bar .cname{font-size:14px;font-weight:bold;color:white;}
-.contact-bar .cphone{font-size:12px;color:#94a3b8;}
+hr{border:1px solid #e2e8f0;margin:12px 0;}
+.dbox{background:#fff;border:1px solid #e2e8f0;padding:10px 12px;border-radius:6px;font-size:13px;margin-bottom:6px;}
+.dbox .lbl{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:bold;margin-bottom:3px;}
+.contact-bar{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.contact-bar .cname{font-size:14px;font-weight:bold;color:#0f172a;}
+.contact-bar .cphone{font-size:12px;color:#64748b;}
 .ready-badge{background:#16a34a;color:white;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:bold;}
-.pay-section{background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:14px;margin-bottom:12px;}
-.pay-section h4{margin:0 0 10px;font-size:12px;color:#94a3b8;text-transform:uppercase;}
+.pay-section{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:12px;}
+.pay-section h4{margin:0 0 10px;font-size:12px;color:#64748b;text-transform:uppercase;}
 .pay-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.pf label{font-size:10px;color:#94a3b8;font-weight:bold;display:block;margin-bottom:3px;}
-.pf input{width:100%;padding:9px;border:1.5px solid #334155;border-radius:6px;font-size:13px;background:#1e293b;color:white;font-family:Arial;}
-.pf.credit input{border-color:#f59e0b;background:#1c1407;color:#fcd34d;font-weight:bold;}
+.pf label{font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;}
+.pf input{width:100%;padding:9px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;background:#fff;color:#0f172a;font-family:Arial;}
+.pf.credit input{border-color:#f59e0b;background:#fffbeb;color:#92400e;font-weight:bold;}
 .pay-recap{margin-top:8px;font-size:11px;color:#64748b;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
 .pay-err{font-size:11px;color:#ef4444;margin-top:5px;display:none;}
 .cb-btn{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;font-family:Arial;}
@@ -64,7 +64,7 @@ hr{border:1px solid #334155;margin:12px 0;}
 .cb-sms {background:#2563eb;color:white;}
 .cb-wa  {background:#25d366;color:white;}
 /* Datalist style */
-.fg input[list]{background:#1e293b;color:white;}
+.fg input[list]{background:#fff;color:#0f172a;}
 
 /* COMPARATEUR PRIX */
 .comp-panel{display:none;position:fixed;top:0;right:0;width:460px;height:100vh;background:white;box-shadow:-4px 0 24px #0003;z-index:600;flex-direction:column;}
@@ -100,8 +100,8 @@ table.sticky thead tr th,
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #1e293b;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  background: #f1f5f9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 
@@ -118,8 +118,8 @@ table.sticky thead tr th,
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #1e293b;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  background: #f1f5f9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 </style>
 <link rel="stylesheet" href="tooltips.css">
@@ -178,7 +178,7 @@ table.sticky thead tr th,
 
 <!-- RIGHT -->
 <div class="right">
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#111827;border-bottom:2px solid #1e293b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#f1f5f9;border-bottom:2px solid #e2e8f0;">
     <div style="display:flex;gap:0;">
       <button id="tabNew"    onclick="showTab('new')"    style="background:#1e3a8a;color:white;border-bottom:3px solid #3b82f6;border:none;padding:13px 18px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">➕ Nouvelle réparation</button>
       <button id="tabDetail" onclick="showTab('detail')" style="display:none;background:#1e3a8a;color:white;border:none;border-bottom:3px solid #3b82f6;padding:13px 18px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;">📋 Modifier</button>
@@ -750,9 +750,9 @@ async function showRepair(id) {
     '</div>' +
 
     /* Section pièces */
-    '<div style="background:#1e293b;border-radius:10px;padding:14px;margin-top:14px;">' +
+    '<div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-top:14px;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-        '<div style="font-size:13px;font-weight:bold;color:white;">🔩 Pièces utilisées</div>' +
+        '<div style="font-size:13px;font-weight:bold;color:#0f172a;">🔩 Pièces utilisées</div>' +
         '<button onclick="showAddPart(' + id + ')" style="padding:5px 12px;background:#7c3aed;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">➕ Ajouter</button>' +
       '</div>' +
       '<div id="partsList"></div>' +
