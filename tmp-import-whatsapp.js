@@ -2,7 +2,7 @@ require('dotenv').config();
 const {Pool}=require('pg');
 const fs=require('fs');
 const path=require('path');
-const Jimp=require('jimp');
+const {Jimp,HorizontalAlign,VerticalAlign}=require('jimp');
 
 const pool=new Pool({user:process.env.DB_USER,host:process.env.DB_HOST,database:process.env.DB_NAME,password:process.env.DB_PASSWORD,port:Number(process.env.DB_PORT)||5432});
 
@@ -68,33 +68,34 @@ const PRODUCTS=[
   },
 ];
 
-/* Nettoyage image : auto-rotate EXIF, normalise luminosité, resize 800x800 centré */
+/* Nettoyage image : auto-rotate EXIF, normalise luminosité, resize 900x900 centré */
 async function processImage(srcPath,destPath){
-  const img=await Jimp.read(srcPath);
+  // Jimp v1 : fromFile gère l'auto-rotation EXIF automatiquement
+  const img=await Jimp.fromFile(srcPath);
 
-  // Auto-rotate via EXIF (jimp le fait automatiquement à la lecture)
-  // Normalise les niveaux (comme "auto contrast")
+  // Normalise les niveaux (auto-contrast / auto-brightness)
   img.normalize();
 
   // Légère amélioration de la netteté
-  img.convolute([
-    [0,-0.5,0],
-    [-0.5,3,-0.5],
-    [0,-0.5,0]
-  ]);
+  img.sharpen({sigma:0.6});
 
-  // Recadrage : on retire les bords si fond uniforme (blanc/gris clair)
-  img.autocrop({tolerance:0.05,cropOnlyFrames:false});
+  // Recadrage auto des bords uniformes
+  try{ img.autocrop(); }catch(e){}
 
   // Resize en carré 900x900 avec fond blanc, image centrée
   const W=900;
-  const bg=new Jimp(W,W,0xFFFFFFFF);
-  img.scaleToFit(W-60,W-60);
-  const x=Math.floor((W-img.getWidth())/2);
-  const y=Math.floor((W-img.getHeight())/2);
+  const PAD=40;
+  const maxDim=W-PAD*2;
+  img.contain({w:maxDim,h:maxDim});
+
+  // Créer fond blanc et coller l'image centrée
+  const bg=new Jimp({width:W,height:W,color:0xFFFFFFFF});
+  const x=Math.floor((W-img.width)/2);
+  const y=Math.floor((W-img.height)/2);
   bg.composite(img,x,y);
 
-  await bg.quality(88).writeAsync(destPath);
+  // Sauvegarder en JPEG qualité 88
+  await bg.write(destPath,{quality:88});
 }
 
 (async()=>{
