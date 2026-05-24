@@ -16,8 +16,19 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 .del-btn{background:#fee2e2;color:#ef4444;border-radius:4px;padding:3px 8px;font-size:11px;font-family:Arial;}
 .detail-btn{background:#f3e8ff;color:#7c3aed;border-radius:4px;padding:3px 8px;font-size:11px;font-family:Arial;margin-right:2px;}
 .main{display:flex;flex:1;overflow:hidden;}
-.sidebar{width:220px;background:white;padding:12px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:7px;}
+.sidebar{width:230px;background:white;padding:12px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:7px;}
 .sidebar h3{margin:0 0 4px;font-size:13px;color:#0f172a;}
+/* Chips filtres */
+.chip-group{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;}
+.chip{padding:4px 9px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;font-size:11px;font-weight:700;cursor:pointer;color:#475569;font-family:Arial;transition:.15s;white-space:nowrap;}
+.chip:hover{border-color:#3b82f6;color:#3b82f6;}
+.chip.on{background:#3b82f6;border-color:#3b82f6;color:#fff;}
+.chip.on.c-occ{background:#f59e0b;border-color:#f59e0b;}
+.chip.on.c-neuf{background:#22c55e;border-color:#22c55e;}
+.chip.on.c-rec{background:#6366f1;border-color:#6366f1;}
+.chip.on.s-ok{background:#22c55e;border-color:#22c55e;}
+.chip.on.s-low{background:#f59e0b;border-color:#f59e0b;}
+.chip.on.s-out{background:#ef4444;border-color:#ef4444;}
 .fg label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;display:block;margin-bottom:3px;}
 .fg input,.fg select{width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;}
 .fg input:focus,.fg select:focus{outline:none;border-color:#3b82f6;}
@@ -177,21 +188,31 @@ table.sticky thead tr th,
     <div id="alertBox" class="alert-box" style="display:none"></div>
     <div class="fg"><label>Recherche</label><input id="f_search" placeholder="Nom, couleur..."></div>
     <div class="fg"><label>Catégorie</label>
-      <select id="f_cat">
-        <option value="">Toutes</option>
-        <option>Smartphone</option><option>Tablette</option><option>PC Portable</option>
-        <option>Carte SIM</option><option>Coque</option><option>Protection écran</option>
-        <option>Chargeur</option><option>Câble</option><option>Audio</option>
-        <option>Accessoire Info</option><option>Pièce détachée</option><option>Prestation</option>
-      </select>
+      <select id="f_cat" style="display:none"></select>
+      <div class="chip-group" id="chips-cat">
+        <button class="chip on" data-val="" onclick="setChip('cat','',this)">Tous</button>
+        <button class="chip" data-val="Smartphone" onclick="setChip('cat','Smartphone',this)">📱 Smartphones</button>
+        <button class="chip" data-val="Tablette" onclick="setChip('cat','Tablette',this)">📟 Tablettes</button>
+        <button class="chip" data-val="PC Portable" onclick="setChip('cat','PC Portable',this)">💻 PC</button>
+        <button class="chip" data-val="Coque" onclick="setChip('cat','Coque',this)">🛡️ Coques</button>
+        <button class="chip" data-val="Protection écran" onclick="setChip('cat','Protection écran',this)">🔲 Protection</button>
+        <button class="chip" data-val="Câble" onclick="setChip('cat','Câble',this)">🔗 Câbles</button>
+        <button class="chip" data-val="Chargeur" onclick="setChip('cat','Chargeur',this)">🔌 Chargeurs</button>
+        <button class="chip" data-val="Audio" onclick="setChip('cat','Audio',this)">🎧 Audio</button>
+        <button class="chip" data-val="Pièce détachée" onclick="setChip('cat','Pièce détachée',this)">🔧 Pièces</button>
+        <button class="chip" data-val="Accessoire Info" onclick="setChip('cat','Accessoire Info',this)">💾 Info</button>
+        <button class="chip" data-val="Carte SIM" onclick="setChip('cat','Carte SIM',this)">💳 SIM</button>
+        <button class="chip" data-val="Prestation" onclick="setChip('cat','Prestation',this)">🖨️ Prestation</button>
+      </div>
     </div>
     <div class="fg"><label>État</label>
-      <select id="f_cond">
-        <option value="">Tous</option>
-        <option value="NEUF">Neuf</option>
-        <option value="OCCASION">Occasion</option>
-        <option value="RECONDITIONNE">Reconditionné</option>
-      </select>
+      <select id="f_cond" style="display:none"></select>
+      <div class="chip-group" id="chips-cond">
+        <button class="chip on" data-val="" onclick="setChip('cond','',this)">Tous</button>
+        <button class="chip c-neuf" data-val="NEUF" onclick="setChip('cond','NEUF',this)">✨ Neuf</button>
+        <button class="chip c-occ" data-val="OCCASION" onclick="setChip('cond','OCCASION',this)">🔄 Occasion</button>
+        <button class="chip c-rec" data-val="RECONDITIONNE" onclick="setChip('cond','RECONDITIONNE',this)">🔧 Recond.</button>
+      </div>
     </div>
     <div class="fg"><label>Grade</label>
       <select id="f_grade">
@@ -213,12 +234,13 @@ table.sticky thead tr th,
     <div class="fg"><label>Fournisseur</label><input id="f_supplier" placeholder="Ex: Mohamed..."></div>
     <div class="fg"><label>Zone</label><input id="f_zone" placeholder="Ex: Armoire 1"></div>
     <div class="fg"><label>Stock</label>
-      <select id="f_stock">
-        <option value="">Tous</option>
-        <option value="ok">En stock</option>
-        <option value="low">Faible</option>
-        <option value="out">Rupture</option>
-      </select>
+      <select id="f_stock" style="display:none"></select>
+      <div class="chip-group" id="chips-stock">
+        <button class="chip on" data-val="" onclick="setChip('stock','',this)">Tous</button>
+        <button class="chip s-ok" data-val="ok" onclick="setChip('stock','ok',this)">✅ En stock</button>
+        <button class="chip s-low" data-val="low" onclick="setChip('stock','low',this)">⚠️ Faible</button>
+        <button class="chip s-out" data-val="out" onclick="setChip('stock','out',this)">❌ Rupture</button>
+      </div>
     </div>
     <button class="reset-btn" id="btnReset">♻ Réinitialiser</button>
   </div>
@@ -476,6 +498,14 @@ function applyFilters() {
   _applyFiltersLocal(qRaw, norm);
 }
 
+function setChip(field, val, btn) {
+  document.getElementById('f_'+field).value = val;
+  var group = document.getElementById('chips-'+field);
+  group.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
+  btn.classList.add('on');
+  applyFilters();
+}
+
 function _applyFiltersLocal(qRaw, norm) {
   var q        = norm(qRaw);
   var cat      = document.getElementById('f_cat').value;
@@ -525,6 +555,14 @@ function resetFilters() {
   document.getElementById('f_grade').value    = '';
   document.getElementById('f_color').value    = '';
   document.getElementById('f_stock').value    = '';
+  // Réinitialiser les chips
+  ['cat','cond','stock'].forEach(function(field){
+    var group = document.getElementById('chips-'+field);
+    if(!group) return;
+    group.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
+    var first = group.querySelector('.chip[data-val=""]');
+    if(first) first.classList.add('on');
+  });
   applyFilters();
 }
 
