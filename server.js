@@ -2180,13 +2180,73 @@ app.get('/api/catalogue/qrcode', async(req,res) => {
 });
 
 /* =======================================================
+   CATALOGUE ADMIN — AUTHENTIFICATION PAR MOT DE PASSE
+======================================================= */
+const crypto=require('crypto');
+const CAT_ADMIN_PASS=process.env.CATALOGUE_ADMIN_PASS||'Smartphone@Admin2026';
+// Token stable : change uniquement si le mot de passe change (persiste aux redémarrages)
+const CAT_TOKEN=crypto.createHash('sha256').update(CAT_ADMIN_PASS+':cat-admin-v1').digest('hex');
+
+function parseCookies(header){
+  const c={};(header||'').split(';').forEach(p=>{const[k,v]=(p.trim()).split('=');if(k)c[k.trim()]=decodeURIComponent((v||'').trim());});return c;
+}
+function requireCatAdmin(req,res,next){
+  const cookies=parseCookies(req.headers.cookie);
+  if(cookies.cat_admin===CAT_TOKEN)return next();
+  if((req.originalUrl||'').includes('/api/catalogue-admin'))
+    return res.status(401).json({error:'Non authentifié. Connectez-vous sur /catalogue-admin'});
+  res.redirect('/catalogue-admin-login');
+}
+
+const CAT_LOGIN_HTML=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Catalogue Admin — Connexion</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a0f;color:#f0f0f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+.box{background:#1a1a24;border:1px solid #2a2a3a;border-radius:16px;padding:40px 32px;width:min(340px,90vw);text-align:center;}
+.logo{font-size:28px;font-weight:900;margin-bottom:4px;}.logo span{color:#e8ff00;}
+.sub{font-size:12px;color:#6b6b85;margin-bottom:28px;}
+input{width:100%;padding:11px 14px;background:#13131a;border:1px solid #3a3a5a;border-radius:8px;color:#fff;font-size:14px;margin-bottom:14px;outline:0;}
+input:focus{border-color:#e8ff00;}
+button{width:100%;padding:13px;background:#e8ff00;color:#000;border:0;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px;}
+button:hover{opacity:.88;}.err{color:#ff6b6b;font-size:13px;margin-top:12px;}</style></head>
+<body><div class="box">
+<div class="logo">📱 <span>SMARTPHONE</span></div>
+<div class="sub">Catalogue Admin — Accès sécurisé</div>
+<form method="POST" action="/catalogue-admin-login">
+<input type="password" name="password" placeholder="Mot de passe admin" autofocus autocomplete="current-password">
+<button type="submit">🔒 Connexion</button>
+</form>%ERR%
+</div></body></html>`;
+
+app.get('/catalogue-admin-login',(req,res)=>{
+  res.send(CAT_LOGIN_HTML.replace('%ERR%',''));
+});
+app.post('/catalogue-admin-login',express.urlencoded({extended:false}),(req,res)=>{
+  if((req.body.password||'')=== CAT_ADMIN_PASS){
+    const exp=new Date(Date.now()+30*24*3600*1000).toUTCString();
+    res.setHeader('Set-Cookie',`cat_admin=${CAT_TOKEN}; Path=/; HttpOnly; Expires=${exp}; SameSite=Strict`);
+    res.redirect('/catalogue-admin');
+  } else {
+    res.status(401).send(CAT_LOGIN_HTML.replace('%ERR%','<div class="err">❌ Mot de passe incorrect</div>'));
+  }
+});
+app.get('/catalogue-admin-logout',(req,res)=>{
+  res.setHeader('Set-Cookie','cat_admin=; Path=/; HttpOnly; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+  res.redirect('/catalogue-admin-login');
+});
+
+/* =======================================================
    CATALOGUE ADMIN — gestion produits/services/settings
 ======================================================= */
 
 // Page admin catalogue
-app.get('/catalogue-admin', (req,res) => {
+app.get('/catalogue-admin', requireCatAdmin, (req,res) => {
   res.sendFile(path.join(__dirname,'catalogue-admin.html'));
 });
+
+// Protection middleware sur toutes les routes API admin
+app.use('/api/catalogue-admin', requireCatAdmin);
 
 // Lister tous les produits pour admin (avec filtre)
 app.get('/api/catalogue-admin/products', async(req,res) => {
