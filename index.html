@@ -63,11 +63,13 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .dashboard{background:linear-gradient(135deg,#064e3b,#059669);}
 .devis    {background:linear-gradient(135deg,#1e3a8a,#3b82f6);}
 .commandes{background:linear-gradient(135deg,#0e7490,#0891b2);}
+.users    {background:linear-gradient(135deg,#5b21b6,#7c3aed);}
 
 /* USER BAR */
 .user-bar{background:#1e293b;padding:8px 24px;display:flex;justify-content:space-between;align-items:center;font-size:12px;}
 .user-info-badge{display:flex;align-items:center;gap:8px;}
 .role-badge{padding:4px 12px;border-radius:12px;font-weight:bold;font-size:11px;}
+.rb-admin {background:#7c3aed;color:#ddd6fe;}
 .rb-gerant{background:#1e40af;color:#93c5fd;}
 .rb-vendeur{background:#334155;color:#94a3b8;}
 .logout-btn{padding:5px 12px;background:#334155;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
@@ -129,6 +131,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
   <div class="user-info-badge">
     <span id="userIcon">👤</span>
     <span id="userName" style="color:white;font-weight:bold;font-size:13px;">—</span>
+    <span id="roleBadge" class="role-badge rb-vendeur" style="display:none;"></span>
     <span style="color:#475569;font-size:12px;" id="loginTime"></span>
   </div>
   <div style="display:flex;gap:6px;">
@@ -220,9 +223,9 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
         <div class="group-title" style="--gc:#ef4444;">💰 Finances</div>
         <div class="group-grid">
           <a title="DÉPENSES" href="expenses.html"          class="card expenses"><div class="icon">📉</div><div class="title">DÉPENSES</div><div class="desc">Sorties caisse<br>Fournisseurs<br>Suivi des coûts</div></a>
-          <a title="CAISSE DU JOUR" href="dailyreport.html"       class="card caisse gerant-only"><div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
+          <a title="CAISSE DU JOUR" href="dailyreport.html"       class="card caisse"><div class="icon">📊</div><div class="title">CAISSE DU JOUR</div><div class="desc">Rapport journalier<br>CB / Espèces<br>Net caisse</div></a>
           <a title="RAPPORT COMPTABLE" href="rapport-comptable.html" class="card compta"><div class="icon">📋</div><div class="title">RAPPORT COMPTABLE</div><div class="desc">Détails CA<br>CB / Espèces / DP<br>Pour le comptable</div></a>
-          <a title="DASHBOARD" href="dashboard.html"         class="card dashboard gerant-only"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
+          <a title="DASHBOARD" href="dashboard.html"         class="card dashboard"><div class="icon">📈</div><div class="title">DASHBOARD</div><div class="desc">Rentabilité<br>CA &amp; Marges<br>Statistiques</div></a>
         </div>
       </div>
     </div>
@@ -243,6 +246,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
         <div class="group-grid">
           <a title="IMPRESSION" href="printshop.html" class="card print">   <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
           <a title="CONTACTS" href="contacts.html"  class="card contacts"><div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>WA · Email</div></a>
+          <a title="GESTION UTILISATEURS" href="users-admin.html" class="card users admin-only"><div class="icon">👥</div><div class="title">UTILISATEURS</div><div class="desc">Gérer les comptes<br>PINs · Rôles<br>Paramètres appli</div></a>
         </div>
       </div>
     </div>
@@ -260,15 +264,21 @@ if (!user) { /* requireAuth redirige automatiquement */ }
 /* Afficher le badge utilisateur */
 if (user) {
   document.getElementById('userName').textContent = user.name;
-  var icon = user.role === 'gerant' ? '👑' : '👤';
+  var icon   = user.role === 'admin' ? '👑' : user.role === 'gerant' ? '🔑' : '👤';
+  var rbCls  = user.role === 'admin' ? 'rb-admin' : user.role === 'gerant' ? 'rb-gerant' : 'rb-vendeur';
+  var rbLabel= user.role === 'admin' ? 'Admin' : user.role === 'gerant' ? 'Gérant' : 'Vendeur';
   document.getElementById('userIcon').textContent = icon;
+  var badge = document.getElementById('roleBadge');
+  badge.textContent  = rbLabel;
+  badge.className    = 'role-badge ' + rbCls;
+  badge.style.display= 'inline-block';
   var loginDate = new Date(user.loginAt);
   document.getElementById('loginTime').textContent =
     'Connecté à ' + loginDate.getHours() + 'h' + String(loginDate.getMinutes()).padStart(2,'0');
 
-  /* Masquer les modules gérant si vendeur */
-  if (user.role !== 'gerant') {
-    document.querySelectorAll('.gerant-only').forEach(function(el){
+  /* Masquer les modules admin si pas admin */
+  if (user.role !== 'admin') {
+    document.querySelectorAll('.admin-only').forEach(function(el){
       el.classList.add('hidden');
     });
   }

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Gestion Utilisateurs — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;}
+.topbar{background:#111827;border-bottom:2px solid #1f2937;padding:12px 24px;display:flex;align-items:center;gap:12px;}
+.topbar a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.topbar a:hover{color:white;}
+.topbar h1{margin:0;font-size:18px;font-weight:bold;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.main{max-width:900px;margin:0 auto;padding:24px 16px;}
+
+/* CARDS STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+.stat-card{background:#1e293b;border-radius:12px;padding:16px;text-align:center;}
+.stat-num{font-size:28px;font-weight:900;color:white;}
+.stat-lbl{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+
+/* TABLE */
+.section-title{font-size:13px;font-weight:bold;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.add-btn{background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;}
+.add-btn:hover{background:#6d28d9;}
+.users-table{width:100%;border-collapse:collapse;}
+.users-table th{text-align:left;padding:10px 14px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1e293b;}
+.users-table td{padding:12px 14px;border-bottom:1px solid #1e293b;font-size:13px;vertical-align:middle;}
+.users-table tr:last-child td{border-bottom:none;}
+.users-table tr:hover td{background:#1e293b;}
+
+.role-chip{display:inline-block;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:bold;}
+.rc-admin {background:#5b21b6;color:#c4b5fd;}
+.rc-gerant{background:#1e40af;color:#93c5fd;}
+.rc-vendeur{background:#334155;color:#94a3b8;}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+.dot-on {background:#22c55e;}
+.dot-off{background:#ef4444;}
+
+.btn-sm{padding:5px 11px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
+.btn-edit{background:#1e3a8a;color:#93c5fd;}
+.btn-edit:hover{background:#1e40af;}
+.btn-pin {background:#0e7490;color:#a5f3fc;}
+.btn-pin:hover{background:#0891b2;}
+.btn-toggle{background:#334155;color:#94a3b8;}
+.btn-toggle:hover{background:#ef4444;color:white;}
+.btn-on{background:#052e16;color:#86efac;}
+.btn-on:hover{background:#ef4444;color:white;}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:#1e293b;border-radius:16px;padding:28px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.modal h2{margin:0 0 20px;font-size:18px;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;}
+.form-group input,.form-group select{width:100%;padding:10px 12px;background:#0f172a;border:1.5px solid #334155;border-radius:8px;color:white;font-size:14px;font-family:Arial;}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#7c3aed;}
+.form-group select option{background:#1e293b;}
+.pin-hint{font-size:11px;color:#64748b;margin-top:4px;}
+.modal-btns{display:flex;gap:10px;margin-top:20px;}
+.btn-cancel{flex:1;padding:11px;background:#334155;color:#94a3b8;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;}
+.btn-cancel:hover{background:#475569;}
+.btn-save{flex:2;padding:11px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;}
+.btn-save:hover{background:#6d28d9;}
+.btn-danger{flex:1;padding:11px;background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;}
+.btn-danger:hover{background:#b91c1c;}
+
+/* PIN MODAL */
+.pin-display{display:flex;justify-content:center;gap:8px;margin:16px 0;}
+.pin-dot-lg{width:22px;height:22px;border-radius:50%;background:#334155;transition:0.2s;}
+.pin-dot-lg.filled{background:#7c3aed;}
+.pin-grid-modal{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto 14px;}
+.pin-btn-m{padding:14px;background:#0f172a;color:white;border:1.5px solid #334155;border-radius:8px;font-size:20px;font-weight:bold;cursor:pointer;text-align:center;font-family:Arial;}
+.pin-btn-m:hover{background:#334155;border-color:#7c3aed;}
+.pin-btn-m:active{transform:scale(0.93);}
+.pin-zero{grid-column:2;}
+.new-pin-display{font-size:28px;font-weight:900;letter-spacing:6px;text-align:center;color:#7c3aed;margin:8px 0;min-height:40px;font-variant-numeric:tabular-nums;}
+</style>
+<script src="auth.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html">← Accueil</a>
+  <span style="color:#334155;">|</span>
+  <h1>👥 Gestion Utilisateurs</h1>
+  <div class="topbar-right">
+    <span id="topUser" style="font-size:13px;color:#94a3b8;"></span>
+  </div>
+</div>
+
+<div class="main">
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">—</div>
+      <div class="stat-lbl">Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#c4b5fd;" id="statAdmin">—</div>
+      <div class="stat-lbl">Admin</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#93c5fd;" id="statGerant">—</div>
+      <div class="stat-lbl">Gérants</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#94a3b8;" id="statVendeur">—</div>
+      <div class="stat-lbl">Vendeurs</div>
+    </div>
+  </div>
+
+  <!-- LISTE -->
+  <div class="section-title">
+    <span>Comptes utilisateurs</span>
+    <button class="add-btn" onclick="openAddModal()">➕ Ajouter</button>
+  </div>
+  <table class="users-table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Rôle</th>
+        <th>Authentification</th>
+        <th>Statut</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="usersBody"></tbody>
+  </table>
+</div>
+
+<!-- MODAL EDIT / ADD -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <h2 id="editModalTitle">✏️ Modifier l'utilisateur</h2>
+    <div class="form-group">
+      <label>Nom</label>
+      <input type="text" id="editName" placeholder="Prénom">
+    </div>
+    <div class="form-group">
+      <label>Rôle</label>
+      <select id="editRole">
+        <option value="vendeur">👤 Vendeur (PIN 4 chiffres)</option>
+        <option value="gerant">🔑 Gérant (PIN 6 chiffres)</option>
+        <option value="admin">👑 Admin (PIN 6 chiffres)</option>
+      </select>
+    </div>
+    <div class="form-group" id="editPinGroup">
+      <label>Code PIN <span id="editPinLenHint" style="color:#64748b;font-weight:normal;text-transform:none;letter-spacing:0;">(4 chiffres pour vendeur, 6 pour gérant/admin)</span></label>
+      <input type="text" id="editPin" placeholder="Laisser vide pour ne pas changer" maxlength="6" pattern="[0-9]*" inputmode="numeric">
+      <div class="pin-hint" id="editPinHint">Saisir seulement si vous voulez changer le PIN</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('editModal')">Annuler</button>
+      <button class="btn-save" onclick="saveUser()">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PIN CHANGE -->
+<div class="modal-bg" id="pinModal">
+  <div class="modal" style="max-width:320px;text-align:center;">
+    <h2 style="margin-bottom:4px;">🔢 Nouveau PIN</h2>
+    <div id="pinModalUser" style="color:#94a3b8;font-size:13px;margin-bottom:12px;"></div>
+    <div class="pin-display" id="pinModalDots"></div>
+    <div class="new-pin-display" id="pinModalDisplay">——</div>
+    <div class="pin-grid-modal">
+      <button class="pin-btn-m" onclick="modalPinPress('1')">1</button>
+      <button class="pin-btn-m" onclick="modalPinPress('2')">2</button>
+      <button class="pin-btn-m" onclick="modalPinPress('3')">3</button>
+      <button class="pin-btn-m" onclick="modalPinPress('4')">4</button>
+      <button class="pin-btn-m" onclick="modalPinPress('5')">5</button>
+      <button class="pin-btn-m" onclick="modalPinPress('6')">6</button>
+      <button class="pin-btn-m" onclick="modalPinPress('7')">7</button>
+      <button class="pin-btn-m" onclick="modalPinPress('8')">8</button>
+      <button class="pin-btn-m" onclick="modalPinPress('9')">9</button>
+      <button class="pin-btn-m" onclick="modalPinDel()" style="font-size:14px;color:#94a3b8;">⌫</button>
+      <button class="pin-btn-m pin-zero" onclick="modalPinPress('0')">0</button>
+    </div>
+    <div id="pinModalHint" style="font-size:12px;color:#64748b;margin-bottom:14px;"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('pinModal')">Annuler</button>
+      <button class="btn-save" id="pinSaveBtn" onclick="savePin()" disabled>✅ Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── AUTH ── */
+var currentUser = requireAuth();
+if (currentUser && currentUser.role !== 'admin') {
+  alert('Accès réservé à l\'administrateur.');
+  window.location.href = 'index.html';
+}
+if (currentUser) {
+  document.getElementById('topUser').textContent = '👑 ' + currentUser.name;
+}
+
+var allUsers = [];
+var editingId = null; /* null = ajout */
+var pinTargetUser = null;
+var modalPin = '';
+var modalPinLen = 4;
+
+/* ── CHARGEMENT ── */
+async function loadUsers() {
+  try {
+    var res = await fetch('/api/users');
+    allUsers = await res.json();
+    renderUsers();
+    renderStats();
+  } catch(e) {
+    document.getElementById('usersBody').innerHTML =
+      '<tr><td colspan="5" style="color:#ef4444;text-align:center;">Erreur chargement : ' + e.message + '</td></tr>';
+  }
+}
+
+function renderStats() {
+  document.getElementById('statTotal').textContent   = allUsers.length;
+  document.getElementById('statAdmin').textContent   = allUsers.filter(u=>u.role==='admin').length;
+  document.getElementById('statGerant').textContent  = allUsers.filter(u=>u.role==='gerant').length;
+  document.getElementById('statVendeur').textContent = allUsers.filter(u=>u.role==='vendeur').length;
+}
+
+function roleChip(role) {
+  var cls = role === 'admin' ? 'rc-admin' : role === 'gerant' ? 'rc-gerant' : 'rc-vendeur';
+  var lbl = role === 'admin' ? '👑 Admin' : role === 'gerant' ? '🔑 Gérant' : '👤 Vendeur';
+  return '<span class="role-chip ' + cls + '">' + lbl + '</span>';
+}
+
+function renderUsers() {
+  var order = {admin:0, gerant:1, vendeur:2};
+  var sorted = allUsers.slice().sort(function(a,b){
+    var oa = order[a.role]||9, ob = order[b.role]||9;
+    return oa !== ob ? oa - ob : a.name.localeCompare(b.name);
+  });
+  var html = sorted.map(function(u) {
+    var active   = u.is_active !== false;
+    var pinLen   = (u.role === 'admin' || u.role === 'gerant') ? 6 : 4;
+    var statusHtml = (active ? '<span class="status-dot dot-on"></span>Actif' : '<span class="status-dot dot-off"></span><span style="color:#ef4444;">Inactif</span>');
+    var toggleLbl  = active ? 'Désactiver' : 'Activer';
+    var toggleCls  = active ? 'btn-sm btn-toggle' : 'btn-sm btn-on';
+    var authInfo   = u.auth_type === 'pin' ? 'PIN · ' + pinLen + ' chiffres' : 'Mot de passe';
+    /* On ne peut pas se désactiver soi-même */
+    var sameUser = currentUser && currentUser.id === u.id;
+    return '<tr>' +
+      '<td style="font-weight:bold;">' + u.name + '</td>' +
+      '<td>' + roleChip(u.role) + '</td>' +
+      '<td style="color:#94a3b8;">' + authInfo + '</td>' +
+      '<td>' + statusHtml + '</td>' +
+      '<td style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<button class="btn-sm btn-edit" onclick="openEditModal(' + u.id + ')">✏️ Modifier</button>' +
+        '<button class="btn-sm btn-pin"  onclick="openPinModal(' + u.id + ')">🔢 PIN</button>' +
+        (!sameUser ? '<button class="' + toggleCls + '" onclick="toggleUser(' + u.id + ',' + active + ')">' + toggleLbl + '</button>' : '') +
+      '</td>' +
+    '</tr>';
+  }).join('');
+  document.getElementById('usersBody').innerHTML = html || '<tr><td colspan="5" style="color:#64748b;text-align:center;">Aucun utilisateur</td></tr>';
+}
+
+/* ── TOGGLE ACTIF ── */
+async function toggleUser(id, currentActive) {
+  var u = allUsers.find(function(x){ return x.id === id; });
+  if (!u) return;
+  var msg = currentActive
+    ? 'Désactiver ' + u.name + ' ? Il ne pourra plus se connecter.'
+    : 'Réactiver ' + u.name + ' ?';
+  if (!confirm(msg)) return;
+  try {
+    await fetch('/api/users/' + id, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name: u.name, role: u.role, auth_type: u.auth_type,
+        pin: u.pin, password_hash: u.password_hash,
+        is_active: !currentActive
+      })
+    });
+    await loadUsers();
+  } catch(e) { alert('Erreur : ' + e.message); }
+}
+
+/* ── MODAL EDIT ── */
+function openAddModal() {
+  editingId = null;
+  document.getElementById('editModalTitle').textContent = '➕ Ajouter un utilisateur';
+  document.getElementById('editName').value = '';
+  document.getElementById('editRole').value = 'vendeur';
+  document.getElementById('editPin').value  = '';
+  document.getElementById('editPin').placeholder = 'PIN (4 chiffres pour vendeur)';
+  document.getElementById('editPinHint').textContent = 'Obligatoire pour un nouvel utilisateur';
+  showModal('editModal');
+}
+
+function openEditModal(id) {
+  var u = allUsers.find(function(x){ return x.id === id; });
+  if (!u) return;
+  editingId = id;
+  document.getElementById('editModalTitle').textContent = '✏️ Modifier — ' + u.name;
+  document.getElementById('editName').value = u.name;
+  document.getElementById('editRole').value = u.role;
+  document.getElementById('editPin').value  = '';
+  document.getElementById('editPin').placeholder = 'Laisser vide pour ne pas changer';
+  document.getElementById('editPinHint').textContent = 'PIN actuel conservé si laissé vide';
+  showModal('editModal');
+}
+
+async function saveUser() {
+  var name = document.getElementById('editName').value.trim();
+  var role = document.getElementById('editRole').value;
+  var pin  = document.getElementById('editPin').value.trim();
+  if (!name) { alert('Saisir un nom.'); return; }
+
+  var expectedPinLen = (role === 'admin' || role === 'gerant') ? 6 : 4;
+
+  if (editingId === null) {
+    /* AJOUT */
+    if (!pin) { alert('PIN obligatoire pour un nouvel utilisateur.'); return; }
+    if (!/^\d+$/.test(pin) || pin.length !== expectedPinLen) {
+      alert('Le PIN doit faire ' + expectedPinLen + ' chiffres pour ce rôle (' + role + ').');
+      return;
+    }
+    try {
+      await fetch('/api/users', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({name:name, role:role, auth_type:'pin', pin:pin, password_hash:pin})
+      });
+      closeModal('editModal');
+      await loadUsers();
+    } catch(e) { alert('Erreur : ' + e.message); }
+  } else {
+    /* MODIFICATION */
+    var u = allUsers.find(function(x){ return x.id === editingId; });
+    if (!u) return;
+    if (pin && (!/^\d+$/.test(pin) || pin.length !== expectedPinLen)) {
+      alert('Le PIN doit faire ' + expectedPinLen + ' chiffres pour ce rôle (' + role + ').');
+      return;
+    }
+    try {
+      var body = {
+        name:name, role:role, auth_type:'pin',
+        pin: pin || u.pin,
+        password_hash: pin || u.password_hash,
+        is_active: u.is_active !== false
+      };
+      await fetch('/api/users/' + editingId, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      closeModal('editModal');
+      await loadUsers();
+    } catch(e) { alert('Erreur : ' + e.message); }
+  }
+}
+
+/* ── MODAL PIN ── */
+function openPinModal(id) {
+  var u = allUsers.find(function(x){ return x.id === id; });
+  if (!u) return;
+  pinTargetUser = u;
+  modalPin = '';
+  modalPinLen = (u.role === 'admin' || u.role === 'gerant') ? 6 : 4;
+  document.getElementById('pinModalUser').textContent = 'Utilisateur : ' + u.name + ' (' + (u.role==='admin'?'Admin':u.role==='gerant'?'Gérant':'Vendeur') + ')';
+  document.getElementById('pinModalHint').textContent = 'Saisir un PIN de ' + modalPinLen + ' chiffres';
+  document.getElementById('pinSaveBtn').disabled = true;
+  updateModalPinDots();
+  updateModalPinDisplay();
+  showModal('pinModal');
+}
+
+function modalPinPress(d) {
+  if (modalPin.length >= modalPinLen) return;
+  modalPin += d;
+  updateModalPinDots();
+  updateModalPinDisplay();
+  document.getElementById('pinSaveBtn').disabled = modalPin.length < modalPinLen;
+}
+
+function modalPinDel() {
+  modalPin = modalPin.slice(0, -1);
+  updateModalPinDots();
+  updateModalPinDisplay();
+  document.getElementById('pinSaveBtn').disabled = modalPin.length < modalPinLen;
+}
+
+function updateModalPinDots() {
+  var dots = document.getElementById('pinModalDots');
+  dots.innerHTML = '';
+  for (var i = 0; i < modalPinLen; i++) {
+    var d = document.createElement('div');
+    d.className = 'pin-dot-lg' + (i < modalPin.length ? ' filled' : '');
+    dots.appendChild(d);
+  }
+}
+
+function updateModalPinDisplay() {
+  var disp = document.getElementById('pinModalDisplay');
+  disp.textContent = modalPin.length > 0 ? modalPin : '——';
+}
+
+async function savePin() {
+  if (!pinTargetUser || modalPin.length < modalPinLen) return;
+  var btn = document.getElementById('pinSaveBtn');
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    var u = pinTargetUser;
+    await fetch('/api/users/' + u.id, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name:u.name, role:u.role, auth_type:'pin',
+        pin: modalPin, password_hash: modalPin,
+        is_active: u.is_active !== false
+      })
+    });
+    closeModal('pinModal');
+    await loadUsers();
+    /* Petit message succès */
+    var ok = document.createElement('div');
+    ok.style.cssText='position:fixed;bottom:24px;right:24px;background:#052e16;border:1px solid #16a34a;color:#86efac;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:bold;z-index:999;';
+    ok.textContent = '✅ PIN de ' + u.name + ' mis à jour : ' + modalPin;
+    document.body.appendChild(ok);
+    setTimeout(function(){ ok.remove(); }, 4000);
+  } catch(e) {
+    alert('Erreur : ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '✅ Confirmer';
+  }
+}
+
+/* ── UTILS MODAL ── */
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+/* Fermer en cliquant le fond */
+document.querySelectorAll('.modal-bg').forEach(function(bg) {
+  bg.addEventListener('click', function(e) {
+    if (e.target === bg) bg.classList.remove('show');
+  });
+});
+
+/* ── LANCEMENT ── */
+loadUsers();
+</script>
+</body>
+</html>

@@ -30,6 +30,7 @@ body{margin:0;font-family:Arial;background:#0f172a;min-height:100vh;display:flex
 .user-opt:hover{background:#0f172a;}
 .user-opt.selected{background:#1e3a8a;}
 .user-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;flex-shrink:0;}
+.av-a{background:#5b21b6;color:#c4b5fd;}
 .av-g{background:#1e40af;color:#93c5fd;}
 .av-v{background:#334155;color:#94a3b8;}
 .user-opt-name{font-size:14px;font-weight:bold;color:white;}
@@ -136,6 +137,7 @@ var selectedUser = null;
 var currentPin = '';
 var currentTab = 'pin';
 var dropdownOpen = false;
+var pinLen = 4; /* longueur PIN selon le rôle : 4 vendeur, 6 admin/gérant */
 
 /* ── INIT ── */
 async function init() {
@@ -148,15 +150,31 @@ async function init() {
   }
 }
 
+function roleIcon(role) {
+  return role === 'admin' ? '👑' : role === 'gerant' ? '🔑' : '👤';
+}
+function roleAvClass(role) {
+  return role === 'admin' ? 'av-a' : role === 'gerant' ? 'av-g' : 'av-v';
+}
+function rolePinLen(role) {
+  return (role === 'admin' || role === 'gerant') ? 6 : 4;
+}
+
 function renderDropdown() {
   var dd = document.getElementById('usersDropdown');
-  /* Trier par ordre alphabetique */
-  var sorted = users.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+  /* Admin d'abord, puis gérant, puis vendeur par nom */
+  var order = {admin:0, gerant:1, vendeur:2};
+  var sorted = users.slice().sort(function(a,b){
+    var oa = order[a.role]||9, ob = order[b.role]||9;
+    return oa !== ob ? oa - ob : a.name.localeCompare(b.name);
+  });
   dd.innerHTML = sorted.map(function(u) {
-    var initial = u.name.charAt(0).toUpperCase();
     return '<div class="user-opt" onclick="selectUser(' + u.id + ')">' +
-      '<div class="user-avatar" style="background:#1e293b;color:#94a3b8;border:1.5px solid #334155;">' + initial + '</div>' +
-      '<div class="user-opt-name">' + u.name + '</div>' +
+      '<div class="user-avatar ' + roleAvClass(u.role) + '">' + roleIcon(u.role) + '</div>' +
+      '<div>' +
+        '<div class="user-opt-name">' + u.name + '</div>' +
+        '<div style="font-size:11px;color:#64748b;margin-top:1px;">' + (u.role==='admin'?'Administrateur':u.role==='gerant'?'Gérant':'Vendeur') + ' · PIN ' + rolePinLen(u.role) + ' chiffres</div>' +
+      '</div>' +
       '</div>';
   }).join('');
 }
@@ -174,8 +192,8 @@ function selectUser(id) {
   if (!selectedUser) return;
 
   /* Mettre à jour le bouton */
-  var initial = selectedUser.name.charAt(0).toUpperCase();
-  document.getElementById('selectLabel').textContent = initial + ' ' + selectedUser.name;
+  pinLen = rolePinLen(selectedUser.role);
+  document.getElementById('selectLabel').textContent = roleIcon(selectedUser.role) + ' ' + selectedUser.name;
 
   /* Fermer dropdown */
   dropdownOpen = false;
@@ -209,10 +227,10 @@ function switchTab(tab) {
 /* ── PIN ── */
 function pinPress(d) {
   if (!selectedUser) return;
-  if (currentPin.length >= 4) return;
+  if (currentPin.length >= pinLen) return;
   currentPin += d;
   updatePinDots();
-  if (currentPin.length === 4) setTimeout(login, 200);
+  if (currentPin.length === pinLen) setTimeout(login, 200);
 }
 
 function pinDel() {
@@ -223,7 +241,7 @@ function pinDel() {
 function updatePinDots() {
   var dots = document.getElementById('pinDots');
   dots.innerHTML = '';
-  for (var i = 0; i < 4; i++) {
+  for (var i = 0; i < pinLen; i++) {
     var d = document.createElement('div');
     d.className = 'pin-dot' + (i < currentPin.length ? ' filled' : '');
     dots.appendChild(d);
@@ -234,7 +252,7 @@ document.addEventListener('keydown', function(e) {
   if (!selectedUser || currentTab !== 'pin') return;
   if (e.key >= '0' && e.key <= '9') pinPress(e.key);
   if (e.key === 'Backspace') pinDel();
-  if (e.key === 'Enter' && currentPin.length === 4) login();
+  if (e.key === 'Enter' && currentPin.length === pinLen) login();
 });
 
 /* ── MOT DE PASSE ── */
