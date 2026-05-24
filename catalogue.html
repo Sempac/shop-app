@@ -70,7 +70,13 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 .btn-mail{padding:9px 11px;background:#1a2a4a;color:#70a0ff;border:1px solid #2a3a6a;border-radius:8px;cursor:pointer;font-size:14px;}
 .btn-mail:hover{background:#1e3060;}
 .empty{text-align:center;padding:50px 20px;color:var(--mu);grid-column:1/-1;}
-.svc-wrap{padding:16px 14px;}.svc-title{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--ac);}
+.svc-wrap{padding:16px 14px;}.svc-title{font-size:15px;font-weight:700;margin-bottom:8px;color:var(--ac);}
+.rep-intro{font-size:13px;color:var(--mu);line-height:1.6;margin-bottom:14px;padding:12px;background:var(--card);border-radius:10px;border-left:3px solid var(--ac);}
+.rep-intro strong{color:var(--tx);}
+.rep-chips{display:flex;gap:7px;flex-wrap:wrap;padding:0 14px 14px;}
+.rep-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--brd);background:var(--card);color:var(--mu);font-size:12px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap;}
+.rep-chip:hover{border-color:var(--ac);color:var(--ac);}
+.rep-chip.on{background:var(--ac);color:#000;border-color:var(--ac);}
 .svc-table{width:100%;border-collapse:collapse;}
 .svc-table th{text-align:left;padding:9px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--mu);border-bottom:1px solid var(--brd);}
 .svc-table td{padding:10px 10px;border-bottom:1px solid rgba(42,42,58,.5);font-size:12px;vertical-align:middle;}
@@ -192,7 +198,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 </div>
 <div class="tabs">
   <div class="tab on" onclick="showTab('products',this)">📱 <span id="t_tp">Produits</span></div>
-  <div class="tab" onclick="showTab('repairs',this)">🔧 <span id="t_tr">Tarifs Répa</span></div>
+  <div class="tab" onclick="showTab('repairs',this)">🔧 <span id="t_tr">Réparation</span></div>
   <div class="tab" onclick="showTab('devis',this)">💬 <span id="t_td">Devis</span></div>
   <div class="tab" onclick="showTab('print',this)">🖨️ <span id="t_ti">Impression</span></div>
   <div class="tab" onclick="showTab('contact',this)">📞 <span id="t_tc">Contact</span></div>
@@ -273,7 +279,11 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 <!-- RÉPARATIONS -->
 <div class="sec" id="sec_repairs">
   <div class="svc-wrap">
-    <div class="svc-title" id="t_rep_title">🔧 Nos réparations</div>
+    <div class="svc-title" id="t_rep_title">🔧 Réparations</div>
+    <div class="rep-intro" id="t_rep_intro">Écran fissuré, batterie à plat, micro HS... Nous réparons sur place, souvent en <strong>30 minutes</strong>. <strong>Diagnostic offert</strong>, sans engagement.</div>
+  </div>
+  <div class="rep-chips" id="repChips"></div>
+  <div class="svc-wrap" style="padding-top:0;">
     <table class="svc-table">
       <thead><tr><th id="t_rh1">Réparation</th><th id="t_rh2">Notre prix</th><th id="t_rh3">Marché</th><th id="t_rh4">Délai</th></tr></thead>
       <tbody id="repBody"></tbody>
@@ -431,7 +441,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 <script>
 var T={
 fr:{tagline:"Réparation · Vente · Impression — Paris 13e",search:"Rechercher...",nostock:"Aucun produit disponible",
-tp:"Produits",tr:"Tarifs Répa",ti:"Impression",td:"Devis",tc:"Contact",
+tp:"Produits",tr:"Réparation",ti:"Impression",td:"Devis",tc:"Contact",
 contact_title:"📞 Nous contacter",avail_title:"🔍 Vérifier la disponibilité d'un produit",
 avail_prod:"Quel produit vous intéresse ?",avail_name:"Votre prénom",
 avail_send:"Envoyer sur WhatsApp",avail_note:"Réponse rapide · Diagnostic gratuit sur place",
@@ -451,7 +461,9 @@ sum_device:"Appareil",sum_brand:"Marque",sum_model:"Modèle",sum_issue:"Panne",
 hours:"<strong>Lun–Sam</strong> 9h30–19h30 &nbsp;·&nbsp; <strong>Dim</strong> Fermé",
 express:"<strong>Réparation express</strong> en 30 min · <strong>Diagnostic offert</strong>",
 reviews:"avis Google",per_page:"/ page",ccard_write:"Écrire",ccard_call:"Appeler",
-rep_title:"🔧 Nos réparations",rh1:"Réparation",rh2:"Notre prix",rh3:"Marché",rh4:"Délai",
+rep_title:"🔧 Réparations",rh1:"Réparation",rh2:"Notre prix",rh3:"Marché",rh4:"Délai",
+rep_intro:"Écran fissuré, batterie à plat, micro HS... Nous réparons sur place, souvent en <strong>30 minutes</strong>. <strong>Diagnostic offert</strong>, sans engagement.",
+rep_filter_all:"Tous",rep_filter_iphone:"🍎 iPhone",rep_filter_samsung:"📱 Samsung",rep_filter_xiaomi:"📱 Xiaomi",rep_filter_huawei:"📱 Huawei",rep_filter_pc:"💻 PC",rep_filter_other:"🔧 Autre",
 rep_cta:"<strong>Diagnostic gratuit</strong> — Apportez votre appareil, sans engagement.",
 print_title:"🖨️ Impression & Photocopie",
 print_cta:"<strong>Envoyez votre fichier</strong> par WhatsApp et venez récupérer vos impressions.",
@@ -482,7 +494,9 @@ sum_device:"Device",sum_brand:"Brand",sum_model:"Model",sum_issue:"Issue",
 hours:"<strong>Mon–Sat</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>Sun</strong> Closed",
 express:"<strong>Express repair</strong> in 30 min · <strong>Free diagnostic</strong>",
 reviews:"Google reviews",per_page:"/ page",ccard_write:"Write",ccard_call:"Call",
-rep_title:"🔧 Our repairs",rh1:"Repair",rh2:"Our price",rh3:"Market",rh4:"Delay",
+rep_title:"🔧 Repairs",rh1:"Repair",rh2:"Our price",rh3:"Market",rh4:"Delay",
+rep_intro:"Cracked screen, dead battery, mic issue... We repair on-site, often in <strong>30 minutes</strong>. <strong>Free diagnostic</strong>, no commitment.",
+rep_filter_all:"All",rep_filter_iphone:"🍎 iPhone",rep_filter_samsung:"📱 Samsung",rep_filter_xiaomi:"📱 Xiaomi",rep_filter_huawei:"📱 Huawei",rep_filter_pc:"💻 PC",rep_filter_other:"🔧 Other",
 rep_cta:"<strong>Free diagnostic</strong> — Bring your device, no commitment.",
 print_title:"🖨️ Printing & Photocopying",
 print_cta:"<strong>Send your file</strong> via WhatsApp and collect your prints.",
@@ -513,7 +527,9 @@ sum_device:"الجهاز",sum_brand:"الماركة",sum_model:"الموديل",
 hours:"<strong>الإثنين–السبت</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>الأحد</strong> مغلق",
 express:"<strong>إصلاح سريع</strong> في 30 دقيقة · <strong>تشخيص مجاني</strong>",
 reviews:"تقييم Google",per_page:"/ صفحة",ccard_write:"راسلنا",ccard_call:"اتصل",
-rep_title:"🔧 خدمات الإصلاح",rh1:"الإصلاح",rh2:"سعرنا",rh3:"سعر السوق",rh4:"المدة",
+rep_title:"🔧 الإصلاح",rh1:"الإصلاح",rh2:"سعرنا",rh3:"سعر السوق",rh4:"المدة",
+rep_intro:"شاشة متشققة، بطارية فارغة، ميكروفون معطل... نُصلح في المكان، غالباً في <strong>30 دقيقة</strong>. <strong>تشخيص مجاني</strong> بدون التزام.",
+rep_filter_all:"الكل",rep_filter_iphone:"🍎 iPhone",rep_filter_samsung:"📱 Samsung",rep_filter_xiaomi:"📱 Xiaomi",rep_filter_huawei:"📱 Huawei",rep_filter_pc:"💻 PC",rep_filter_other:"🔧 أخرى",
 rep_cta:"<strong>تشخيص مجاني</strong> — أحضر جهازك، نصيحة بلا التزام.",
 print_title:"🖨️ الطباعة والتصوير",print_cta:"<strong>أرسل ملفك</strong> عبر واتساب.",
 ds1:"نوع الجهاز؟",ds2:"الماركة؟",ds3:"الموديل؟",ds4:"ما هي المشكلة؟",ds5:"معلوماتك",
@@ -543,7 +559,9 @@ sum_device:"设备",sum_brand:"品牌",sum_model:"型号",sum_issue:"故障",
 hours:"<strong>周一至周六</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>周日</strong> 休息",
 express:"<strong>快速维修</strong> 30分钟 · <strong>免费诊断</strong>",
 reviews:"条谷歌评价",per_page:"/ 页",ccard_write:"发消息",ccard_call:"致电",
-rep_title:"🔧 维修服务",rh1:"维修项目",rh2:"我们的价格",rh3:"市场价",rh4:"时间",
+rep_title:"🔧 维修",rh1:"维修项目",rh2:"我们的价格",rh3:"市场价",rh4:"时间",
+rep_intro:"屏幕破裂、电池耗尽、麦克风故障... 我们当场维修，通常仅需<strong>30分钟</strong>。<strong>免费诊断</strong>，无需承诺。",
+rep_filter_all:"全部",rep_filter_iphone:"🍎 iPhone",rep_filter_samsung:"📱 Samsung",rep_filter_xiaomi:"📱 Xiaomi",rep_filter_huawei:"📱 Huawei",rep_filter_pc:"💻 PC",rep_filter_other:"🔧 其他",
 rep_cta:"<strong>免费诊断</strong> — 带来设备，无需承诺。",
 print_title:"🖨️ 打印与复印",print_cta:"<strong>发送文件</strong>至WhatsApp。",
 ds1:"设备类型？",ds2:"哪个品牌？",ds3:"哪个型号？",ds4:"什么问题？",ds5:"您的信息",
@@ -573,7 +591,9 @@ sum_device:"Dispositivo",sum_brand:"Marca",sum_model:"Modelo",sum_issue:"Avería
 hours:"<strong>Lun–Sáb</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>Dom</strong> Cerrado",
 express:"<strong>Reparación express</strong> en 30 min · <strong>Diagnóstico gratuito</strong>",
 reviews:"reseñas Google",per_page:"/ página",ccard_write:"Escribir",ccard_call:"Llamar",
-rep_title:"🔧 Nuestras reparaciones",rh1:"Reparación",rh2:"Nuestro precio",rh3:"Mercado",rh4:"Plazo",
+rep_title:"🔧 Reparación",rh1:"Reparación",rh2:"Nuestro precio",rh3:"Mercado",rh4:"Plazo",
+rep_intro:"Pantalla rota, batería agotada, micrófono que falla... Reparamos en el momento, a menudo en <strong>30 minutos</strong>. <strong>Diagnóstico gratuito</strong>, sin compromiso.",
+rep_filter_all:"Todo",rep_filter_iphone:"🍎 iPhone",rep_filter_samsung:"📱 Samsung",rep_filter_xiaomi:"📱 Xiaomi",rep_filter_huawei:"📱 Huawei",rep_filter_pc:"💻 PC",rep_filter_other:"🔧 Otro",
 rep_cta:"<strong>Diagnóstico gratuito</strong> — Trae tu dispositivo, sin compromiso.",
 print_title:"🖨️ Impresión y Fotocopias",print_cta:"<strong>Envía tu archivo</strong> por WhatsApp.",
 ds1:"¿Tipo de dispositivo?",ds2:"¿Qué marca?",ds3:"¿Qué modelo?",ds4:"¿Cuál es la avería?",ds5:"Tus datos",
@@ -603,7 +623,9 @@ sum_device:"Dispositivo",sum_brand:"Marca",sum_model:"Modello",sum_issue:"Guasto
 hours:"<strong>Lun–Sab</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>Dom</strong> Chiuso",
 express:"<strong>Riparazione express</strong> in 30 min · <strong>Diagnosi gratuita</strong>",
 reviews:"recensioni Google",per_page:"/ pagina",ccard_write:"Scrivi",ccard_call:"Chiama",
-rep_title:"🔧 Le nostre riparazioni",rh1:"Riparazione",rh2:"Nostro prezzo",rh3:"Mercato",rh4:"Tempi",
+rep_title:"🔧 Riparazione",rh1:"Riparazione",rh2:"Nostro prezzo",rh3:"Mercato",rh4:"Tempi",
+rep_intro:"Schermo rotto, batteria scarica, microfono che non funziona... Ripariamo sul posto, spesso in <strong>30 minuti</strong>. <strong>Diagnosi gratuita</strong>, senza impegno.",
+rep_filter_all:"Tutti",rep_filter_iphone:"🍎 iPhone",rep_filter_samsung:"📱 Samsung",rep_filter_xiaomi:"📱 Xiaomi",rep_filter_huawei:"📱 Huawei",rep_filter_pc:"💻 PC",rep_filter_other:"🔧 Altro",
 rep_cta:"<strong>Diagnosi gratuita</strong> — Porta il dispositivo, senza impegno.",
 print_title:"🖨️ Stampa e Fotocopie",print_cta:"<strong>Invia il tuo file</strong> via WhatsApp.",
 ds1:"Tipo di dispositivo?",ds2:"Quale marca?",ds3:"Quale modello?",ds4:"Qual è il guasto?",ds5:"I tuoi dati",
@@ -633,7 +655,9 @@ sum_device:"Gerät",sum_brand:"Marke",sum_model:"Modell",sum_issue:"Problem",
 hours:"<strong>Mo–Sa</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>So</strong> Geschlossen",
 express:"<strong>Express-Reparatur</strong> in 30 Min · <strong>Kostenlose Diagnose</strong>",
 reviews:"Google-Bewertungen",per_page:"/ Seite",ccard_write:"Schreiben",ccard_call:"Anrufen",
-rep_title:"🔧 Unsere Reparaturen",rh1:"Reparatur",rh2:"Unser Preis",rh3:"Marktpreis",rh4:"Dauer",
+rep_title:"🔧 Reparatur",rh1:"Reparatur",rh2:"Unser Preis",rh3:"Marktpreis",rh4:"Dauer",
+rep_intro:"Gerissenes Display, leerer Akku, defektes Mikrofon... Wir reparieren vor Ort, oft in <strong>30 Minuten</strong>. <strong>Kostenlose Diagnose</strong>, ohne Verpflichtung.",
+rep_filter_all:"Alle",rep_filter_iphone:"🍎 iPhone",rep_filter_samsung:"📱 Samsung",rep_filter_xiaomi:"📱 Xiaomi",rep_filter_huawei:"📱 Huawei",rep_filter_pc:"💻 PC",rep_filter_other:"🔧 Sonstige",
 rep_cta:"<strong>Kostenlose Diagnose</strong> — Bringen Sie Ihr Gerät, ohne Verpflichtung.",
 print_title:"🖨️ Drucken & Kopieren",print_cta:"<strong>Senden Sie Ihre Datei</strong> per WhatsApp.",
 ds1:"Gerätetyp?",ds2:"Welche Marke?",ds3:"Welches Modell?",ds4:"Was ist der Fehler?",ds5:"Ihre Daten",
@@ -681,14 +705,14 @@ function updatePromoBand(l){
   var band=inner+sep+inner+sep;
   document.getElementById("promoBand").innerHTML=band;
 }
-function setLang(l,btn){lang=l;document.querySelectorAll(".lb").forEach(function(b){b.classList.remove("on")});btn.classList.add("on");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";applyT();updatePromoBand(l);renderProducts();renderRepairs();renderPrint();}
+function setLang(l,btn){lang=l;document.querySelectorAll(".lb").forEach(function(b){b.classList.remove("on")});btn.classList.add("on");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";applyT();updatePromoBand(l);renderProducts();renderRepairs();renderPrint();repFilter='all';}
 function applyT(){
   var t=T[lang];
   /* Éléments avec id direct → clé T */
   var map={t_tp:"tp",t_tr:"tr",t_ti:"ti",t_td:"td",t_tc:"tc",
     t_ltype:"ltype",t_lbrand:"lbrand",t_lgr:"lgr",t_lcond:"lcond",
     t_lprice:"lprice",t_lstorage:"lstorage",t_lsim:"lsim",
-    t_rep_title:"rep_title",t_rh1:"rh1",t_rh2:"rh2",t_rh3:"rh3",t_rh4:"rh4",
+    t_rep_title:"rep_title",t_rep_intro:"rep_intro",t_rh1:"rh1",t_rh2:"rh2",t_rh3:"rh3",t_rh4:"rh4",
     t_print_title:"print_title",
     t_ds1:"ds1",t_ds2:"ds2",t_ds3:"ds3",t_ds4:"ds4",t_ds5:"ds5",
     t_q_name:"q_name",t_q_phone:"q_phone",t_q_sent:"q_sent",
@@ -794,16 +818,72 @@ function renderProducts(){
     return'<div class="card"><div class="card-img">'+icon+'</div><div class="card-body"><div class="card-cat">'+(p.category||"")+'</div><div class="card-name">'+p.name+(p.color?" — "+p.color:"")+'</div><div class="card-tags">'+(cl?'<span class="tag tag-c">'+cl+"</span>":"")+(p.grade?'<span class="tag tag-g">Grade '+p.grade+"</span>":"")+(storage?'<span class="tag tag-s">'+storage+"</span>":"")+'</div><div class="card-price">'+price.toFixed(0)+' €</div><div class="card-btns"><button class="btn-wa" title="WhatsApp" onclick="window.open(\'https://wa.me/'+shopPhone+'?text='+msg+'\',\'_blank\')">💬</button><button class="btn-call" onclick="window.location.href=\'tel:+'+shopPhone+'\'" title="Appeler">📞</button><button class="btn-mail" onclick="window.location.href=\'mailto:'+shopEmail+'?subject='+mailSubj+'&body='+mailBody+'\'" title="Email">✉️</button></div></div></div>';
   }).join("");
 }
-function renderRepairs(){
+var repFilter='all';
+
+var REP_BRANDS=[
+  {key:'all'},
+  {key:'iphone',  match:/iphone/i},
+  {key:'samsung', match:/samsung/i},
+  {key:'xiaomi',  match:/xiaomi|redmi/i},
+  {key:'huawei',  match:/huawei|honor/i},
+  {key:'pc',      match:/pc\b|laptop|ordinateur|macbook/i},
+  {key:'other',   match:/universel|OS|données|dégât|SIM|déverrouillage|récupération|eau/i},
+];
+
+function matchRepBrand(name,key){
+  if(key==='all')return true;
+  var b=REP_BRANDS.find(function(b){return b.key===key;});
+  /* "other" = ne correspond à aucune marque connue */
+  if(key==='other'){
+    var knownKeys=['iphone','samsung','xiaomi','huawei','pc'];
+    return !knownKeys.some(function(k){
+      var kb=REP_BRANDS.find(function(b){return b.key===k;});
+      return kb&&kb.match.test(name);
+    });
+  }
+  return b&&b.match.test(name);
+}
+
+function renderRepairChips(){
   var t=T[lang];
-  var r=allServices.filter(function(s){return s.category==="reparation";});
+  var all=allServices.filter(function(s){return s.category==="reparation";});
+  /* N'afficher que les filtres qui ont au moins un service */
+  var chips=REP_BRANDS.filter(function(b){
+    if(b.key==='all')return all.length>0;
+    return all.some(function(s){return matchRepBrand(s["name_"+lang]||s.name,b.key);});
+  });
+  var container=document.getElementById("repChips");
+  container.innerHTML=chips.map(function(b){
+    var lbl=t["rep_filter_"+b.key]||b.key;
+    return'<button class="rep-chip'+(repFilter===b.key?' on':'')
+      +'" onclick="setRepFilter(\''+b.key+'\',this)">'+lbl+'</button>';
+  }).join('');
+}
+
+function setRepFilter(key,btn){
+  repFilter=key;
+  document.querySelectorAll('.rep-chip').forEach(function(c){c.classList.remove('on');});
+  btn.classList.add('on');
+  renderRepairRows();
+}
+
+function renderRepairRows(){
+  var t=T[lang];
+  var all=allServices.filter(function(s){return s.category==="reparation";});
+  var r=all.filter(function(s){return matchRepBrand(s["name_"+lang]||s.name,repFilter);});
   if(!r.length){document.getElementById("repBody").innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--mu);padding:24px">—</td></tr>';return;}
   document.getElementById("repBody").innerHTML=r.map(function(s){
     var name=s["name_"+lang]||s.name;var price=Number(s.price||0);var pm=s.price_market?Number(s.price_market):null;
     var eco=pm&&price>0?Math.round((pm-price)/pm*100):0;
-    var ph=price===0?'<span class="p-our" style="color:var(--gr)">'+(t.free||"Gratuit")+"</span>":'<span class="p-our">'+price.toFixed(0)+' €</span>'+(pm?'<span class="p-mkt">'+pm.toFixed(0)+' €</span>':"");
+    var ph=price===0?'<span class="p-our" style="color:var(--gr)">'+(t.free||"Gratuit")+"</span>"
+      :'<span class="p-our">'+price.toFixed(0)+' €</span>'+(pm?'<span class="p-mkt">'+pm.toFixed(0)+' €</span>':"");
     return"<tr><td>"+name+"</td><td>"+ph+"</td><td>"+(eco>0?'<span class="eco">-'+eco+"%</span>":"—")+"</td><td>"+(s.delay?'<span class="dly">'+s.delay+"</span>":"—")+"</td></tr>";
   }).join("");
+}
+
+function renderRepairs(){
+  renderRepairChips();
+  renderRepairRows();
 }
 function renderPrint(){
   var prints=allServices.filter(function(s){return s.category==="impression";});
