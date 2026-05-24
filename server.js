@@ -2437,4 +2437,119 @@ app.patch('/api/catalogue-admin/settings', async(req,res) => {
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
+/* =======================================================
+   PHOTOS PRODUITS
+======================================================= */
+
+/* Multer dédié aux photos produits (sous-dossier par produit) */
+const photoStorage=multer.diskStorage({
+  destination:(req,file,cb)=>{
+    const dir=path.join(__dirname,'uploads','products',String(req.params.id));
+    fs.mkdirSync(dir,{recursive:true});
+    cb(null,dir);
+  },
+  filename:(req,file,cb)=>{
+    const ext=path.extname(file.originalname).toLowerCase()||'.jpg';
+    cb(null,Date.now()+'-'+Math.random().toString(36).substr(2,6)+ext);
+  }
+});
+const uploadPhoto=multer({storage:photoStorage,limits:{fileSize:15*1024*1024},
+  fileFilter:(req,file,cb)=>{
+    const ok=['.jpg','.jpeg','.png','.webp','.gif'].includes(path.extname(file.originalname).toLowerCase());
+    cb(null,ok);
+  }
+});
+
+/* Servir les photos */
+app.use('/uploads/products',express.static(path.join(__dirname,'uploads','products')));
+
+/* Lister les photos d'un produit */
+app.get('/api/catalogue-admin/products/:id/photos',requireCatAdmin,async(req,res)=>{
+  try{
+    const r=await pool.query(
+      'SELECT * FROM product_photos WHERE product_id=$1 ORDER BY sort_order,id',
+      [req.params.id]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* Upload une ou plusieurs photos (compressées côté client) */
+app.post('/api/catalogue-admin/products/:id/photos',requireCatAdmin,uploadPhoto.array('photos',10),async(req,res)=>{
+  try{
+    if(!req.files||!req.files.length)return res.status(400).json({error:'Aucun fichier reçu'});
+    const added=[];
+    for(const f of req.files){
+      /* sort_order = max existant + 1 */
+      const r=await pool.query(
+        `INSERT INTO product_photos(product_id,filename,sort_order)
+         VALUES($1,$2,(SELECT COALESCE(MAX(sort_order),0)+1 FROM product_photos WHERE product_id=$1))
+         RETURNING *`,
+        [req.params.id,f.filename]);
+      added.push(r.rows[0]);
+    }
+    res.json(added);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* Import depuis une URL (télécharge et sauvegarde) */
+app.post('/api/catalogue-admin/products/:id/photos/from-url',requireCatAdmin,async(req,res)=>{
+  const {url}=req.body;
+  if(!url)return res.status(400).json({error:'URL manquante'});
+  try{
+    const dir=path.join(__dirname,'uploads','products',String(req.params.id));
+    fs.mkdirSync(dir,{recursive:true});
+    const filename=Date.now()+'-'+Math.random().toString(36).substr(2,6)+'.jpg';
+    const filepath=path.join(dir,filename);
+
+    /* Téléchargement avec suivi des redirections */
+    await new Promise((resolve,reject)=>{
+      function download(u,depth){
+        if(depth>5)return reject(new Error('Trop de redirections'));
+        const client=u.startsWith('https')?require('https'):require('http');
+        client.get(u,{headers:{'User-Agent':'Mozilla/5.0 (compatible; ShopBot/1.0)','Accept':'image/*,*/*'}},resp=>{
+          if(resp.statusCode===301||resp.statusCode===302||resp.statusCode===303){
+            return download(resp.headers.location,depth+1);
+          }
+          if(resp.statusCode!==200)return reject(new Error('HTTP '+resp.statusCode));
+          const out=fs.createWriteStream(filepath);
+          resp.pipe(out);
+          out.on('finish',()=>out.close(resolve));
+          out.on('error',reject);
+        }).on('error',reject);
+      }
+      download(url,0);
+    });
+
+    const r=await pool.query(
+      `INSERT INTO product_photos(product_id,filename,sort_order)
+       VALUES($1,$2,(SELECT COALESCE(MAX(sort_order),0)+1 FROM product_photos WHERE product_id=$1))
+       RETURNING *`,
+      [req.params.id,filename]);
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* Supprimer une photo */
+app.delete('/api/catalogue-admin/products/:id/photos/:photoId',requireCatAdmin,async(req,res)=>{
+  try{
+    const r=await pool.query('SELECT * FROM product_photos WHERE id=$1 AND product_id=$2',[req.params.photoId,req.params.id]);
+    if(!r.rows[0])return res.status(404).json({error:'Photo introuvable'});
+    const filepath=path.join(__dirname,'uploads','products',String(req.params.id),r.rows[0].filename);
+    if(fs.existsSync(filepath))fs.unlinkSync(filepath);
+    await pool.query('DELETE FROM product_photos WHERE id=$1',[req.params.photoId]);
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* Réordonner les photos (drag & drop) */
+app.put('/api/catalogue-admin/products/:id/photos/reorder',requireCatAdmin,async(req,res)=>{
+  try{
+    const {order}=req.body; /* [{id,sort_order}] */
+    for(const item of order){
+      await pool.query('UPDATE product_photos SET sort_order=$1 WHERE id=$2 AND product_id=$3',[item.sort_order,item.id,req.params.id]);
+    }
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
