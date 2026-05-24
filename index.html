@@ -63,7 +63,9 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .dashboard{background:linear-gradient(135deg,#064e3b,#059669);}
 .devis    {background:linear-gradient(135deg,#1e3a8a,#3b82f6);}
 .commandes{background:linear-gradient(135deg,#0e7490,#0891b2);}
-.users    {background:linear-gradient(135deg,#5b21b6,#7c3aed);}
+.users     {background:linear-gradient(135deg,#5b21b6,#7c3aed);}
+.catalogue {background:linear-gradient(135deg,#be185d,#ec4899);}
+.cat-admin {background:linear-gradient(135deg,#9d174d,#db2777);}
 
 /* USER BAR */
 .user-bar{background:#1e293b;padding:8px 24px;display:flex;justify-content:space-between;align-items:center;font-size:12px;}
@@ -275,6 +277,8 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
         <div class="group-grid">
           <a title="IMPRESSION" href="printshop.html" class="card print">   <div class="icon">🖨️</div><div class="title">IMPRESSION</div><div class="desc">QR Code client<br>WhatsApp · Email<br>File d'attente</div></a>
           <a title="CONTACTS" href="contacts.html"  class="card contacts"><div class="icon">📒</div><div class="title">CONTACTS</div><div class="desc">Fournisseurs · Équipe<br>Réparateurs · Banque<br>WA · Email</div></a>
+          <a title="CATALOGUE" href="/catalogue" target="_blank" class="card catalogue"><div class="icon">🛍️</div><div class="title">CATALOGUE</div><div class="desc">Vitrine publique<br>Vue client<br>S'ouvre dans un onglet</div></a>
+          <a title="ADMIN CATALOGUE" href="/catalogue-admin" target="_blank" class="card cat-admin"><div class="icon">🏷️</div><div class="title">ADMIN CATALOGUE</div><div class="desc">Prix · Stock · Photos<br>Services · Réparations<br>Paramètres</div></a>
           <a title="GESTION UTILISATEURS" href="users-admin.html" class="card users admin-only"><div class="icon">👥</div><div class="title">UTILISATEURS</div><div class="desc">Gérer les comptes<br>PINs · Rôles<br>Paramètres appli</div></a>
         </div>
       </div>
