@@ -68,7 +68,7 @@ table.sticky thead tr th,
   <h2>📉 Dépenses</h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     <button onclick="window.print()" style="padding:10px 14px;background:#475569;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">🖨️ Imprimer</button>
-    <button onclick="exportExcelExpenses()" style="padding:10px 14px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">📊 Export Excel</button>
+    <button onclick="exportExcelExpenses()" style="padding:10px 14px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">📊 Export Excel</button>
     <button onclick="sendEmailExpenses()" style="padding:10px 14px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">✉️ Email</button>
     <button onclick="location.href='rapport-comptable.html'" style="padding:10px 14px;background:#1e40af;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">📊 Rapport Comptable</button>
     <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
@@ -108,7 +108,7 @@ table.sticky thead tr th,
       <div class="fg"><label>Catégorie</label>
         <select id="dep_cat"></select>
       </div>
-      <button class="btn-add btn-save-dep" onclick="addExpense()" style="background:#16a34a;" title="Enregistrer la dépense">➕ Ajouter</button>
+      <button class="btn-add btn-save-dep" onclick="addExpense()" title="Enregistrer la dépense">➕ Ajouter</button>
     </div>
     <div class="card" style="margin-top:20px">
       <h3>📊 Résumé par catégorie</h3>
@@ -218,7 +218,7 @@ async function addExpense() {
   /* Réinitialiser le mode édition */
   window._editingExpenseId = null;
   var btn = document.querySelector('.btn-save-dep');
-  if (btn) { btn.textContent = '➕ Ajouter'; btn.style.background = '#16a34a'; }
+  if (btn) { btn.textContent = '➕ Ajouter'; btn.style.background = '#22c55e'; }
   document.getElementById('dep_desc').value   = '';
   document.getElementById('dep_amount').value = '';
   loadExpenses();
