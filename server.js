@@ -783,6 +783,47 @@ app.post('/api/print/:id/confirm', async(req,res)=>{
 /* =======================================================
    USERS & AUTH
 ======================================================= */
+
+/* ── Rate limiting anti-brute force ── */
+const loginAttempts=new Map(); /* ip -> {count, blockedUntil} */
+const RATE_MAX=5;              /* tentatives avant blocage */
+const RATE_WINDOW=15*60*1000;  /* 15 minutes en ms */
+
+function getClientIp(req){
+  /* Tailscale Funnel passe l'IP réelle dans x-forwarded-for */
+  const fwd=req.headers['x-forwarded-for'];
+  if(fwd)return fwd.split(',')[0].trim();
+  return req.ip||req.connection.remoteAddress||'unknown';
+}
+
+function checkRateLimit(ip){
+  const now=Date.now();
+  const e=loginAttempts.get(ip)||{count:0,blockedUntil:0};
+  if(e.blockedUntil>now){
+    const mins=Math.ceil((e.blockedUntil-now)/60000);
+    return{blocked:true,remaining:mins};
+  }
+  /* Expiration automatique si la fenêtre est passée */
+  if(e.blockedUntil>0 && e.blockedUntil<=now) loginAttempts.delete(ip);
+  return{blocked:false,count:e.count};
+}
+
+function recordFail(ip){
+  const now=Date.now();
+  const e=loginAttempts.get(ip)||{count:0,blockedUntil:0};
+  e.count++;
+  if(e.count>=RATE_MAX){e.blockedUntil=now+RATE_WINDOW;e.count=0;}
+  loginAttempts.set(ip,e);
+}
+
+function clearAttempts(ip){loginAttempts.delete(ip);}
+
+/* Nettoyage toutes les heures */
+setInterval(()=>{
+  const now=Date.now();
+  for(const[ip,e] of loginAttempts){if(e.blockedUntil<=now)loginAttempts.delete(ip);}
+},3600*1000);
+
 app.get('/api/users', async(req,res)=>{
   try{
     const r=await pool.query(
@@ -792,19 +833,60 @@ app.get('/api/users', async(req,res)=>{
 });
 
 app.post('/api/auth/login', async(req,res)=>{
+  const ip=getClientIp(req);
+  const rate=checkRateLimit(ip);
+  if(rate.blocked){
+    return res.status(429).json({
+      error:`Trop de tentatives. Réessayez dans ${rate.remaining} minute${rate.remaining>1?'s':''}.`,
+      blocked:true, remaining:rate.remaining
+    });
+  }
   try{
     const{user_id,type,value}=req.body;
     const r=await pool.query(`SELECT * FROM app_users WHERE id=$1 AND is_active=true`,[user_id]);
-    if(!r.rows[0])return res.status(401).json({error:'Utilisateur introuvable'});
+    if(!r.rows[0]){recordFail(ip);return res.status(401).json({error:'Utilisateur introuvable'});}
     const user=r.rows[0];
     let ok=false;
     if(type==='pin'){
       ok=(user.pin===value);
     } else {
-      ok=(user.password_hash===value); /* Simple pour l'instant — à hasher en prod */
+      ok=(user.password_hash===value);
     }
-    if(!ok)return res.status(401).json({error:'Invalid credentials'});
+    if(!ok){
+      recordFail(ip);
+      const e=loginAttempts.get(ip)||{count:0};
+      const left=RATE_MAX-e.count;
+      return res.status(401).json({
+        error:'PIN incorrect',
+        attempts_left: left>0?left:0
+      });
+    }
+    clearAttempts(ip);
     res.json({user:{id:user.id,name:user.name,role:user.role,auth_type:user.auth_type}});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* Changer son propre PIN */
+app.post('/api/auth/change-pin', async(req,res)=>{
+  try{
+    const{user_id,current_pin,new_pin}=req.body;
+    const r=await pool.query(`SELECT * FROM app_users WHERE id=$1 AND is_active=true`,[user_id]);
+    if(!r.rows[0])return res.status(404).json({error:'Utilisateur introuvable'});
+    const user=r.rows[0];
+    /* Vérifier le PIN actuel */
+    if(user.pin!==current_pin && user.password_hash!==current_pin)
+      return res.status(401).json({error:'PIN actuel incorrect'});
+    /* Valider la longueur du nouveau PIN */
+    const expectedLen=(user.role==='admin'||user.role==='gerant')?6:4;
+    if(!new_pin||!/^\d+$/.test(new_pin)||new_pin.length!==expectedLen)
+      return res.status(400).json({error:`Le nouveau PIN doit faire ${expectedLen} chiffres`});
+    /* Interdire de remettre le même PIN */
+    if(new_pin===current_pin)
+      return res.status(400).json({error:'Le nouveau PIN doit être différent de l\'ancien'});
+    await pool.query(
+      `UPDATE app_users SET pin=$1,password_hash=$2,updated_at=NOW() WHERE id=$3`,
+      [new_pin,new_pin,user_id]);
+    res.json({success:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
 

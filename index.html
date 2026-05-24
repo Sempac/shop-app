@@ -75,6 +75,34 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .logout-btn{padding:5px 12px;background:#334155;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
 .logout-btn:hover{background:#ef4444;color:white;}
 .switch-btn{padding:5px 12px;background:#1e3a8a;color:#93c5fd;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
+.pin-btn-bar{padding:5px 12px;background:#0e7490;color:#a5f3fc;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;}
+.pin-btn-bar:hover{background:#0891b2;}
+
+/* MODAL CHANGE PIN */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:#1e293b;border-radius:16px;padding:28px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
+.modal-box h3{margin:0 0 6px;font-size:17px;}
+.modal-sub{font-size:12px;color:#64748b;margin-bottom:16px;}
+.cpindots{display:flex;justify-content:center;gap:10px;margin-bottom:10px;}
+.cpindot{width:20px;height:20px;border-radius:50%;background:#334155;transition:0.2s;}
+.cpindot.filled{background:#0e7490;}
+.cpindot.new{background:#22c55e;}
+.cpin-num{font-size:30px;font-weight:900;letter-spacing:8px;color:#0e7490;min-height:40px;margin-bottom:6px;font-variant-numeric:tabular-nums;}
+.cpin-num.step2{color:#22c55e;}
+.cpin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto 12px;}
+.cpbtn{padding:13px;background:#0f172a;color:white;border:1.5px solid #334155;border-radius:8px;font-size:20px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.cpbtn:hover{background:#334155;border-color:#0e7490;}
+.cpbtn:active{transform:scale(0.93);}
+.cpbtn-zero{grid-column:2;}
+.cpin-hint{font-size:12px;color:#64748b;margin-bottom:14px;min-height:18px;}
+.cpin-step-label{font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.cpin-btns{display:flex;gap:8px;margin-top:4px;}
+.cpin-cancel{flex:1;padding:10px;background:#334155;color:#94a3b8;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;}
+.cpin-cancel:hover{background:#475569;}
+.cpin-ok{flex:2;padding:10px;background:#0e7490;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;}
+.cpin-ok:hover{background:#0891b2;}
+.cpin-ok:disabled{background:#1e293b;color:#475569;cursor:not-allowed;}
 
 .footer{background:#111827;padding:6px;text-align:center;color:#475569;font-size:11px;}
 
@@ -135,6 +163,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
     <span style="color:#475569;font-size:12px;" id="loginTime"></span>
   </div>
   <div style="display:flex;gap:6px;">
+    <button class="pin-btn-bar" onclick="openChangePinModal()">🔢 Mon PIN</button>
     <button class="switch-btn" onclick="window.location.href='login.html'">🔄 Changer</button>
     <button class="logout-btn" onclick="doLogout()">🔓 Déco.</button>
   </div>
@@ -545,6 +574,145 @@ renderTodos();
 loadPersonalNote();
 
 </script>
+<!-- MODAL CHANGER MON PIN -->
+<div class="modal-overlay" id="changePinOverlay">
+  <div class="modal-box">
+    <h3>🔢 Changer mon PIN</h3>
+    <div class="modal-sub" id="cpSubTitle"></div>
+    <div class="cpin-step-label" id="cpStepLabel">Étape 1 / 2 — Saisir le PIN actuel</div>
+    <div class="cpindots" id="cpDots"></div>
+    <div class="cpin-num" id="cpNum">——</div>
+    <div class="cpin-grid">
+      <button class="cpbtn" onclick="cpPress('1')">1</button>
+      <button class="cpbtn" onclick="cpPress('2')">2</button>
+      <button class="cpbtn" onclick="cpPress('3')">3</button>
+      <button class="cpbtn" onclick="cpPress('4')">4</button>
+      <button class="cpbtn" onclick="cpPress('5')">5</button>
+      <button class="cpbtn" onclick="cpPress('6')">6</button>
+      <button class="cpbtn" onclick="cpPress('7')">7</button>
+      <button class="cpbtn" onclick="cpPress('8')">8</button>
+      <button class="cpbtn" onclick="cpPress('9')">9</button>
+      <button class="cpbtn" onclick="cpDel()" style="font-size:13px;color:#94a3b8;">⌫</button>
+      <button class="cpbtn cpbtn-zero" onclick="cpPress('0')">0</button>
+    </div>
+    <div class="cpin-hint" id="cpHint"></div>
+    <div class="cpin-btns">
+      <button class="cpin-cancel" onclick="closeChangePinModal()">Annuler</button>
+      <button class="cpin-ok" id="cpOkBtn" onclick="cpNext()" disabled>Suivant →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── MODAL CHANGER MON PIN ── */
+var cpStep = 1;      /* 1 = ancien PIN, 2 = nouveau PIN */
+var cpOld  = '';
+var cpNew  = '';
+var cpLen  = 4;
+
+function openChangePinModal() {
+  if (!user) return;
+  cpLen  = (user.role === 'admin' || user.role === 'gerant') ? 6 : 4;
+  cpStep = 1; cpOld = ''; cpNew = '';
+  document.getElementById('cpSubTitle').textContent = user.name + ' · PIN ' + cpLen + ' chiffres';
+  updateCpUI();
+  document.getElementById('changePinOverlay').classList.add('show');
+}
+
+function closeChangePinModal() {
+  document.getElementById('changePinOverlay').classList.remove('show');
+}
+
+function updateCpUI() {
+  var current = cpStep === 1 ? cpOld : cpNew;
+  var label   = cpStep === 1 ? 'Étape 1 / 2 — Saisir votre PIN actuel' : 'Étape 2 / 2 — Choisir votre nouveau PIN';
+  var okTxt   = cpStep === 1 ? 'Suivant →' : '✅ Confirmer';
+  document.getElementById('cpStepLabel').textContent = label;
+  document.getElementById('cpOkBtn').textContent = okTxt;
+  document.getElementById('cpOkBtn').disabled = current.length < cpLen;
+
+  /* Affichage numérique */
+  var numEl = document.getElementById('cpNum');
+  numEl.textContent = current.length > 0 ? current : '——';
+  numEl.className   = 'cpin-num' + (cpStep === 2 ? ' step2' : '');
+
+  /* Points */
+  var dots = document.getElementById('cpDots');
+  dots.innerHTML = '';
+  for (var i = 0; i < cpLen; i++) {
+    var d = document.createElement('div');
+    d.className = 'cpindot' + (i < current.length ? ' filled' : '') + (cpStep === 2 && i < current.length ? ' new' : '');
+    dots.appendChild(d);
+  }
+  document.getElementById('cpHint').textContent = '';
+}
+
+function cpPress(d) {
+  if (cpStep === 1) {
+    if (cpOld.length >= cpLen) return;
+    cpOld += d;
+  } else {
+    if (cpNew.length >= cpLen) return;
+    cpNew += d;
+  }
+  updateCpUI();
+  /* Auto-avance à l'étape 2 */
+  if (cpStep === 1 && cpOld.length === cpLen) setTimeout(cpNext, 250);
+  /* Auto-confirme à l'étape 2 */
+  if (cpStep === 2 && cpNew.length === cpLen) setTimeout(cpNext, 250);
+}
+
+function cpDel() {
+  if (cpStep === 1) cpOld = cpOld.slice(0, -1);
+  else              cpNew = cpNew.slice(0, -1);
+  updateCpUI();
+}
+
+async function cpNext() {
+  if (cpStep === 1) {
+    if (cpOld.length < cpLen) return;
+    cpStep = 2; cpNew = '';
+    updateCpUI();
+    return;
+  }
+  /* Étape 2 : envoyer */
+  if (cpNew.length < cpLen) return;
+  var btn = document.getElementById('cpOkBtn');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    var res = await fetch('/api/auth/change-pin', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: user.id, current_pin: cpOld, new_pin: cpNew})
+    });
+    var d = await res.json();
+    if (!res.ok) {
+      document.getElementById('cpHint').textContent = '❌ ' + (d.error || 'Erreur');
+      document.getElementById('cpHint').style.color = '#ef4444';
+      cpStep = 1; cpOld = ''; cpNew = '';
+      updateCpUI();
+      return;
+    }
+    closeChangePinModal();
+    /* Toast succès */
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#052e16;border:1px solid #16a34a;color:#86efac;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:bold;z-index:999;';
+    t.textContent = '✅ PIN changé avec succès !';
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 4000);
+  } catch(e) {
+    document.getElementById('cpHint').textContent = '❌ Erreur réseau';
+    document.getElementById('cpHint').style.color = '#ef4444';
+    btn.disabled = false; btn.textContent = '✅ Confirmer';
+  }
+}
+
+/* Fermer en cliquant le fond */
+document.getElementById('changePinOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeChangePinModal();
+});
+</script>
+
 <script src="tooltips.js"></script>
 </body>
 </html>
