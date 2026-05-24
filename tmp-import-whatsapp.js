@@ -54,8 +54,7 @@ async function processImage(srcPath,destPath){
   const img=await Jimp.read(srcPath);
 
   img.normalize();          // auto-contrast / auto-brightness
-  img.blur(1);              // léger lissage du bruit
-  img.sharpen();            // redonner de la netteté
+  img.contrast(0.1);        // léger boost de contraste
 
   // Recadrage auto des bords uniformes (fond gris/blanc de la table)
   try{ img.autocrop({tolerance:0.06,cropOnlyFrames:false}); }catch(e){}
