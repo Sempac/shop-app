@@ -9,17 +9,17 @@
 *{box-sizing:border-box;}
 body{margin:0;font-family:Arial;background:#0f172a;color:white;}
 .container{display:flex;height:100vh;}
-.left{width:52%;border-right:1px solid #334155;padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px;}
+.left{width:52%;border-right:2px solid #e2e8f0;padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px;background:#ffffff;color:#0f172a;}
 .home-btn{width:100%;padding:14px;background:#1e40af;color:white;border:none;font-size:15px;font-weight:bold;border-radius:8px;cursor:pointer;font-family:Arial;}
 .search-row{display:flex;gap:6px;}
-.search-row input{flex:1;padding:9px 12px;border-radius:6px;border:none;font-size:13px;background:#1e293b;color:white;}
-.search-row input::placeholder{color:#475569;}
+.search-row input{flex:1;padding:9px 12px;border-radius:6px;border:1.5px solid #d1d5db;font-size:13px;background:#f8fafc;color:#0f172a;}
+.search-row input::placeholder{color:#9ca3af;}
 .search-btn{padding:9px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-family:Arial;}
 table.rl{width:100%;border-collapse:collapse;font-size:12px;}
-table.rl th{background:#1e293b;color:#94a3b8;padding:8px 10px;text-align:left;border-bottom:2px solid #334155;white-space:nowrap;}
-table.rl td{padding:8px 10px;border-bottom:1px solid #1e293b;color:#e2e8f0;cursor:pointer;}
-table.rl tr:hover td{background:#1e293b;}
-table.rl tr.selected td{background:#1e3a8a44;}
+table.rl th{background:#1e293b;color:#cbd5e1;padding:8px 10px;text-align:left;border-bottom:2px solid #334155;white-space:nowrap;}
+table.rl td{padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#374151;cursor:pointer;}
+table.rl tr:hover td{background:#eff6ff;}
+table.rl tr.selected td{background:#dbeafe;}
 .sbadge{font-size:10px;padding:3px 8px;border-radius:5px;font-weight:bold;display:inline-block;}
 .EN_ATTENTE{background:#3b82f6;color:white;}
 .EN_COURS  {background:#f59e0b;color:white;}
@@ -144,30 +144,30 @@ table.sticky thead tr th,
   <!-- Filtres avancés -->
   <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;">
     <div style="display:flex;gap:5px;">
-      <input type="date" id="f_from" style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;" title="Date début">
-      <input type="date" id="f_to"   style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;" title="Date fin">
+      <input type="date" id="f_from" style="flex:1;padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;" title="Date début">
+      <input type="date" id="f_to"   style="flex:1;padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;" title="Date fin">
     </div>
-    <select id="f_status" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+    <select id="f_status" style="padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;">
       <option value="">Tous statuts</option>
       <option value="EN_ATTENTE">⏳ En attente</option>
       <option value="EN_COURS">🔧 En cours</option>
       <option value="TERMINE">✅ Terminé</option>
       <option value="LIVRE">📦 Livré</option>
     </select>
-    <select id="f_brand" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+    <select id="f_brand" style="padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;">
       <option value="">Toutes marques</option>
       <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
       <option>Huawei</option><option>OnePlus</option><option>Sony</option>
       <option>Google</option><option>Oppo</option><option>Motorola</option><option>Autre</option>
     </select>
-    <input id="f_model" placeholder="Modèle (ex: iPhone 12)" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
-    <input id="f_issue" placeholder="Panne (ex: écran)" style="padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+    <input id="f_model" placeholder="Modèle (ex: iPhone 12)" style="padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;">
+    <input id="f_issue" placeholder="Panne (ex: écran)" style="padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;">
     <div style="display:flex;gap:5px;">
-      <input type="number" id="f_price_min" placeholder="Prix min €" style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
-      <input type="number" id="f_price_max" placeholder="Prix max €" style="flex:1;padding:6px;border:1.5px solid #334155;border-radius:6px;font-size:11px;background:#1e293b;color:white;font-family:Arial;">
+      <input type="number" id="f_price_min" placeholder="Prix min €" style="flex:1;padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;">
+      <input type="number" id="f_price_max" placeholder="Prix max €" style="flex:1;padding:6px;border:1.5px solid #d1d5db;border-radius:6px;font-size:11px;background:#f8fafc;color:#0f172a;font-family:Arial;">
     </div>
     <button onclick="applyFilters()" style="padding:7px;background:#0f766e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🔍 Filtrer</button>
-    <button onclick="resetFilters()" style="padding:5px;background:#1e293b;color:#64748b;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:11px;font-family:Arial;">✕ Réinitialiser</button>
+    <button onclick="resetFilters()" style="padding:5px;background:#f1f5f9;color:#374151;border:1.5px solid #d1d5db;border-radius:6px;cursor:pointer;font-size:11px;font-family:Arial;">✕ Réinitialiser</button>
   </div>
 
   <table class="rl">
