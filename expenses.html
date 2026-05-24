@@ -86,11 +86,15 @@ table.sticky thead tr th,
       <div class="fg"><label>Date</label><input type="date" id="dep_date"></div>
       <div class="fg"><label>Description</label><input id="dep_desc" placeholder="Ex: Achat café, produit entretien..."></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-        <div class="fg" style="flex:1;min-width:90px;">
-          <label>HT (€)</label>
-          <input type="number" id="dep_amount_ht" placeholder="optionnel" min="0" step="0.01" oninput="calcDepTTC()" title="Montant hors taxe">
+        <div class="fg" style="flex:0 0 70px;">
+          <label>Qté</label>
+          <input type="number" id="dep_qty" value="1" min="1" step="1" oninput="calcDepTTC()" title="Quantité">
         </div>
-        <div class="fg" style="flex:0 0 90px;">
+        <div class="fg" style="flex:1;min-width:80px;">
+          <label>HT unit. (€)</label>
+          <input type="number" id="dep_amount_ht" placeholder="optionnel" min="0" step="0.01" oninput="calcDepTTC()" title="Prix HT par unité">
+        </div>
+        <div class="fg" style="flex:0 0 80px;">
           <label>TVA (%)</label>
           <select id="dep_tva" onchange="calcDepTTC()">
             <option value="">—</option>
@@ -100,10 +104,13 @@ table.sticky thead tr th,
             <option value="0">0 %</option>
           </select>
         </div>
-        <div class="fg" style="flex:1;min-width:90px;">
-          <label>TTC (€) *</label>
-          <input type="number" id="dep_amount" placeholder="0.00" min="0" step="0.01" oninput="calcDepHT()" title="Montant TTC">
+        <div class="fg" style="flex:1;min-width:80px;">
+          <label>TTC unit. (€) *</label>
+          <input type="number" id="dep_amount" placeholder="0.00" min="0" step="0.01" oninput="calcDepHT()" title="Prix TTC par unité">
         </div>
+      </div>
+      <div id="dep_total_line" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:bold;color:#1e40af;text-align:right;margin-bottom:12px;">
+        Total : <span id="dep_total_val">0.00 €</span>
       </div>
       <div class="fg"><label>Catégorie</label>
         <select id="dep_cat"></select>
@@ -132,7 +139,7 @@ table.sticky thead tr th,
       </select>
     </div>
     <table>
-      <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th style="text-align:right;">HT</th><th style="text-align:center;">TVA</th><th style="text-align:right;">TTC</th><th class="no-print"></th></tr></thead>
+      <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th style="text-align:center;">Qté</th><th style="text-align:right;">HT unit.</th><th style="text-align:center;">TVA</th><th style="text-align:right;">TTC total</th><th class="no-print"></th></tr></thead>
       <tbody id="expBody"></tbody>
     </table>
     <div class="total-bar"><span>TOTAL PÉRIODE</span><span id="totalExp">0.00 €</span></div>
@@ -182,12 +189,15 @@ async function loadCategories() {
 }
 
 async function addExpense() {
-  var desc   = document.getElementById('dep_desc').value.trim();
-  var amount = Number(document.getElementById('dep_amount').value);
-  var cat    = document.getElementById('dep_cat').value;
-  var date   = document.getElementById('dep_date').value;
+  var desc    = document.getElementById('dep_desc').value.trim();
+  var unitTTC = Number(document.getElementById('dep_amount').value);
+  var qty     = Math.max(1, parseInt(document.getElementById('dep_qty')?.value) || 1);
+  var cat     = document.getElementById('dep_cat').value;
+  var date    = document.getElementById('dep_date').value;
+  var htVal   = document.getElementById('dep_amount_ht')?.value;
+  var tvaVal  = document.getElementById('dep_tva')?.value;
 
-  if (!desc || !amount) { alert('⚠️ Description et montant obligatoires'); return; }
+  if (!desc || !unitTTC) { alert('⚠️ Description et montant obligatoires'); return; }
 
   /* Vérification sécurité côté client */
   if (userRole !== 'gerant' && allowedCategories.indexOf(cat) < 0) {
@@ -195,22 +205,24 @@ async function addExpense() {
     return;
   }
 
+  var totalTTC = unitTTC * qty;
+  var totalHT  = htVal ? Number(htVal) * qty : null;
+
   var editId = window._editingExpenseId || null;
   var url    = editId ? '/api/expenses/' + editId : '/api/expenses';
   var method = editId ? 'PUT' : 'POST';
-  var htVal  = document.getElementById('dep_amount_ht')?.value;
-  var tvaVal = document.getElementById('dep_tva')?.value;
   var res = await fetch(url, {
     method: method,
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
       description: desc,
-      amount:      amount,
-      amount_ht:   htVal ? Number(htVal) : null,
-      amount_ttc:  amount,
+      amount:      totalTTC,
+      amount_ht:   totalHT,
+      amount_ttc:  totalTTC,
       taux_tva:    tvaVal ? Number(tvaVal) : null,
       category:    cat,
-      date:        date
+      date:        date,
+      quantity:    qty
     })
   });
   var d = await res.json();
@@ -221,6 +233,9 @@ async function addExpense() {
   if (btn) { btn.textContent = '➕ Ajouter'; btn.style.background = '#22c55e'; }
   document.getElementById('dep_desc').value   = '';
   document.getElementById('dep_amount').value = '';
+  document.getElementById('dep_qty').value    = '1';
+  document.getElementById('dep_amount_ht').value = '';
+  document.getElementById('dep_total_line').style.display = 'none';
   loadExpenses();
 }
 
@@ -254,16 +269,20 @@ async function loadExpenses() {
     tbody.innerHTML = data.map(function(e) {
       total += Number(e.amount||0);
       byCat[e.category] = (byCat[e.category]||0) + Number(e.amount||0);
+      var qty = parseInt(e.quantity) || 1;
+      var unitHT  = qty > 1 && e.amount_ht  ? e.amount_ht  / qty : e.amount_ht;
+      var unitTTC = qty > 1 && (e.amount_ttc||e.amount) ? (e.amount_ttc||e.amount) / qty : (e.amount_ttc||e.amount);
       return '<tr>' +
         '<td>' + new Date(e.date).toLocaleDateString('fr-FR') + '</td>' +
-        '<td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;" title="' + e.description + '"><b>' + e.description + '</b></td>' +
+        '<td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;" title="' + e.description + '"><b>' + e.description + '</b></td>' +
         '<td><span class="cat-badge">' + (e.category||'Autre') + '</span></td>' +
-        '<td style="text-align:right;color:#64748b;">' + (e.amount_ht ? fmt(e.amount_ht) : '—') + '</td>' +
+        '<td style="text-align:center;font-weight:bold;color:#374151;">' + qty + '</td>' +
+        '<td style="text-align:right;color:#64748b;">' + (unitHT ? fmt(unitHT) : '—') + '</td>' +
         '<td style="text-align:center;color:#94a3b8;font-size:11px;">' + (e.taux_tva ? e.taux_tva+'%' : '—') + '</td>' +
         '<td style="text-align:right;font-weight:bold;color:#dc2626;">' + fmt(e.amount_ttc||e.amount) + '</td>' +
         '<td class="no-print">' +
           '<button class="edit-btn" onclick="editExpense(' + e.id + ')" title="Modifier cette dépense" style="margin-right:4px;">✏️</button>' +
-          (userRole === 'gerant' ? '<button class="del-btn" onclick="deleteExpense(' + e.id + ')" title="Supprimer définitivement cette dépense"" title="Supprimer définitivement cette dépense">🗑</button>' : '') +
+          (userRole === 'gerant' ? '<button class="del-btn" onclick="deleteExpense(' + e.id + ')" title="Supprimer définitivement cette dépense">🗑</button>' : '') +
         '</td>' +
         '</tr>';
     }).join('');
@@ -294,12 +313,17 @@ async function editExpense(id) {
   var exp = (window._allExpenses||[]).find(function(e){ return e.id === id; });
   if (!exp) return;
   /* Pré-remplir le formulaire */
+  var qty = Math.max(1, parseInt(exp.quantity) || 1);
+  var unitTTC = Number((exp.amount_ttc||exp.amount||0) / qty).toFixed(2);
+  var unitHT  = qty > 0 && exp.amount_ht ? Number(exp.amount_ht / qty).toFixed(2) : '';
   document.getElementById('dep_desc').value       = exp.description || '';
-  document.getElementById('dep_amount').value     = Number(exp.amount_ttc||exp.amount||0).toFixed(2);
-  document.getElementById('dep_amount_ht').value  = Number(exp.amount_ht||0).toFixed(2);
+  document.getElementById('dep_qty').value        = qty;
+  document.getElementById('dep_amount').value     = unitTTC;
+  document.getElementById('dep_amount_ht').value  = unitHT;
   document.getElementById('dep_tva').value        = exp.taux_tva || '20';
   document.getElementById('dep_cat').value        = exp.category || '';
   document.getElementById('dep_date').value       = exp.date ? exp.date.slice(0,10) : '';
+  calcDepTTC();
   /* Stocker l'ID en cours d'édition */
   window._editingExpenseId = id;
   /* Changer le label du bouton */
@@ -384,14 +408,26 @@ loadCategories().then(function(){ loadExpenses(); });
   }
   if (document.readyState === 'loading') {
     function calcDepTTC() {
+  var qtyEl = document.getElementById('dep_qty');
   var htEl  = document.getElementById('dep_amount_ht');
   var tvaEl = document.getElementById('dep_tva');
   var ttcEl = document.getElementById('dep_amount');
+  var qty   = Math.max(1, parseInt(qtyEl?.value||1));
   var ht    = parseFloat(htEl?.value||0);
   var tva   = parseFloat(tvaEl?.value||'');
   if (ht > 0 && tva !== '' && !isNaN(tva)) {
     if (ttcEl && document.activeElement !== ttcEl)
       ttcEl.value = (ht * (1 + tva/100)).toFixed(2);
+  }
+  /* Affiche le total quand qty > 1 */
+  var unitTTC = parseFloat(ttcEl?.value||0);
+  var totalLine = document.getElementById('dep_total_line');
+  var totalVal  = document.getElementById('dep_total_val');
+  if (qty > 1 && unitTTC > 0 && totalLine && totalVal) {
+    totalVal.textContent = (qty * unitTTC).toFixed(2) + ' €';
+    totalLine.style.display = 'block';
+  } else if (totalLine) {
+    totalLine.style.display = 'none';
   }
 }
 function calcDepHT() {
@@ -404,6 +440,7 @@ function calcDepHT() {
     if (htEl && document.activeElement !== htEl)
       htEl.value = (ttc / (1 + tva/100)).toFixed(2);
   }
+  calcDepTTC();
 }
 
 document.addEventListener('DOMContentLoaded', initSticky);

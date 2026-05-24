@@ -505,15 +505,16 @@ app.delete('/api/repairs/:id',async(req,res)=>{
 app.get('/api/expenses',async(req,res)=>{try{const{from='2000-01-01',to='2999-12-31',category}=req.query;let q=`SELECT * FROM expenses WHERE DATE(date) BETWEEN $1 AND $2`;const p=[from,to];if(category){q+=` AND category=$3`;p.push(category);}q+=` ORDER BY date DESC`;const r=await pool.query(q,p);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/expenses/:id', async(req,res)=>{
   try{
-    const{description,amount,amount_ht,amount_ttc,taux_tva,category,date}=req.body;
+    const{description,amount,amount_ht,amount_ttc,taux_tva,category,date,quantity}=req.body;
+    const qty=Math.max(1,parseInt(quantity)||1);
     const tva=Number(taux_tva||20);
     const ttc=amount_ttc?Number(amount_ttc):Number(amount||0);
     const ht=amount_ht?Number(amount_ht):(tva>0?ttc/(1+tva/100):ttc);
     const r=await pool.query(
       `UPDATE expenses SET description=$1,amount=$2,amount_ht=$3,amount_ttc=$4,
-       taux_tva=$5,category=$6,date=$7 WHERE id=$8 RETURNING *`,
+       taux_tva=$5,category=$6,date=$7,quantity=$8 WHERE id=$9 RETURNING *`,
       [description||'',ttc,Number(ht.toFixed(2)),Number(ttc.toFixed(2)),
-       tva,category||'Autre',date||new Date().toISOString().split('T')[0],req.params.id]);
+       tva,category||'Autre',date||new Date().toISOString().split('T')[0],qty,req.params.id]);
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -527,7 +528,8 @@ app.delete('/api/expenses/:id', async(req,res)=>{
 
 app.post('/api/expenses',async(req,res)=>{
   try{
-    const{description,amount,amount_ht,amount_ttc,taux_tva,category,date}=req.body;
+    const{description,amount,amount_ht,amount_ttc,taux_tva,category,date,quantity}=req.body;
+    const qty=Math.max(1,parseInt(quantity)||1);
     const dateStr=(date||new Date().toISOString().slice(0,10)).replace(/-/g,'');
     const numRes=await pool.query("SELECT next_numero('DEP',$1,'expenses','numero') AS num",[dateStr]);
     const numero=numRes.rows[0].num;
@@ -536,10 +538,10 @@ app.post('/api/expenses',async(req,res)=>{
     const ht=amount_ht?Number(amount_ht):Number(amount||0)/(1+tva/100);
     const ttc=amount_ttc?Number(amount_ttc):Number(amount||0);
     const r=await pool.query(
-      `INSERT INTO expenses(numero,description,amount,amount_ht,amount_ttc,taux_tva,category,date)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      `INSERT INTO expenses(numero,description,amount,amount_ht,amount_ttc,taux_tva,category,date,quantity)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
       [numero,description||'',Number(amount||ttc),Number(ht.toFixed(2)),Number(ttc.toFixed(2)),tva,
-       category||'Autre',date||new Date().toISOString().split('T')[0]]);
+       category||'Autre',date||new Date().toISOString().split('T')[0],qty]);
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
