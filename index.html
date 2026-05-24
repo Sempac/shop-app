@@ -305,8 +305,7 @@ if (user) {
     'Connecté à ' + loginDate.getHours() + 'h' + String(loginDate.getMinutes()).padStart(2,'0');
 }
 
-/* Rendu des cartes (tient compte du rôle pour admin-only) */
-renderCards();
+/* renderCards() est appelé en fin de script, après l'init de CARDS */
 
 /* ══════════════════════════════════════════════════
    CARTES — définitions & drag-and-drop
@@ -774,6 +773,7 @@ async function saveTodo() {
   renderTodos();
 }
 
+renderCards();
 renderTodos();
 loadPersonalNote();
 
