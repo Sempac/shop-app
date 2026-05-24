@@ -1,7 +1,10 @@
 const j=require('jimp');
-console.log('version:', j.Jimp?.version || 'unknown');
-console.log('keys:', Object.keys(j).slice(0,20).join(', '));
-console.log('has read:', typeof j.read);
-console.log('has Jimp:', typeof j.Jimp);
-console.log('has fromFile:', typeof j.fromFile);
-if(j.Jimp) console.log('Jimp keys:', Object.keys(j.Jimp).slice(0,10).join(', '));
+const {Jimp}=j;
+console.log('jimp version:', require('./node_modules/jimp/package.json').version);
+console.log('Jimp type:', typeof Jimp);
+// Static methods
+const staticMethods=Object.getOwnPropertyNames(Jimp).filter(k=>typeof Jimp[k]==='function');
+console.log('Jimp static methods:', staticMethods.join(', '));
+// Instance methods (from prototype)
+const protoMethods=Object.getOwnPropertyNames(Jimp.prototype).filter(k=>k!=='constructor');
+console.log('Jimp prototype methods (first 20):', protoMethods.slice(0,20).join(', '));
