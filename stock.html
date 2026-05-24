@@ -16,7 +16,10 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 .del-btn{background:#fee2e2;color:#ef4444;border-radius:4px;padding:3px 8px;font-size:11px;font-family:Arial;}
 .detail-btn{background:#f3e8ff;color:#7c3aed;border-radius:4px;padding:3px 8px;font-size:11px;font-family:Arial;margin-right:2px;}
 .main{display:flex;flex:1;overflow:hidden;}
-.sidebar{width:230px;background:white;padding:12px;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:7px;}
+.sidebar{width:230px;background:white;padding:12px;border-right:none;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:7px;min-width:150px;max-width:520px;}
+.resizer{width:5px;background:#e2e8f0;cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;}
+.resizer:hover,.resizer.dragging{background:#3b82f6;}
+.resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:40px;border-radius:2px;background:inherit;}
 .sidebar h3{margin:0 0 4px;font-size:13px;color:#0f172a;}
 /* Chips filtres */
 .chip-group{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;}
@@ -244,6 +247,8 @@ table.sticky thead tr th,
     </div>
     <button class="reset-btn" id="btnReset">♻ Réinitialiser</button>
   </div>
+
+  <div class="resizer" id="resizer" title="Glisser pour redimensionner"></div>
 
   <div class="content">
     <div class="stats-row" id="statsRow"></div>
@@ -498,8 +503,13 @@ function applyFilters() {
   _applyFiltersLocal(qRaw, norm);
 }
 
+/* Variables pour les filtres chips (les selects cachés ne fonctionnent pas sans options) */
+var chipCat='', chipCond='', chipStock='';
+
 function setChip(field, val, btn) {
-  document.getElementById('f_'+field).value = val;
+  if(field==='cat')   chipCat=val;
+  if(field==='cond')  chipCond=val;
+  if(field==='stock') chipStock=val;
   var group = document.getElementById('chips-'+field);
   group.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
   btn.classList.add('on');
@@ -508,13 +518,13 @@ function setChip(field, val, btn) {
 
 function _applyFiltersLocal(qRaw, norm) {
   var q        = norm(qRaw);
-  var cat      = document.getElementById('f_cat').value;
-  var cond     = document.getElementById('f_cond').value;
+  var cat      = chipCat;
+  var cond     = chipCond;
   var grade    = document.getElementById('f_grade').value;
   var color    = document.getElementById('f_color').value;
   var supplier = norm(document.getElementById('f_supplier').value);
   var zone     = norm(document.getElementById('f_zone').value);
-  var stock    = document.getElementById('f_stock').value;
+  var stock    = chipStock;
 
   filtered = allProducts.filter(function(p) {
     var qty  = parseInt(p.stock_quantity||0);
@@ -550,12 +560,9 @@ function resetFilters() {
   document.getElementById('f_search').value   = '';
   document.getElementById('f_zone').value     = '';
   document.getElementById('f_supplier').value = '';
-  document.getElementById('f_cat').value      = '';
-  document.getElementById('f_cond').value     = '';
   document.getElementById('f_grade').value    = '';
   document.getElementById('f_color').value    = '';
-  document.getElementById('f_stock').value    = '';
-  // Réinitialiser les chips
+  chipCat=''; chipCond=''; chipStock='';
   ['cat','cond','stock'].forEach(function(field){
     var group = document.getElementById('chips-'+field);
     if(!group) return;
@@ -1431,6 +1438,49 @@ async function importStockFile(input) {
     }
     if (tries > 30) clearInterval(interval);
   }, 300);
+})();
+
+/* ══ SÉPARATEUR REDIMENSIONNABLE ══ */
+(function(){
+  var resizer  = document.getElementById('resizer');
+  var sidebar  = document.querySelector('.sidebar');
+  var STOR_KEY = 'stock_sidebar_width';
+  var isDragging = false, startX, startW;
+
+  // Restaurer largeur sauvegardée
+  var saved = localStorage.getItem(STOR_KEY);
+  if(saved) sidebar.style.width = saved + 'px';
+
+  resizer.addEventListener('mousedown', function(e){
+    isDragging = true;
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e){
+    if(!isDragging) return;
+    var newW = Math.min(520, Math.max(150, startW + e.clientX - startX));
+    sidebar.style.width = newW + 'px';
+  });
+
+  document.addEventListener('mouseup', function(){
+    if(!isDragging) return;
+    isDragging = false;
+    resizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem(STOR_KEY, sidebar.offsetWidth);
+  });
+
+  // Double-clic → largeur par défaut
+  resizer.addEventListener('dblclick', function(){
+    sidebar.style.width = '230px';
+    localStorage.removeItem(STOR_KEY);
+  });
 })();
 
 </script>
