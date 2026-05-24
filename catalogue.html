@@ -202,7 +202,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 <div class="sec on" id="sec_products">
   <div class="chips-wrap">
     <span class="chips-label" id="t_ltype">Type</span>
-    <div class="chip on" onclick="setPF('type','',this)">Tout</div>
+    <div class="chip on chip-all" onclick="setPF('type','',this)">Tout</div>
     <div class="chip" onclick="setPF('type','Smartphone',this)">📱 Smartphone</div>
     <div class="chip" onclick="setPF('type','Tablette',this)">📟 Tablette</div>
     <div class="chip" onclick="setPF('type','PC Portable',this)">💻 PC Portable</div>
@@ -229,14 +229,14 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
     <div class="adv-body" id="advBody">
       <div class="adv-title" id="t_lgr">Grade</div>
       <div class="adv-row">
-        <div class="chip on" onclick="setPF('grade','',this)">Tous</div>
+        <div class="chip on chip-all-m" onclick="setPF('grade','',this)">Tous</div>
         <div class="chip" onclick="setPF('grade','A',this)">Grade A ⭐</div>
         <div class="chip" onclick="setPF('grade','B',this)">Grade B</div>
         <div class="chip" onclick="setPF('grade','C',this)">Grade C</div>
       </div>
       <div class="adv-title" id="t_lcond">État</div>
       <div class="adv-row">
-        <div class="chip on" onclick="setPF('cond','',this)">Tous</div>
+        <div class="chip on chip-all-m" onclick="setPF('cond','',this)">Tous</div>
         <div class="chip" onclick="setPF('cond','NEUF',this)" id="tc_neuf">Neuf</div>
         <div class="chip" onclick="setPF('cond','OCCASION',this)" id="tc_occ">Occasion</div>
         <div class="chip" onclick="setPF('cond','RECONDITIONNE',this)" id="tc_rec">Reconditionné</div>
@@ -251,7 +251,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
       <div class="adv-row" id="storageRow"><div class="chip on" onclick="setPF('storage','',this)">Tous</div></div>
       <div class="adv-title" id="t_lsim">SIM</div>
       <div class="adv-row">
-        <div class="chip on" onclick="setPF('sim','',this)">Toutes</div>
+        <div class="chip on chip-all-f" onclick="setPF('sim','',this)">Toutes</div>
         <div class="chip" onclick="setPF('sim','dual',this)" id="tc_dual">Dual SIM</div>
         <div class="chip" onclick="setPF('sim','single',this)" id="tc_single">1 SIM</div>
       </div>
@@ -313,7 +313,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
   <div id="quoteOk" class="quote-ok">
     <div class="quote-ok-icon">✅</div>
     <div id="t_q_sent">Votre demande a été envoyée !</div><br>
-    <button class="btn-next" onclick="resetDevis()" style="width:100%;max-width:220px">Nouveau devis</button>
+    <button class="btn-next" id="btn_new_quote" onclick="resetDevis()" style="width:100%;max-width:220px">Nouveau devis</button>
   </div>
   <!-- STEP 1 -->
   <div class="dstep on" id="ds1">
@@ -324,15 +324,15 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
       <div class="big-chip" onclick="selectDType('PC Portable',this)"><div class="icon">💻</div><div class="label">PC Portable</div></div>
       <div class="big-chip" onclick="selectDType('PC',this)"><div class="icon">🖥️</div><div class="label">PC</div></div>
     </div>
-    <div class="dstep-btns"><button class="btn-next" onclick="goStep(2)" style="flex:1">Suivant →</button></div>
+    <div class="dstep-btns"><button class="btn-next btn-next-nav" onclick="goStep(2)" style="flex:1">Suivant →</button></div>
   </div>
   <!-- STEP 2 -->
   <div class="dstep" id="ds2">
     <div class="dstep-title" id="t_ds2">Quelle marque ?</div>
     <div class="brand-chips" id="dBrandChips"></div>
     <div class="dstep-btns">
-      <button class="btn-back" onclick="goStep(1)">← Retour</button>
-      <button class="btn-next" onclick="goStep(3)">Suivant →</button>
+      <button class="btn-back btn-back-nav" onclick="goStep(1)">← Retour</button>
+      <button class="btn-next btn-next-nav" onclick="goStep(3)">Suivant →</button>
     </div>
   </div>
   <!-- STEP 3 -->
@@ -341,8 +341,8 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
     <input class="model-search" id="modelSearch" placeholder="🔍 Rechercher votre modèle..." oninput="filterModels()">
     <div class="model-list" id="modelList"></div>
     <div class="dstep-btns">
-      <button class="btn-back" onclick="goStep(2)">← Retour</button>
-      <button class="btn-next" onclick="goStep(4)">Suivant →</button>
+      <button class="btn-back btn-back-nav" onclick="goStep(2)">← Retour</button>
+      <button class="btn-next btn-next-nav" onclick="goStep(4)">Suivant →</button>
     </div>
   </div>
   <!-- STEP 4 -->
@@ -356,8 +356,8 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
     <div style="font-size:11px;color:var(--mu);margin-bottom:4px;margin-top:4px" id="t_desc_lbl">Description (facultatif)</div>
     <textarea class="form-ta" id="d_desc" placeholder="Ex: l'écran clignote, le téléphone démarre très lentement..."></textarea>
     <div class="dstep-btns">
-      <button class="btn-back" onclick="goStep(3)">← Retour</button>
-      <button class="btn-next" onclick="goStep(5)">Suivant →</button>
+      <button class="btn-back btn-back-nav" onclick="goStep(3)">← Retour</button>
+      <button class="btn-next btn-next-nav" onclick="goStep(5)">Suivant →</button>
     </div>
   </div>
   <!-- STEP 5 -->
@@ -372,8 +372,8 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
       📞 <strong style="color:var(--tx)">01 47 07 18 66</strong> &nbsp;·&nbsp; 📱 <strong style="color:var(--tx)">06 86 84 82 79</strong> &nbsp;·&nbsp; ✉️ smartphonesatelier4@gmail.com
     </div>
     <div class="dstep-btns">
-      <button class="btn-back" onclick="goStep(4)">← Retour</button>
-      <button class="btn-send" onclick="sendQuote()">📩 Envoyer sur WhatsApp</button>
+      <button class="btn-back btn-back-nav" onclick="goStep(4)">← Retour</button>
+      <button class="btn-send" id="btn_send_quote" onclick="sendQuote()">📩 Envoyer sur WhatsApp</button>
     </div>
   </div>
 </div>
@@ -430,18 +430,233 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 
 <script>
 var T={
-fr:{tagline:"Réparation · Vente · Impression — Paris 13e",search:"Rechercher...",nostock:"Aucun produit disponible",tp:"Produits",tr:"Tarifs Répa",ti:"Impression",td:"Devis",tc:"Contact",contact_title:"📞 Nous contacter",avail_title:"🔍 Vérifier la disponibilité d'un produit",avail_prod:"Quel produit vous intéresse ?",avail_name:"Votre prénom",avail_send:"Envoyer sur WhatsApp",avail_note:"Réponse rapide · Diagnostic gratuit sur place",ltype:"Type",lbrand:"Marque",ladv:"🔽 Filtres avancés",lgr:"Grade",lcond:"État",lprice:"Prix",lstorage:"Stockage",lsim:"SIM",rep_title:"🔧 Nos réparations",rh1:"Réparation",rh2:"Notre prix",rh3:"Marché",rh4:"Délai",rep_cta:"<strong>Diagnostic gratuit</strong> — Apportez votre appareil, sans engagement.",print_title:"🖨️ Impression & Photocopie",print_cta:"<strong>Envoyez votre fichier</strong> par WhatsApp et venez récupérer vos impressions.",ds1:"Quel type d'appareil ?",ds2:"Quelle marque ?",ds3:"Quel modèle ?",ds4:"Quelle est la panne ?",ds5:"Vos coordonnées",q_name:"Votre prénom *",q_phone:"Votre téléphone WhatsApp *",q_sent:"Votre demande a été envoyée !",free:"Gratuit",sl1:"Appareil",sl2:"Marque",sl3:"Modèle",sl4:"Panne",sl5:"Contact",subissue:"Précisez :",desc_lbl:"Description (facultatif)",cond:{NEUF:"Neuf",OCCASION:"Occasion",RECONDITIONNE:"Reconditionné"},wa_msg:"Bonjour, je suis intéressé par : ",tc_neuf:"Neuf",tc_occ:"Occasion",tc_rec:"Reconditionné",tc_dual:"Dual SIM",tc_single:"1 SIM"},
-en:{tagline:"Repair · Sales · Printing — Paris 13",search:"Search...",nostock:"No products available",tp:"Phones",tr:"Repairs",ti:"Printing",td:"Quote",ltype:"Type",lbrand:"Brand",ladv:"🔽 Advanced filters",lgr:"Grade",lcond:"Condition",lprice:"Price",lstorage:"Storage",lsim:"SIM",rep_title:"🔧 Our repairs",rh1:"Repair",rh2:"Our price",rh3:"Market",rh4:"Delay",rep_cta:"<strong>Free diagnostic</strong> — Bring your device, no commitment.",print_title:"🖨️ Printing & Photocopying",print_cta:"<strong>Send your file</strong> via WhatsApp and collect your prints.",ds1:"Device type?",ds2:"Which brand?",ds3:"Which model?",ds4:"What is the issue?",ds5:"Your details",q_name:"Your first name *",q_phone:"Your WhatsApp number *",q_sent:"Your request has been sent!",free:"Free",sl1:"Device",sl2:"Brand",sl3:"Model",sl4:"Issue",sl5:"Contact",subissue:"Specify:",desc_lbl:"Description (optional)",cond:{NEUF:"New",OCCASION:"Used",RECONDITIONNE:"Refurbished"},wa_msg:"Hello, I am interested in: ",tc_neuf:"New",tc_occ:"Used",tc_rec:"Refurbished",tc_dual:"Dual SIM",tc_single:"Single SIM"},
-ar:{tagline:"إصلاح · بيع · طباعة — باريس 13",search:"ابحث...",nostock:"لا توجد منتجات",tp:"الهواتف",tr:"الإصلاح",ti:"الطباعة",td:"طلب سعر",ltype:"النوع",lbrand:"الماركة",ladv:"🔽 فلاتر متقدمة",lgr:"الدرجة",lcond:"الحالة",lprice:"السعر",lstorage:"المساحة",lsim:"شريحة",rep_title:"🔧 خدمات الإصلاح",rh1:"الإصلاح",rh2:"سعرنا",rh3:"سعر السوق",rh4:"المدة",rep_cta:"<strong>تشخيص مجاني</strong> — أحضر جهازك، نصيحة بلا التزام.",print_title:"🖨️ الطباعة والتصوير",print_cta:"<strong>أرسل ملفك</strong> عبر واتساب.",ds1:"نوع الجهاز؟",ds2:"الماركة؟",ds3:"الموديل؟",ds4:"ما هي المشكلة؟",ds5:"معلوماتك",q_name:"اسمك *",q_phone:"هاتف واتساب *",q_sent:"تم إرسال طلبك!",free:"مجاني",sl1:"الجهاز",sl2:"الماركة",sl3:"الموديل",sl4:"العطل",sl5:"التواصل",subissue:"حدد:",desc_lbl:"وصف (اختياري)",cond:{NEUF:"جديد",OCCASION:"مستعمل",RECONDITIONNE:"مُجدَّد"},wa_msg:"مرحبا، أنا مهتم بـ: ",tc_neuf:"جديد",tc_occ:"مستعمل",tc_rec:"مُجدَّد",tc_dual:"شريحتان",tc_single:"شريحة واحدة"},
-zh:{tagline:"维修 · 销售 · 打印 — 巴黎13区",search:"搜索...",nostock:"暂无产品",tp:"手机",tr:"维修",ti:"打印",td:"报价",ltype:"类型",lbrand:"品牌",ladv:"🔽 高级筛选",lgr:"成色",lcond:"状态",lprice:"价格",lstorage:"存储",lsim:"SIM卡",rep_title:"🔧 维修服务",rh1:"维修项目",rh2:"我们的价格",rh3:"市场价",rh4:"时间",rep_cta:"<strong>免费诊断</strong> — 带来设备，无需承诺。",print_title:"🖨️ 打印与复印",print_cta:"<strong>发送文件</strong>至WhatsApp。",ds1:"设备类型？",ds2:"哪个品牌？",ds3:"哪个型号？",ds4:"什么问题？",ds5:"您的信息",q_name:"您的姓名 *",q_phone:"WhatsApp号码 *",q_sent:"您的申请已发送！",free:"免费",sl1:"设备",sl2:"品牌",sl3:"型号",sl4:"问题",sl5:"联系",subissue:"请说明:",desc_lbl:"描述（可选）",cond:{NEUF:"全新",OCCASION:"二手",RECONDITIONNE:"翻新"},wa_msg:"您好，我对以下感兴趣：",tc_neuf:"全新",tc_occ:"二手",tc_rec:"翻新",tc_dual:"双SIM",tc_single:"单SIM"},
-es:{tagline:"Reparación · Venta · Impresión — París 13",search:"Buscar...",nostock:"Sin productos",tp:"Teléfonos",tr:"Reparaciones",ti:"Impresión",td:"Presupuesto",ltype:"Tipo",lbrand:"Marca",ladv:"🔽 Filtros avanzados",lgr:"Grado",lcond:"Estado",lprice:"Precio",lstorage:"Almacenamiento",lsim:"SIM",rep_title:"🔧 Nuestras reparaciones",rh1:"Reparación",rh2:"Nuestro precio",rh3:"Mercado",rh4:"Plazo",rep_cta:"<strong>Diagnóstico gratuito</strong> — Trae tu dispositivo, sin compromiso.",print_title:"🖨️ Impresión y Fotocopias",print_cta:"<strong>Envía tu archivo</strong> por WhatsApp.",ds1:"¿Tipo de dispositivo?",ds2:"¿Qué marca?",ds3:"¿Qué modelo?",ds4:"¿Cuál es la avería?",ds5:"Tus datos",q_name:"Tu nombre *",q_phone:"Tu WhatsApp *",q_sent:"¡Tu solicitud fue enviada!",free:"Gratis",sl1:"Dispositivo",sl2:"Marca",sl3:"Modelo",sl4:"Avería",sl5:"Contacto",subissue:"Especificar:",desc_lbl:"Descripción (opcional)",cond:{NEUF:"Nuevo",OCCASION:"Usado",RECONDITIONNE:"Reacondicionado"},wa_msg:"Hola, estoy interesado en: ",tc_neuf:"Nuevo",tc_occ:"Usado",tc_rec:"Reacondicionado",tc_dual:"Dual SIM",tc_single:"1 SIM"},
-it:{tagline:"Riparazione · Vendita · Stampa — Parigi 13",search:"Cerca...",nostock:"Nessun prodotto",tp:"Telefoni",tr:"Riparazioni",ti:"Stampa",td:"Preventivo",ltype:"Tipo",lbrand:"Marca",ladv:"🔽 Filtri avanzati",lgr:"Grado",lcond:"Stato",lprice:"Prezzo",lstorage:"Memoria",lsim:"SIM",rep_title:"🔧 Le nostre riparazioni",rh1:"Riparazione",rh2:"Nostro prezzo",rh3:"Mercato",rh4:"Tempi",rep_cta:"<strong>Diagnosi gratuita</strong> — Porta il dispositivo, senza impegno.",print_title:"🖨️ Stampa e Fotocopie",print_cta:"<strong>Invia il tuo file</strong> via WhatsApp.",ds1:"Tipo di dispositivo?",ds2:"Quale marca?",ds3:"Quale modello?",ds4:"Qual è il guasto?",ds5:"I tuoi dati",q_name:"Il tuo nome *",q_phone:"Il tuo WhatsApp *",q_sent:"La tua richiesta è stata inviata!",free:"Gratuito",sl1:"Dispositivo",sl2:"Marca",sl3:"Modello",sl4:"Guasto",sl5:"Contatto",subissue:"Specifica:",desc_lbl:"Descrizione (facoltativo)",cond:{NEUF:"Nuovo",OCCASION:"Usato",RECONDITIONNE:"Ricondizionato"},wa_msg:"Ciao, sono interessato a: ",tc_neuf:"Nuovo",tc_occ:"Usato",tc_rec:"Ricondizionato",tc_dual:"Dual SIM",tc_single:"1 SIM"},
-de:{tagline:"Reparatur · Verkauf · Druck — Paris 13",search:"Suchen...",nostock:"Keine Produkte",tp:"Telefone",tr:"Reparaturen",ti:"Druck",td:"Angebot",ltype:"Typ",lbrand:"Marke",ladv:"🔽 Erweiterte Filter",lgr:"Zustand",lcond:"Status",lprice:"Preis",lstorage:"Speicher",lsim:"SIM",rep_title:"🔧 Unsere Reparaturen",rh1:"Reparatur",rh2:"Unser Preis",rh3:"Marktpreis",rh4:"Dauer",rep_cta:"<strong>Kostenlose Diagnose</strong> — Bringen Sie Ihr Gerät, ohne Verpflichtung.",print_title:"🖨️ Drucken & Kopieren",print_cta:"<strong>Senden Sie Ihre Datei</strong> per WhatsApp.",ds1:"Gerätetyp?",ds2:"Welche Marke?",ds3:"Welches Modell?",ds4:"Was ist der Fehler?",ds5:"Ihre Daten",q_name:"Ihr Name *",q_phone:"Ihr WhatsApp *",q_sent:"Ihre Anfrage wurde gesendet!",free:"Kostenlos",sl1:"Gerät",sl2:"Marke",sl3:"Modell",sl4:"Problem",sl5:"Kontakt",subissue:"Genauer:",desc_lbl:"Beschreibung (optional)",cond:{NEUF:"Neu",OCCASION:"Gebraucht",RECONDITIONNE:"Generalüberholt"},wa_msg:"Hallo, ich interessiere mich für: ",tc_neuf:"Neu",tc_occ:"Gebraucht",tc_rec:"Generalüberholt",tc_dual:"Dual-SIM",tc_single:"1 SIM"}
+fr:{tagline:"Réparation · Vente · Impression — Paris 13e",search:"Rechercher...",nostock:"Aucun produit disponible",
+tp:"Produits",tr:"Tarifs Répa",ti:"Impression",td:"Devis",tc:"Contact",
+contact_title:"📞 Nous contacter",avail_title:"🔍 Vérifier la disponibilité d'un produit",
+avail_prod:"Quel produit vous intéresse ?",avail_name:"Votre prénom",
+avail_send:"Envoyer sur WhatsApp",avail_note:"Réponse rapide · Diagnostic gratuit sur place",
+ltype:"Type",lbrand:"Marque",ladv:"🔽 Filtres avancés",lgr:"Grade",lcond:"État",lprice:"Prix",lstorage:"Stockage",lsim:"SIM",
+all:"Tout",all_m:"Tous",all_f:"Toutes",
+products:"produit",products_p:"produits",
+sort_az:"A → Z",sort_pu:"Prix ↑",sort_pd:"Prix ↓",sort_gr:"Grade",
+next:"Suivant →",back:"← Retour",send_wa:"📩 Envoyer sur WhatsApp",new_quote:"Nouveau devis",
+alert_type:"Sélectionnez un type d'appareil.",alert_brand:"Sélectionnez une marque.",
+alert_model:"Sélectionnez un modèle.",alert_name:"Merci d'indiquer votre prénom.",
+alert_product:"Merci d'indiquer le produit recherché.",
+wa_print:"Bonjour The SMARTPHONE, je voudrais un service d'impression.",
+wa_contact:"Bonjour The SMARTPHONE, j'ai une question.",
+wa_repair:"Bonjour The SMARTPHONE, je voudrais un devis réparation.",
+wa_avail:"🔍 *Disponibilité produit — The SMARTPHONE*\n\n📦 Produit recherché : ",
+sum_device:"Appareil",sum_brand:"Marque",sum_model:"Modèle",sum_issue:"Panne",
+hours:"<strong>Lun–Sam</strong> 9h30–19h30 &nbsp;·&nbsp; <strong>Dim</strong> Fermé",
+express:"<strong>Réparation express</strong> en 30 min · <strong>Diagnostic offert</strong>",
+reviews:"avis Google",per_page:"/ page",ccard_write:"Écrire",ccard_call:"Appeler",
+rep_title:"🔧 Nos réparations",rh1:"Réparation",rh2:"Notre prix",rh3:"Marché",rh4:"Délai",
+rep_cta:"<strong>Diagnostic gratuit</strong> — Apportez votre appareil, sans engagement.",
+print_title:"🖨️ Impression & Photocopie",
+print_cta:"<strong>Envoyez votre fichier</strong> par WhatsApp et venez récupérer vos impressions.",
+ds1:"Quel type d'appareil ?",ds2:"Quelle marque ?",ds3:"Quel modèle ?",ds4:"Quelle est la panne ?",ds5:"Vos coordonnées",
+q_name:"Votre prénom *",q_phone:"Votre téléphone WhatsApp *",q_sent:"Votre demande a été envoyée !",
+free:"Gratuit",sl1:"Appareil",sl2:"Marque",sl3:"Modèle",sl4:"Panne",sl5:"Contact",
+subissue:"Précisez :",desc_lbl:"Description (facultatif)",
+cond:{NEUF:"Neuf",OCCASION:"Occasion",RECONDITIONNE:"Reconditionné"},
+wa_msg:"Bonjour, je suis intéressé par : ",tc_neuf:"Neuf",tc_occ:"Occasion",tc_rec:"Reconditionné",tc_dual:"Dual SIM",tc_single:"1 SIM"},
+en:{tagline:"Repair · Sales · Printing — Paris 13",search:"Search...",nostock:"No products available",
+tp:"Products",tr:"Repairs",ti:"Printing",td:"Quote",tc:"Contact",
+contact_title:"📞 Contact us",avail_title:"🔍 Check product availability",
+avail_prod:"Which product are you looking for?",avail_name:"Your first name",
+avail_send:"Send on WhatsApp",avail_note:"Quick reply during opening hours · Free on-site diagnostic",
+ltype:"Type",lbrand:"Brand",ladv:"🔽 Advanced filters",lgr:"Grade",lcond:"Condition",lprice:"Price",lstorage:"Storage",lsim:"SIM",
+all:"All",all_m:"All",all_f:"All",
+products:"product",products_p:"products",
+sort_az:"A → Z",sort_pu:"Price ↑",sort_pd:"Price ↓",sort_gr:"Grade",
+next:"Next →",back:"← Back",send_wa:"📩 Send on WhatsApp",new_quote:"New quote",
+alert_type:"Please select a device type.",alert_brand:"Please select a brand.",
+alert_model:"Please select a model.",alert_name:"Please enter your first name.",
+alert_product:"Please indicate the product you are looking for.",
+wa_print:"Hello The SMARTPHONE, I would like a printing service.",
+wa_contact:"Hello The SMARTPHONE, I have a question.",
+wa_repair:"Hello The SMARTPHONE, I would like a repair quote.",
+wa_avail:"🔍 *Product availability — The SMARTPHONE*\n\n📦 Product: ",
+sum_device:"Device",sum_brand:"Brand",sum_model:"Model",sum_issue:"Issue",
+hours:"<strong>Mon–Sat</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>Sun</strong> Closed",
+express:"<strong>Express repair</strong> in 30 min · <strong>Free diagnostic</strong>",
+reviews:"Google reviews",per_page:"/ page",ccard_write:"Write",ccard_call:"Call",
+rep_title:"🔧 Our repairs",rh1:"Repair",rh2:"Our price",rh3:"Market",rh4:"Delay",
+rep_cta:"<strong>Free diagnostic</strong> — Bring your device, no commitment.",
+print_title:"🖨️ Printing & Photocopying",
+print_cta:"<strong>Send your file</strong> via WhatsApp and collect your prints.",
+ds1:"Device type?",ds2:"Which brand?",ds3:"Which model?",ds4:"What is the issue?",ds5:"Your details",
+q_name:"Your first name *",q_phone:"Your WhatsApp number *",q_sent:"Your request has been sent!",
+free:"Free",sl1:"Device",sl2:"Brand",sl3:"Model",sl4:"Issue",sl5:"Contact",
+subissue:"Specify:",desc_lbl:"Description (optional)",
+cond:{NEUF:"New",OCCASION:"Used",RECONDITIONNE:"Refurbished"},
+wa_msg:"Hello, I am interested in: ",tc_neuf:"New",tc_occ:"Used",tc_rec:"Refurbished",tc_dual:"Dual SIM",tc_single:"Single SIM"},
+ar:{tagline:"إصلاح · بيع · طباعة — باريس 13",search:"ابحث...",nostock:"لا توجد منتجات",
+tp:"المنتجات",tr:"الإصلاح",ti:"الطباعة",td:"طلب سعر",tc:"التواصل",
+contact_title:"📞 اتصل بنا",avail_title:"🔍 التحقق من توفر منتج",
+avail_prod:"أي منتج يهمك؟",avail_name:"اسمك",
+avail_send:"إرسال عبر واتساب",avail_note:"رد سريع خلال ساعات العمل · تشخيص مجاني في المحل",
+ltype:"النوع",lbrand:"الماركة",ladv:"🔽 فلاتر متقدمة",lgr:"الدرجة",lcond:"الحالة",lprice:"السعر",lstorage:"المساحة",lsim:"شريحة",
+all:"الكل",all_m:"الكل",all_f:"الكل",
+products:"منتج",products_p:"منتجات",
+sort_az:"أ ← ي",sort_pu:"السعر ↑",sort_pd:"السعر ↓",sort_gr:"الدرجة",
+next:"التالي ←",back:"→ رجوع",send_wa:"📩 إرسال عبر واتساب",new_quote:"طلب جديد",
+alert_type:"اختر نوع الجهاز.",alert_brand:"اختر الماركة.",
+alert_model:"اختر الموديل.",alert_name:"الرجاء إدخال اسمك.",
+alert_product:"الرجاء تحديد المنتج المطلوب.",
+wa_print:"مرحبا The SMARTPHONE، أريد خدمة طباعة.",
+wa_contact:"مرحبا The SMARTPHONE، لدي سؤال.",
+wa_repair:"مرحبا The SMARTPHONE، أريد عرض سعر للإصلاح.",
+wa_avail:"🔍 *توفر المنتج — The SMARTPHONE*\n\n📦 المنتج المطلوب: ",
+sum_device:"الجهاز",sum_brand:"الماركة",sum_model:"الموديل",sum_issue:"العطل",
+hours:"<strong>الإثنين–السبت</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>الأحد</strong> مغلق",
+express:"<strong>إصلاح سريع</strong> في 30 دقيقة · <strong>تشخيص مجاني</strong>",
+reviews:"تقييم Google",per_page:"/ صفحة",ccard_write:"راسلنا",ccard_call:"اتصل",
+rep_title:"🔧 خدمات الإصلاح",rh1:"الإصلاح",rh2:"سعرنا",rh3:"سعر السوق",rh4:"المدة",
+rep_cta:"<strong>تشخيص مجاني</strong> — أحضر جهازك، نصيحة بلا التزام.",
+print_title:"🖨️ الطباعة والتصوير",print_cta:"<strong>أرسل ملفك</strong> عبر واتساب.",
+ds1:"نوع الجهاز؟",ds2:"الماركة؟",ds3:"الموديل؟",ds4:"ما هي المشكلة؟",ds5:"معلوماتك",
+q_name:"اسمك *",q_phone:"هاتف واتساب *",q_sent:"تم إرسال طلبك!",
+free:"مجاني",sl1:"الجهاز",sl2:"الماركة",sl3:"الموديل",sl4:"العطل",sl5:"التواصل",
+subissue:"حدد:",desc_lbl:"وصف (اختياري)",
+cond:{NEUF:"جديد",OCCASION:"مستعمل",RECONDITIONNE:"مُجدَّد"},
+wa_msg:"مرحبا، أنا مهتم بـ: ",tc_neuf:"جديد",tc_occ:"مستعمل",tc_rec:"مُجدَّد",tc_dual:"شريحتان",tc_single:"شريحة واحدة"},
+zh:{tagline:"维修 · 销售 · 打印 — 巴黎13区",search:"搜索...",nostock:"暂无产品",
+tp:"产品",tr:"维修",ti:"打印",td:"报价",tc:"联系",
+contact_title:"📞 联系我们",avail_title:"🔍 查询产品库存",
+avail_prod:"您想要哪款产品？",avail_name:"您的姓名",
+avail_send:"通过WhatsApp发送",avail_note:"营业时间内快速回复 · 免费现场诊断",
+ltype:"类型",lbrand:"品牌",ladv:"🔽 高级筛选",lgr:"成色",lcond:"状态",lprice:"价格",lstorage:"存储",lsim:"SIM卡",
+all:"全部",all_m:"全部",all_f:"全部",
+products:"件",products_p:"件",
+sort_az:"A → Z",sort_pu:"价格 ↑",sort_pd:"价格 ↓",sort_gr:"成色",
+next:"下一步 →",back:"← 返回",send_wa:"📩 发送到WhatsApp",new_quote:"新报价",
+alert_type:"请选择设备类型。",alert_brand:"请选择品牌。",
+alert_model:"请选择型号。",alert_name:"请输入您的姓名。",
+alert_product:"请输入您要查询的产品。",
+wa_print:"您好 The SMARTPHONE，我需要打印服务。",
+wa_contact:"您好 The SMARTPHONE，我有一个问题。",
+wa_repair:"您好 The SMARTPHONE，我想要维修报价。",
+wa_avail:"🔍 *产品库存查询 — The SMARTPHONE*\n\n📦 查询产品：",
+sum_device:"设备",sum_brand:"品牌",sum_model:"型号",sum_issue:"故障",
+hours:"<strong>周一至周六</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>周日</strong> 休息",
+express:"<strong>快速维修</strong> 30分钟 · <strong>免费诊断</strong>",
+reviews:"条谷歌评价",per_page:"/ 页",ccard_write:"发消息",ccard_call:"致电",
+rep_title:"🔧 维修服务",rh1:"维修项目",rh2:"我们的价格",rh3:"市场价",rh4:"时间",
+rep_cta:"<strong>免费诊断</strong> — 带来设备，无需承诺。",
+print_title:"🖨️ 打印与复印",print_cta:"<strong>发送文件</strong>至WhatsApp。",
+ds1:"设备类型？",ds2:"哪个品牌？",ds3:"哪个型号？",ds4:"什么问题？",ds5:"您的信息",
+q_name:"您的姓名 *",q_phone:"WhatsApp号码 *",q_sent:"您的申请已发送！",
+free:"免费",sl1:"设备",sl2:"品牌",sl3:"型号",sl4:"问题",sl5:"联系",
+subissue:"请说明:",desc_lbl:"描述（可选）",
+cond:{NEUF:"全新",OCCASION:"二手",RECONDITIONNE:"翻新"},
+wa_msg:"您好，我对以下感兴趣：",tc_neuf:"全新",tc_occ:"二手",tc_rec:"翻新",tc_dual:"双SIM",tc_single:"单SIM"},
+es:{tagline:"Reparación · Venta · Impresión — París 13",search:"Buscar...",nostock:"Sin productos",
+tp:"Productos",tr:"Reparaciones",ti:"Impresión",td:"Presupuesto",tc:"Contacto",
+contact_title:"📞 Contáctenos",avail_title:"🔍 Verificar disponibilidad",
+avail_prod:"¿Qué producto le interesa?",avail_name:"Su nombre",
+avail_send:"Enviar por WhatsApp",avail_note:"Respuesta rápida en horario de apertura · Diagnóstico gratuito",
+ltype:"Tipo",lbrand:"Marca",ladv:"🔽 Filtros avanzados",lgr:"Grado",lcond:"Estado",lprice:"Precio",lstorage:"Almacenamiento",lsim:"SIM",
+all:"Todo",all_m:"Todos",all_f:"Todas",
+products:"producto",products_p:"productos",
+sort_az:"A → Z",sort_pu:"Precio ↑",sort_pd:"Precio ↓",sort_gr:"Grado",
+next:"Siguiente →",back:"← Volver",send_wa:"📩 Enviar por WhatsApp",new_quote:"Nuevo presupuesto",
+alert_type:"Seleccione un tipo de dispositivo.",alert_brand:"Seleccione una marca.",
+alert_model:"Seleccione un modelo.",alert_name:"Por favor indique su nombre.",
+alert_product:"Por favor indique el producto buscado.",
+wa_print:"Hola The SMARTPHONE, me gustaría un servicio de impresión.",
+wa_contact:"Hola The SMARTPHONE, tengo una pregunta.",
+wa_repair:"Hola The SMARTPHONE, me gustaría un presupuesto de reparación.",
+wa_avail:"🔍 *Disponibilidad de producto — The SMARTPHONE*\n\n📦 Producto buscado: ",
+sum_device:"Dispositivo",sum_brand:"Marca",sum_model:"Modelo",sum_issue:"Avería",
+hours:"<strong>Lun–Sáb</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>Dom</strong> Cerrado",
+express:"<strong>Reparación express</strong> en 30 min · <strong>Diagnóstico gratuito</strong>",
+reviews:"reseñas Google",per_page:"/ página",ccard_write:"Escribir",ccard_call:"Llamar",
+rep_title:"🔧 Nuestras reparaciones",rh1:"Reparación",rh2:"Nuestro precio",rh3:"Mercado",rh4:"Plazo",
+rep_cta:"<strong>Diagnóstico gratuito</strong> — Trae tu dispositivo, sin compromiso.",
+print_title:"🖨️ Impresión y Fotocopias",print_cta:"<strong>Envía tu archivo</strong> por WhatsApp.",
+ds1:"¿Tipo de dispositivo?",ds2:"¿Qué marca?",ds3:"¿Qué modelo?",ds4:"¿Cuál es la avería?",ds5:"Tus datos",
+q_name:"Tu nombre *",q_phone:"Tu WhatsApp *",q_sent:"¡Tu solicitud fue enviada!",
+free:"Gratis",sl1:"Dispositivo",sl2:"Marca",sl3:"Modelo",sl4:"Avería",sl5:"Contacto",
+subissue:"Especificar:",desc_lbl:"Descripción (opcional)",
+cond:{NEUF:"Nuevo",OCCASION:"Usado",RECONDITIONNE:"Reacondicionado"},
+wa_msg:"Hola, estoy interesado en: ",tc_neuf:"Nuevo",tc_occ:"Usado",tc_rec:"Reacondicionado",tc_dual:"Dual SIM",tc_single:"1 SIM"},
+it:{tagline:"Riparazione · Vendita · Stampa — Parigi 13",search:"Cerca...",nostock:"Nessun prodotto",
+tp:"Prodotti",tr:"Riparazioni",ti:"Stampa",td:"Preventivo",tc:"Contatti",
+contact_title:"📞 Contattaci",avail_title:"🔍 Verifica disponibilità prodotto",
+avail_prod:"Quale prodotto ti interessa?",avail_name:"Il tuo nome",
+avail_send:"Invia su WhatsApp",avail_note:"Risposta rapida negli orari di apertura · Diagnosi gratuita",
+ltype:"Tipo",lbrand:"Marca",ladv:"🔽 Filtri avanzati",lgr:"Grado",lcond:"Stato",lprice:"Prezzo",lstorage:"Memoria",lsim:"SIM",
+all:"Tutti",all_m:"Tutti",all_f:"Tutte",
+products:"prodotto",products_p:"prodotti",
+sort_az:"A → Z",sort_pu:"Prezzo ↑",sort_pd:"Prezzo ↓",sort_gr:"Grado",
+next:"Avanti →",back:"← Indietro",send_wa:"📩 Invia su WhatsApp",new_quote:"Nuovo preventivo",
+alert_type:"Seleziona un tipo di dispositivo.",alert_brand:"Seleziona una marca.",
+alert_model:"Seleziona un modello.",alert_name:"Per favore indica il tuo nome.",
+alert_product:"Per favore indica il prodotto cercato.",
+wa_print:"Ciao The SMARTPHONE, vorrei un servizio di stampa.",
+wa_contact:"Ciao The SMARTPHONE, ho una domanda.",
+wa_repair:"Ciao The SMARTPHONE, vorrei un preventivo riparazione.",
+wa_avail:"🔍 *Disponibilità prodotto — The SMARTPHONE*\n\n📦 Prodotto cercato: ",
+sum_device:"Dispositivo",sum_brand:"Marca",sum_model:"Modello",sum_issue:"Guasto",
+hours:"<strong>Lun–Sab</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>Dom</strong> Chiuso",
+express:"<strong>Riparazione express</strong> in 30 min · <strong>Diagnosi gratuita</strong>",
+reviews:"recensioni Google",per_page:"/ pagina",ccard_write:"Scrivi",ccard_call:"Chiama",
+rep_title:"🔧 Le nostre riparazioni",rh1:"Riparazione",rh2:"Nostro prezzo",rh3:"Mercato",rh4:"Tempi",
+rep_cta:"<strong>Diagnosi gratuita</strong> — Porta il dispositivo, senza impegno.",
+print_title:"🖨️ Stampa e Fotocopie",print_cta:"<strong>Invia il tuo file</strong> via WhatsApp.",
+ds1:"Tipo di dispositivo?",ds2:"Quale marca?",ds3:"Quale modello?",ds4:"Qual è il guasto?",ds5:"I tuoi dati",
+q_name:"Il tuo nome *",q_phone:"Il tuo WhatsApp *",q_sent:"La tua richiesta è stata inviata!",
+free:"Gratuito",sl1:"Dispositivo",sl2:"Marca",sl3:"Modello",sl4:"Guasto",sl5:"Contatto",
+subissue:"Specifica:",desc_lbl:"Descrizione (facoltativo)",
+cond:{NEUF:"Nuovo",OCCASION:"Usato",RECONDITIONNE:"Ricondizionato"},
+wa_msg:"Ciao, sono interessato a: ",tc_neuf:"Nuovo",tc_occ:"Usato",tc_rec:"Ricondizionato",tc_dual:"Dual SIM",tc_single:"1 SIM"},
+de:{tagline:"Reparatur · Verkauf · Druck — Paris 13",search:"Suchen...",nostock:"Keine Produkte",
+tp:"Produkte",tr:"Reparaturen",ti:"Druck",td:"Angebot",tc:"Kontakt",
+contact_title:"📞 Kontakt",avail_title:"🔍 Produktverfügbarkeit prüfen",
+avail_prod:"Welches Produkt suchen Sie?",avail_name:"Ihr Name",
+avail_send:"Per WhatsApp senden",avail_note:"Schnelle Antwort während der Öffnungszeiten · Kostenlose Diagnose",
+ltype:"Typ",lbrand:"Marke",ladv:"🔽 Erweiterte Filter",lgr:"Zustand",lcond:"Status",lprice:"Preis",lstorage:"Speicher",lsim:"SIM",
+all:"Alle",all_m:"Alle",all_f:"Alle",
+products:"Produkt",products_p:"Produkte",
+sort_az:"A → Z",sort_pu:"Preis ↑",sort_pd:"Preis ↓",sort_gr:"Zustand",
+next:"Weiter →",back:"← Zurück",send_wa:"📩 Per WhatsApp senden",new_quote:"Neues Angebot",
+alert_type:"Bitte wählen Sie einen Gerätetyp.",alert_brand:"Bitte wählen Sie eine Marke.",
+alert_model:"Bitte wählen Sie ein Modell.",alert_name:"Bitte geben Sie Ihren Namen ein.",
+alert_product:"Bitte geben Sie das gesuchte Produkt an.",
+wa_print:"Hallo The SMARTPHONE, ich möchte einen Druckservice.",
+wa_contact:"Hallo The SMARTPHONE, ich habe eine Frage.",
+wa_repair:"Hallo The SMARTPHONE, ich möchte ein Reparaturangebot.",
+wa_avail:"🔍 *Produktverfügbarkeit — The SMARTPHONE*\n\n📦 Gesuchtes Produkt: ",
+sum_device:"Gerät",sum_brand:"Marke",sum_model:"Modell",sum_issue:"Problem",
+hours:"<strong>Mo–Sa</strong> 9:30–19:30 &nbsp;·&nbsp; <strong>So</strong> Geschlossen",
+express:"<strong>Express-Reparatur</strong> in 30 Min · <strong>Kostenlose Diagnose</strong>",
+reviews:"Google-Bewertungen",per_page:"/ Seite",ccard_write:"Schreiben",ccard_call:"Anrufen",
+rep_title:"🔧 Unsere Reparaturen",rh1:"Reparatur",rh2:"Unser Preis",rh3:"Marktpreis",rh4:"Dauer",
+rep_cta:"<strong>Kostenlose Diagnose</strong> — Bringen Sie Ihr Gerät, ohne Verpflichtung.",
+print_title:"🖨️ Drucken & Kopieren",print_cta:"<strong>Senden Sie Ihre Datei</strong> per WhatsApp.",
+ds1:"Gerätetyp?",ds2:"Welche Marke?",ds3:"Welches Modell?",ds4:"Was ist der Fehler?",ds5:"Ihre Daten",
+q_name:"Ihr Name *",q_phone:"Ihr WhatsApp *",q_sent:"Ihre Anfrage wurde gesendet!",
+free:"Kostenlos",sl1:"Gerät",sl2:"Marke",sl3:"Modell",sl4:"Problem",sl5:"Kontakt",
+subissue:"Genauer:",desc_lbl:"Beschreibung (optional)",
+cond:{NEUF:"Neu",OCCASION:"Gebraucht",RECONDITIONNE:"Generalüberholt"},
+wa_msg:"Hallo, ich interessiere mich für: ",tc_neuf:"Neu",tc_occ:"Gebraucht",tc_rec:"Generalüberholt",tc_dual:"Dual-SIM",tc_single:"1 SIM"}
 };
 var BRANDS={Smartphone:["Apple","Samsung","Xiaomi","Huawei","OnePlus","Sony","Google","Motorola","Oppo","Nokia","Realme","Autre"],Tablette:["Apple","Samsung","Huawei","Lenovo","Microsoft","Amazon","Autre"],"PC Portable":["Apple","Dell","HP","Lenovo","Asus","Acer","MSI","Microsoft","Autre"],PC:["Dell","HP","Lenovo","Asus","Apple","Autre"]};
 var MODELS={Apple:{Smartphone:["iPhone 16 Pro Max","iPhone 16 Pro","iPhone 16 Plus","iPhone 16","iPhone 15 Pro Max","iPhone 15 Pro","iPhone 15","iPhone 14 Pro Max","iPhone 14 Pro","iPhone 14","iPhone 13 Pro Max","iPhone 13 Pro","iPhone 13","iPhone 13 mini","iPhone 12 Pro Max","iPhone 12 Pro","iPhone 12","iPhone 12 mini","iPhone 11 Pro Max","iPhone 11 Pro","iPhone 11","iPhone XS Max","iPhone XS","iPhone XR","iPhone X","iPhone 8 Plus","iPhone 8","iPhone SE 3","iPhone SE 2","Autre"],Tablette:["iPad Pro 13\" M4","iPad Pro 11\" M4","iPad Air 13\"","iPad Air 11\"","iPad mini 7","iPad mini 6","iPad 10","iPad 9","Autre"],"PC Portable":["MacBook Pro 16\" M4","MacBook Pro 14\" M4","MacBook Air 15\" M3","MacBook Air 13\" M3","MacBook Air 13\" M2","MacBook Air 13\" M1","Autre"]},Samsung:{Smartphone:["Galaxy S25 Ultra","Galaxy S25+","Galaxy S25","Galaxy S24 Ultra","Galaxy S24+","Galaxy S24","Galaxy S23 Ultra","Galaxy S23","Galaxy S22 Ultra","Galaxy S22","Galaxy A55","Galaxy A54","Galaxy A53","Galaxy A35","Galaxy A34","Galaxy A25","Galaxy A15","Galaxy Z Fold 6","Galaxy Z Flip 6","Galaxy Note 20 Ultra","Autre"],Tablette:["Galaxy Tab S10 Ultra","Galaxy Tab S10+","Galaxy Tab S10","Galaxy Tab S9+","Galaxy Tab A9+","Galaxy Tab A9","Galaxy Tab A8","Autre"]},Xiaomi:{Smartphone:["Xiaomi 14 Ultra","Xiaomi 14 Pro","Xiaomi 14","Xiaomi 13T Pro","Redmi Note 13 Pro+","Redmi Note 13 Pro","Redmi Note 13","Redmi Note 12","POCO X6 Pro","POCO F6","Autre"]},Huawei:{Smartphone:["P60 Pro","P60","P50 Pro","P50","P40 Pro+","P40 Pro","P40","P30 Pro","P30","Mate 60 Pro","Nova 12","Nova 11","Autre"]},OnePlus:{Smartphone:["OnePlus 12 Pro","OnePlus 12","OnePlus 11","OnePlus 10 Pro","OnePlus Nord 4","OnePlus Nord 3","Autre"]},Sony:{Smartphone:["Xperia 1 VI","Xperia 5 VI","Xperia 10 VI","Xperia 1 V","Autre"]},Google:{Smartphone:["Pixel 9 Pro XL","Pixel 9 Pro","Pixel 9","Pixel 8 Pro","Pixel 8","Pixel 7 Pro","Pixel 7","Autre"]},Motorola:{Smartphone:["Edge 50 Ultra","Edge 50 Pro","Moto G85","Moto G75","Moto G64","Autre"]},Oppo:{Smartphone:["Find X8 Pro","Find X8","Reno 12 Pro","Reno 12","Autre"]},Nokia:{Smartphone:["Nokia G42","Nokia G22","Nokia C32","Autre"]},Realme:{Smartphone:["Realme 12 Pro+","Realme 12","Realme GT 6","Realme C67","Autre"]},Dell:{"PC Portable":["XPS 15","XPS 13","Inspiron 15","Inspiron 14","Latitude E7470","Vostro 15","Autre"],PC:["OptiPlex 7090","OptiPlex 3080","Inspiron Desktop","Autre"]},HP:{"PC Portable":["Spectre x360","Envy 15","Pavilion 15","EliteBook 840","ProBook 450","Omen 16","Autre"],PC:["EliteDesk 800","ProDesk 400","Pavilion Desktop","Autre"]},Lenovo:{"PC Portable":["ThinkPad X1 Carbon","ThinkPad T14","IdeaPad 5","Legion 5","Legion 7","Yoga 9","Autre"],PC:["ThinkCentre M90q","IdeaCentre 5","Autre"]},Asus:{"PC Portable":["ZenBook 14","ZenBook Pro 16","VivoBook 15","ROG Zephyrus","TUF Gaming A15","Autre"],PC:["ROG Strix G15","Autre"]},Acer:{"PC Portable":["Swift 3","Aspire 5","Predator Helios","Nitro 5","Autre"]},MSI:{"PC Portable":["Stealth 16","Raider GE78","Katana GF76","Autre"]},Microsoft:{"PC Portable":["Surface Laptop 5","Surface Pro 9","Autre"],Tablette:["Surface Pro 10","Surface Pro 9","Surface Go 4","Autre"]},Amazon:{Tablette:["Fire HD 10","Fire HD 8","Fire Max 11","Autre"]}};
 var ISSUES={Smartphone:[{id:"ecran",icon:"🔲",label:"Écran / Vitre",sub:["Vitre avant cassée","LCD défaillant","Vitre + LCD","Vitre arrière"]},{id:"batterie",icon:"🔋",label:"Batterie",sub:["Se décharge vite","Ne charge plus","Gonflement"]},{id:"charge",icon:"🔌",label:"Charge",sub:["Ne charge pas","Charge intermittente","Connecteur abîmé"]},{id:"eau",icon:"💧",label:"Dégât eaux",sub:[]},{id:"camera",icon:"📷",label:"Caméra",sub:["Caméra avant","Caméra arrière","Flash"]},{id:"boutons",icon:"🔘",label:"Boutons",sub:["Bouton power","Volume","Bouton Home"]},{id:"lent",icon:"🐌",label:"Lenteur",sub:["Très lent","Redémarre seul","Bloqué"]},{id:"son",icon:"🔇",label:"Son / Micro",sub:["Haut-parleur","Écouteur","Micro"]},{id:"autre",icon:"🔧",label:"Autre",sub:[]}],Tablette:[{id:"ecran",icon:"🔲",label:"Écran",sub:["Vitre cassée","LCD défaillant","Vitre + LCD"]},{id:"batterie",icon:"🔋",label:"Batterie",sub:[]},{id:"charge",icon:"🔌",label:"Charge",sub:[]},{id:"boutons",icon:"🔘",label:"Boutons",sub:[]},{id:"lent",icon:"🐌",label:"Lenteur",sub:[]},{id:"autre",icon:"🔧",label:"Autre",sub:[]}],"PC Portable":[{id:"ecran",icon:"🔲",label:"Écran",sub:["Écran cassé","Rétroéclairage","Ligne/tache"]},{id:"clavier",icon:"⌨️",label:"Clavier",sub:["Touches mortes","Touchpad","Charnière"]},{id:"batterie",icon:"🔋",label:"Batterie",sub:["Ne tient plus","Gonflement"]},{id:"charge",icon:"🔌",label:"Alimentation",sub:["Ne charge pas","Connecteur cassé"]},{id:"lent",icon:"🐌",label:"Lenteur",sub:["Très lent","Virus/Malware","Réinstall Windows"]},{id:"stockage",icon:"💾",label:"Disque dur",sub:["Disque mort","Upgrade SSD"]},{id:"eau",icon:"💧",label:"Dégât eaux",sub:[]},{id:"autre",icon:"🔧",label:"Autre",sub:[]}],PC:[{id:"lent",icon:"🐌",label:"Lenteur",sub:["Virus","Réinstall Windows"]},{id:"demarrage",icon:"⚡",label:"Ne démarre plus",sub:[]},{id:"stockage",icon:"💾",label:"Disque dur",sub:[]},{id:"reseau",icon:"📶",label:"Réseau / Wifi",sub:[]},{id:"autre",icon:"🔧",label:"Autre",sub:[]}]};
 
+/* Labels traduits des pannes */
+var ISSUES_LABELS={
+fr:{ecran:"Écran / Vitre",batterie:"Batterie",charge:"Charge",eau:"Dégât eaux",camera:"Caméra",boutons:"Boutons",lent:"Lenteur",son:"Son / Micro",autre:"Autre",clavier:"Clavier",stockage:"Disque dur",demarrage:"Ne démarre plus",reseau:"Réseau / Wifi"},
+en:{ecran:"Screen / Glass",batterie:"Battery",charge:"Charging",eau:"Water damage",camera:"Camera",boutons:"Buttons",lent:"Slow device",son:"Sound / Mic",autre:"Other",clavier:"Keyboard",stockage:"Hard drive",demarrage:"Won't start",reseau:"Network / Wifi"},
+ar:{ecran:"الشاشة",batterie:"البطارية",charge:"الشحن",eau:"تلف بالماء",camera:"الكاميرا",boutons:"الأزرار",lent:"البطء",son:"الصوت / المايك",autre:"أخرى",clavier:"لوحة المفاتيح",stockage:"القرص الصلب",demarrage:"لا يشتغل",reseau:"الشبكة"},
+zh:{ecran:"屏幕/玻璃",batterie:"电池",charge:"充电",eau:"进水",camera:"摄像头",boutons:"按钮",lent:"运行缓慢",son:"声音/麦克风",autre:"其他",clavier:"键盘",stockage:"硬盘",demarrage:"无法开机",reseau:"网络/WiFi"},
+es:{ecran:"Pantalla / Cristal",batterie:"Batería",charge:"Carga",eau:"Daño por agua",camera:"Cámara",boutons:"Botones",lent:"Lentitud",son:"Sonido / Micrófono",autre:"Otro",clavier:"Teclado",stockage:"Disco duro",demarrage:"No arranca",reseau:"Red / Wifi"},
+it:{ecran:"Schermo / Vetro",batterie:"Batteria",charge:"Ricarica",eau:"Danno da acqua",camera:"Fotocamera",boutons:"Tasti",lent:"Lentezza",son:"Audio / Microfono",autre:"Altro",clavier:"Tastiera",stockage:"Hard disk",demarrage:"Non si avvia",reseau:"Rete / Wifi"},
+de:{ecran:"Bildschirm / Glas",batterie:"Akku",charge:"Laden",eau:"Wasserschaden",camera:"Kamera",boutons:"Tasten",lent:"Langsam",son:"Ton / Mikrofon",autre:"Sonstiges",clavier:"Tastatur",stockage:"Festplatte",demarrage:"Startet nicht",reseau:"Netzwerk / Wifi"}
+};
 var lang="fr",allProducts=[],allServices=[],shopPhone="33686648279",shopEmail="smartphonesatelier4@gmail.com";
 var pf={type:"",brand:"",grade:"",cond:"",storage:"",sim:"",accSub:""};
 var dState={step:1,type:"",brand:"",model:"",issue:"",subIssue:"",desc:""};
@@ -469,14 +684,48 @@ function updatePromoBand(l){
 function setLang(l,btn){lang=l;document.querySelectorAll(".lb").forEach(function(b){b.classList.remove("on")});btn.classList.add("on");document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";applyT();updatePromoBand(l);renderProducts();renderRepairs();renderPrint();}
 function applyT(){
   var t=T[lang];
-  var map={t_tp:"tp",t_tr:"tr",t_ti:"ti",t_td:"td",t_tc:"tc",t_ltype:"ltype",t_lbrand:"lbrand",t_lgr:"lgr",t_lcond:"lcond",t_lprice:"lprice",t_lstorage:"lstorage",t_lsim:"lsim",t_rep_title:"rep_title",t_rh1:"rh1",t_rh2:"rh2",t_rh3:"rh3",t_rh4:"rh4",t_print_title:"print_title",t_ds1:"ds1",t_ds2:"ds2",t_ds3:"ds3",t_ds4:"ds4",t_ds5:"ds5",t_q_name:"q_name",t_q_phone:"q_phone",t_q_sent:"q_sent",sl1:"sl1",sl2:"sl2",sl3:"sl3",sl4:"sl4",sl5:"sl5",t_subissue:"subissue",t_desc_lbl:"desc_lbl",t_contact_title:"contact_title",t_avail_title:"avail_title",t_avail_prod:"avail_prod",t_avail_name:"avail_name",t_avail_send:"avail_send",t_avail_note:"avail_note"};
+  /* Éléments avec id direct → clé T */
+  var map={t_tp:"tp",t_tr:"tr",t_ti:"ti",t_td:"td",t_tc:"tc",
+    t_ltype:"ltype",t_lbrand:"lbrand",t_lgr:"lgr",t_lcond:"lcond",
+    t_lprice:"lprice",t_lstorage:"lstorage",t_lsim:"lsim",
+    t_rep_title:"rep_title",t_rh1:"rh1",t_rh2:"rh2",t_rh3:"rh3",t_rh4:"rh4",
+    t_print_title:"print_title",
+    t_ds1:"ds1",t_ds2:"ds2",t_ds3:"ds3",t_ds4:"ds4",t_ds5:"ds5",
+    t_q_name:"q_name",t_q_phone:"q_phone",t_q_sent:"q_sent",
+    sl1:"sl1",sl2:"sl2",sl3:"sl3",sl4:"sl4",sl5:"sl5",
+    t_subissue:"subissue",t_desc_lbl:"desc_lbl",
+    t_contact_title:"contact_title",t_avail_title:"avail_title",
+    t_avail_prod:"avail_prod",t_avail_name:"avail_name",
+    t_avail_send:"avail_send",t_avail_note:"avail_note"};
   for(var id in map){var el=document.getElementById(id);if(el&&t[map[id]])el.textContent=t[map[id]];}
+  /* innerHTML (HTML enrichi) */
   document.getElementById("heroTagline").textContent=t.tagline;
   document.getElementById("searchInp").placeholder="🔍 "+t.search;
   document.getElementById("t_ladv").textContent=t.ladv;
   var rc=document.getElementById("t_rep_cta");if(rc)rc.innerHTML=t.rep_cta;
   var pc=document.getElementById("t_print_cta");if(pc)pc.innerHTML=t.print_cta;
+  var th=document.getElementById("t_hours");if(th)th.innerHTML=t.hours;
+  var te=document.getElementById("t_express");if(te)te.innerHTML=t.express;
+  /* Chips état/SIM */
   ["tc_neuf","tc_occ","tc_rec","tc_dual","tc_single"].forEach(function(id){var el=document.getElementById(id);if(el&&t[id])el.textContent=t[id];});
+  /* Chips "Tout/Tous/Toutes" statiques */
+  document.querySelectorAll(".chip-all").forEach(function(el){el.textContent=t.all||"Tout";});
+  document.querySelectorAll(".chip-all-m").forEach(function(el){el.textContent=t.all_m||"Tous";});
+  document.querySelectorAll(".chip-all-f").forEach(function(el){el.textContent=t.all_f||"Toutes";});
+  /* Options de tri */
+  var s=document.getElementById("sortSel");
+  if(s&&s.options.length>=4){s.options[0].text=t.sort_az||"A → Z";s.options[1].text=t.sort_pu||"Prix ↑";s.options[2].text=t.sort_pd||"Prix ↓";s.options[3].text=t.sort_gr||"Grade";}
+  /* Boutons navigation devis */
+  document.querySelectorAll(".btn-next-nav").forEach(function(el){el.textContent=t.next||"Suivant →";});
+  document.querySelectorAll(".btn-back-nav").forEach(function(el){el.textContent=t.back||"← Retour";});
+  var bsend=document.getElementById("btn_send_quote");if(bsend)bsend.textContent=t.send_wa||"📩 Envoyer sur WhatsApp";
+  var bnew=document.getElementById("btn_new_quote");if(bnew)bnew.textContent=t.new_quote||"Nouveau devis";
+  /* Contact cards */
+  var cw=document.getElementById("ccard_wa_num");if(cw)cw.textContent=t.ccard_write||"Écrire";
+  var cc=document.getElementById("t_ccard_call");if(cc)cc.textContent=t.ccard_call||"Appeler";
+  /* Hero rating — reconstruit si données disponibles */
+  var hr=document.getElementById("heroRating");
+  if(hr&&hr.dataset.rating)hr.textContent="⭐ "+hr.dataset.rating+" · "+hr.dataset.reviews+" "+(t.reviews||"avis Google");
 }
 function showTab(name,btn){document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on")});document.querySelectorAll(".sec").forEach(function(s){s.classList.remove("on")});btn.classList.add("on");document.getElementById("sec_"+name).classList.add("on");}
 function setPF(key,val,btn){pf[key]=val;btn.parentElement.querySelectorAll(".chip").forEach(function(c){c.classList.remove("on")});btn.classList.add("on");if(key==="type"){buildBrandChips();var accWrap=document.getElementById("accSubChips");accWrap.style.display=(val==="Accessoire")?"flex":"none";if(val!=="Accessoire")pf.accSub="";}renderProducts();}
@@ -491,14 +740,14 @@ function buildBrandChips(){
   if(!brands.length){wrap.style.display="none";pf.brand="";return;}
   wrap.style.display="flex";
   var t=T[lang];
-  wrap.innerHTML='<span class="chips-label">'+(t.lbrand||"Marque")+'</span><div class="chip on" onclick="setPF(\'brand\',\'\',this)">Tout</div>'+brands.map(function(b){return'<div class="chip" onclick="setPF(\'brand\',\''+b+'\',this)">'+b+'</div>';}).join("");
+  wrap.innerHTML='<span class="chips-label">'+(t.lbrand||"Marque")+'</span><div class="chip on chip-all" onclick="setPF(\'brand\',\'\',this)">'+(t.all||"Tout")+'</div>'+brands.map(function(b){return'<div class="chip" onclick="setPF(\'brand\',\''+b+'\',this)">'+b+'</div>';}).join("");
 }
 function buildStorageChips(){
   var sto=new Set();allProducts.forEach(function(p){var s=extractStorage(p.name);if(s)sto.add(s);});
   var arr=Array.from(sto).sort(function(a,b){return parseInt(a)-parseInt(b);});
   if(!arr.length)return;
-  var row=document.getElementById("storageRow");
-  row.innerHTML='<div class="chip on" onclick="setPF(\'storage\',\'\',this)">Tous</div>'+arr.map(function(s){return'<div class="chip" onclick="setPF(\'storage\',\''+s+'\',this)">'+s+'</div>';}).join("");
+  var row=document.getElementById("storageRow");var t=T[lang];
+  row.innerHTML='<div class="chip on chip-all-m" onclick="setPF(\'storage\',\'\',this)">'+(t.all_m||"Tous")+'</div>'+arr.map(function(s){return'<div class="chip" onclick="setPF(\'storage\',\''+s+'\',this)">'+s+'</div>';}).join("");
 }
 function extractBrand(name){
   var map=[["Apple",["iphone","ipad","macbook","apple"]],["Samsung",["samsung","galaxy"]],["Xiaomi",["xiaomi","redmi","poco","mi "]],["Huawei",["huawei","honor","nova"]],["OnePlus",["oneplus","one plus"]],["Sony",["sony","xperia"]],["Google",["google","pixel"]],["Motorola",["motorola","moto "]],["Oppo",["oppo"]],["Nokia",["nokia"]],["Realme",["realme"]],["Lenovo",["lenovo","thinkpad","ideapad"]],["HP",["hp ","hewlett","pavilion","elitebook"]],["Dell",["dell","xps","inspiron","latitude"]],["Asus",["asus","zenbook","vivobook","rog"]],["Acer",["acer","aspire","swift"]],["MSI",["msi"]],["Microsoft",["microsoft","surface"]],["Amazon",["kindle","fire tab"]]];
@@ -530,7 +779,7 @@ function renderProducts(){
     return true;
   });
   f.sort(function(a,b){var pa=Number(a.catalogue_price||a.sale_price||0),pb=Number(b.catalogue_price||b.sale_price||0);if(sort==="price_asc")return pa-pb;if(sort==="price_desc")return pb-pa;if(sort==="grade"){var g={A:1,B:2,C:3};return(g[a.grade]||9)-(g[b.grade]||9);}return(a.name||"").localeCompare(b.name||"");});
-  document.getElementById("pCount").textContent=f.length+" produit"+(f.length>1?"s":"");
+  var t=T[lang];document.getElementById("pCount").textContent=f.length+" "+(f.length>1?(t.products_p||"produits"):(t.products||"produit"));
   if(!f.length){document.getElementById("productGrid").innerHTML='<div class="empty">📭<br><br>'+(t.nostock||"Aucun produit")+"</div>";return;}
   var cond=t.cond||{};
   document.getElementById("productGrid").innerHTML=f.map(function(p){
@@ -564,9 +813,10 @@ function renderPrint(){
   }).join("");
 }
 function goStep(n){
-  if(n===2&&!dState.type){alert("Sélectionnez un type d'appareil.");return;}
-  if(n===3&&!dState.brand){alert("Sélectionnez une marque.");return;}
-  if(n===4&&!dState.model){alert("Sélectionnez un modèle.");return;}
+  var t=T[lang];
+  if(n===2&&!dState.type){alert(t.alert_type||"Sélectionnez un type d'appareil.");return;}
+  if(n===3&&!dState.brand){alert(t.alert_brand||"Sélectionnez une marque.");return;}
+  if(n===4&&!dState.model){alert(t.alert_model||"Sélectionnez un modèle.");return;}
   if(n===5)buildSummary();
   dState.step=n;
   document.querySelectorAll(".dstep").forEach(function(s,i){s.classList.toggle("on",i===n-1);});
@@ -579,35 +829,82 @@ function buildDModels(){var models=(MODELS[dState.brand]&&MODELS[dState.brand][d
 function filterModels(){var q=(document.getElementById("modelSearch").value||"").toLowerCase();var models=(MODELS[dState.brand]&&MODELS[dState.brand][dState.type])||["Autre modèle"];renderModelList(q?models.filter(function(m){return m.toLowerCase().includes(q);}):models);}
 function renderModelList(models){document.getElementById("modelList").innerHTML=models.map(function(m){return'<div class="mitem'+(m===dState.model?" on":"")+'" onclick="selectModel(\''+m.replace(/\\/g,"\\\\").replace(/'/g,"\\'")+'\',this)">'+m+'</div>';}).join("");}
 function selectModel(model,el){dState.model=model;document.querySelectorAll(".mitem").forEach(function(c){c.classList.remove("on")});el.classList.add("on");}
-function buildDIssues(){var issues=ISSUES[dState.type]||ISSUES.Smartphone;dState.issue="";dState.subIssue="";document.getElementById("subIssueWrap").style.display="none";document.getElementById("issueGrid").innerHTML=issues.map(function(is){return'<div class="issue-chip" onclick="selectIssue(this,\''+is.id+'\')"><div class="i-icon">'+is.icon+'</div><div class="i-label">'+is.label+'</div></div>';}).join("");}
+function buildDIssues(){
+  var issues=ISSUES[dState.type]||ISSUES.Smartphone;
+  var labels=ISSUES_LABELS[lang]||ISSUES_LABELS.fr;
+  dState.issue="";dState.subIssue="";
+  document.getElementById("subIssueWrap").style.display="none";
+  document.getElementById("issueGrid").innerHTML=issues.map(function(is){
+    return'<div class="issue-chip" onclick="selectIssue(this,\''+is.id+'\')"><div class="i-icon">'+is.icon+'</div><div class="i-label">'+(labels[is.id]||is.label)+'</div></div>';
+  }).join("");
+}
 function selectIssue(el,id){document.querySelectorAll(".issue-chip").forEach(function(c){c.classList.remove("on")});el.classList.add("on");dState.issue=id;dState.subIssue="";var issues=ISSUES[dState.type]||ISSUES.Smartphone;var found=issues.find(function(x){return x.id===id;});var wrap=document.getElementById("subIssueWrap");if(found&&found.sub&&found.sub.length){wrap.style.display="block";document.getElementById("subIssueChips").innerHTML=found.sub.map(function(s){return'<div class="si-chip" onclick="selectSub(this,\''+s.replace(/'/g,"\\'")+'\')">'+s+'</div>';}).join("");}else{wrap.style.display="none";}}
 function selectSub(el,val){document.querySelectorAll(".si-chip").forEach(function(c){c.classList.remove("on")});el.classList.add("on");dState.subIssue=val;}
-function buildSummary(){document.getElementById("summaryCard").innerHTML=[{k:"Appareil",v:dState.type},{k:"Marque",v:dState.brand},{k:"Modèle",v:dState.model},{k:"Panne",v:dState.issue+(dState.subIssue?" — "+dState.subIssue:"")}].map(function(r){return'<div class="summary-row"><span class="k">'+r.k+'</span><span class="v">'+(r.v||"—")+'</span></div>';}).join("");}
+function buildSummary(){
+  var t=T[lang];
+  var labels=ISSUES_LABELS[lang]||ISSUES_LABELS.fr;
+  var issues=ISSUES[dState.type]||ISSUES.Smartphone;
+  var found=issues.find(function(x){return x.id===dState.issue;});
+  var issueLabel=found?(labels[found.id]||found.label):(dState.issue||"—");
+  document.getElementById("summaryCard").innerHTML=[
+    {k:t.sum_device||"Appareil",v:dState.type},
+    {k:t.sum_brand||"Marque",v:dState.brand},
+    {k:t.sum_model||"Modèle",v:dState.model},
+    {k:t.sum_issue||"Panne",v:issueLabel+(dState.subIssue?" — "+dState.subIssue:"")}
+  ].map(function(r){return'<div class="summary-row"><span class="k">'+r.k+'</span><span class="v">'+(r.v||"—")+'</span></div>';}).join("");
+}
 function sendQuote(){
+  var t=T[lang];
   var name=document.getElementById("d_name").value.trim();
-  if(!name){alert("Merci d'indiquer votre prénom.");return;}
+  if(!name){alert(t.alert_name||"Merci d'indiquer votre prénom.");return;}
   var phone=document.getElementById("d_phone").value.trim();
   var desc=document.getElementById("d_desc").value.trim();
-  var msg="📋 *Devis The SMARTPHONE*\n\n📱 "+dState.type+" "+dState.brand+" "+dState.model+"\n🔧 "+dState.issue+(dState.subIssue?" — "+dState.subIssue:"")+"\n"+(desc?"📝 "+desc+"\n":"")+"👤 "+name+(phone?"\n📲 "+phone:"");
+  var labels=ISSUES_LABELS[lang]||ISSUES_LABELS.fr;
+  var issues=ISSUES[dState.type]||ISSUES.Smartphone;
+  var found=issues.find(function(x){return x.id===dState.issue;});
+  var issueLabel=found?(labels[found.id]||found.label):(dState.issue||"");
+  var msg="📋 *Devis The SMARTPHONE*\n\n📱 "+dState.type+" "+dState.brand+" "+dState.model+"\n🔧 "+issueLabel+(dState.subIssue?" — "+dState.subIssue:"")+"\n"+(desc?"📝 "+desc+"\n":"")+"👤 "+name+(phone?"\n📲 "+phone:"");
   window.open("https://wa.me/"+shopPhone+"?text="+encodeURIComponent(msg),"_blank");
   document.getElementById("quoteOk").style.display="block";
   document.querySelectorAll(".dstep").forEach(function(s){s.classList.remove("on");});
 }
 function resetDevis(){dState={step:1,type:"",brand:"",model:"",issue:"",subIssue:"",desc:""};document.getElementById("quoteOk").style.display="none";document.getElementById("d_name").value="";document.getElementById("d_phone").value="";document.getElementById("d_desc").value="";goStep(1);document.querySelectorAll(".big-chip,.bchip,.mitem,.issue-chip,.si-chip").forEach(function(c){c.classList.remove("on");});}
 function openWA(ctx){
-  var msg=ctx==="print"?"Bonjour The SMARTPHONE, je voudrais un service d'impression.":ctx==="contact"?"Bonjour The SMARTPHONE, j'ai une question.":"Bonjour The SMARTPHONE, je voudrais un devis réparation.";
+  var t=T[lang];
+  var msg=ctx==="print"?(t.wa_print||"Bonjour The SMARTPHONE, je voudrais un service d'impression."):ctx==="contact"?(t.wa_contact||"Bonjour The SMARTPHONE, j'ai une question."):(t.wa_repair||"Bonjour The SMARTPHONE, je voudrais un devis réparation.");
   window.open("https://wa.me/"+shopPhone+"?text="+encodeURIComponent(msg),"_blank");
 }
 function sendAvailability(){
+  var t=T[lang];
   var prod=document.getElementById("avail_prod").value.trim();
   var name=document.getElementById("avail_name").value.trim();
-  if(!prod){alert("Merci d'indiquer le produit recherché.");return;}
-  var msg="🔍 *Disponibilité produit — The SMARTPHONE*\n\n📦 Produit recherché : "+prod+(name?"\n👤 "+name:"");
+  if(!prod){alert(t.alert_product||"Merci d'indiquer le produit recherché.");return;}
+  var prefix=t.wa_avail||"🔍 *Disponibilité produit — The SMARTPHONE*\n\n📦 Produit recherché : ";
+  var msg=prefix+prod+(name?"\n👤 "+name:"");
   window.open("https://wa.me/"+shopPhone+"?text="+encodeURIComponent(msg),"_blank");
 }
 async function loadAll(){
-  try{var r=await fetch("/api/catalogue");allProducts=await r.json();if(!Array.isArray(allProducts))allProducts=[];}catch(e){allProducts=[];}
-  try{var r2=await fetch("/api/catalogue/data");var d=await r2.json();allServices=d.services||[];if(d.settings){var s=d.settings;if(s.shop_phone&&s.shop_phone.replace(/\D/g,"").length>5)shopPhone=s.shop_phone.replace(/\D/g,"");if(s.google_rating&&s.google_reviews)document.getElementById("heroRating").textContent="⭐ "+s.google_rating+" · "+s.google_reviews+" avis Google";if(s.shop_address){document.getElementById("heroAddr").textContent="📍 "+s.shop_address;document.getElementById("footAddr").textContent=s.shop_address;}}}catch(e){allServices=[];}
+  /* Un seul appel — produits (catalogue_visible=true), services, settings */
+  try{
+    var r=await fetch("/api/catalogue/data");
+    var d=await r.json();
+    allProducts=d.products||[];
+    allServices=d.services||[];
+    if(d.settings){
+      var s=d.settings;
+      if(s.shop_phone&&s.shop_phone.replace(/\D/g,"").length>5)shopPhone=s.shop_phone.replace(/\D/g,"");
+      var hr=document.getElementById("heroRating");
+      if(s.google_rating&&s.google_reviews&&hr){
+        hr.dataset.rating=s.google_rating;hr.dataset.reviews=s.google_reviews;
+        hr.textContent="⭐ "+s.google_rating+" · "+s.google_reviews+" "+(T[lang].reviews||"avis Google");
+      }
+      if(s.shop_address){
+        document.getElementById("heroAddr").textContent="📍 "+s.shop_address;
+        document.getElementById("footAddr").textContent=s.shop_address;
+        var fa2=document.getElementById("footAddr2");if(fa2)fa2.textContent=s.shop_address;
+      }
+    }
+  }catch(e){allProducts=[];allServices=[];}
   buildStorageChips();renderProducts();renderRepairs();renderPrint();
 }
 loadAll();
