@@ -897,6 +897,15 @@ app.get('/api/users/:id', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+/* PIN visible uniquement depuis le module admin (Kader) */
+app.get('/api/users/:id/pin', async(req,res)=>{
+  try{
+    const r=await pool.query(`SELECT id,name,pin FROM app_users WHERE id=$1`,[req.params.id]);
+    if(!r.rows[0])return res.status(404).json({error:'Utilisateur introuvable'});
+    res.json({pin:r.rows[0].pin, name:r.rows[0].name});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.post('/api/users', async(req,res)=>{
   try{
     const{name,role,auth_type,pin,password_hash}=req.body;

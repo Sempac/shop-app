@@ -46,6 +46,10 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 .btn-toggle:hover{background:#ef4444;color:white;}
 .btn-on{background:#052e16;color:#86efac;}
 .btn-on:hover{background:#ef4444;color:white;}
+.btn-view{background:#1e293b;color:#64748b;border:1px solid #334155;}
+.btn-view:hover{background:#334155;color:white;}
+.pin-revealed{font-size:15px;font-weight:900;color:#22c55e;letter-spacing:3px;background:#052e16;padding:2px 10px;border-radius:6px;cursor:pointer;font-family:monospace;}
+.pin-revealed:hover{background:#064e3b;}
 
 /* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;}
@@ -249,9 +253,10 @@ function renderUsers() {
       '<td>' + roleChip(u.role) + '</td>' +
       '<td style="color:#94a3b8;">' + authInfo + '</td>' +
       '<td>' + statusHtml + '</td>' +
-      '<td style="display:flex;gap:6px;flex-wrap:wrap;">' +
+      '<td style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
         '<button class="btn-sm btn-edit" onclick="openEditModal(' + u.id + ')">✏️ Modifier</button>' +
-        '<button class="btn-sm btn-pin"  onclick="openPinModal(' + u.id + ')">🔢 PIN</button>' +
+        '<button class="btn-sm btn-pin"  onclick="openPinModal(' + u.id + ')">🔢 Changer PIN</button>' +
+        '<button class="btn-sm btn-view" onclick="revealPin(this,' + u.id + ')">👁 Voir PIN</button>' +
         (!sameUser ? '<button class="' + toggleCls + '" onclick="toggleUser(' + u.id + ',' + active + ')">' + toggleLbl + '</button>' : '') +
       '</td>' +
     '</tr>';
@@ -446,6 +451,38 @@ document.querySelectorAll('.modal-bg').forEach(function(bg) {
     if (e.target === bg) bg.classList.remove('show');
   });
 });
+
+/* ── VOIR PIN ── */
+async function revealPin(btn, id) {
+  /* Si déjà affiché, cacher */
+  if (btn.classList.contains('btn-hiding')) {
+    btn.previousSibling && btn.previousSibling.remove();
+    btn.textContent = '👁 Voir PIN';
+    btn.classList.remove('btn-hiding');
+    return;
+  }
+  btn.textContent = '...';
+  try {
+    var res = await fetch('/api/users/' + id + '/pin');
+    var d   = await res.json();
+    /* Insérer l'affichage du PIN juste avant le bouton */
+    var span = document.createElement('span');
+    span.className   = 'pin-revealed';
+    span.textContent = d.pin;
+    span.title       = 'Cliquer pour masquer';
+    span.onclick     = function() { span.remove(); btn.textContent = '👁 Voir PIN'; btn.classList.remove('btn-hiding'); };
+    btn.parentNode.insertBefore(span, btn);
+    btn.textContent = '🙈 Masquer';
+    btn.classList.add('btn-hiding');
+    /* Masquage automatique après 30 secondes */
+    setTimeout(function() {
+      if (span.parentNode) { span.remove(); btn.textContent = '👁 Voir PIN'; btn.classList.remove('btn-hiding'); }
+    }, 30000);
+  } catch(e) {
+    btn.textContent = '👁 Voir PIN';
+    alert('Erreur : ' + e.message);
+  }
+}
 
 /* ── LANCEMENT ── */
 loadUsers();
