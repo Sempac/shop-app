@@ -7,39 +7,41 @@ const path=require('path');
 
 const p=new Pool({user:process.env.DB_USER,host:process.env.DB_HOST,database:process.env.DB_NAME,password:process.env.DB_PASSWORD,port:Number(process.env.DB_PORT)||5432});
 
-/* Produits ciblés + leurs photos (Wikipedia Commons, CC-BY-SA, libre de droits) */
+/* Produits ciblés + leurs photos (picsum.photos, service libre de droits) */
 const DEMO=[
   {
-    product_id:410, label:'Apple iPhone 12 Pro',
+    product_id:411, label:'Apple iPhone 12 Pro',
     photos:[
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/IPhone_12_Pro_in_Pacific_Blue.jpeg/600px-IPhone_12_Pro_in_Pacific_Blue.jpeg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/IPhone_12_Pro_camera_system.jpeg/600px-IPhone_12_Pro_camera_system.jpeg',
+      'https://picsum.photos/seed/iphone12pro_a/800/800',
+      'https://picsum.photos/seed/iphone12pro_b/800/800',
     ]
   },
   {
-    product_id:516, label:'Apple iPhone 14 Pro Max',
+    product_id:413, label:'Apple iPhone 14 Pro Max',
     photos:[
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/IPhone_14_Pro_Max_Deep_Purple.jpg/600px-IPhone_14_Pro_Max_Deep_Purple.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/IPhone_14_Pro_camera_system.jpg/600px-IPhone_14_Pro_camera_system.jpg',
+      'https://picsum.photos/seed/iphone14promax_a/800/800',
+      'https://picsum.photos/seed/iphone14promax_b/800/800',
     ]
   },
   {
-    product_id:505, label:'PowerBank 30000mAh',
+    product_id:328, label:'Power Bank 22,5W - 20000 mAh',
     photos:[
-      'https://picsum.photos/seed/powerbank1/800/800',
-      'https://picsum.photos/seed/powerbank2/800/800',
+      'https://picsum.photos/seed/powerbank_a/800/800',
+      'https://picsum.photos/seed/powerbank_b/800/800',
     ]
   },
   {
     product_id:143, label:'Chargeur Lightning 20W',
     photos:[
-      'https://picsum.photos/seed/charger1/800/800',
+      'https://picsum.photos/seed/charger20w_a/800/800',
+      'https://picsum.photos/seed/charger20w_b/800/800',
     ]
   },
   {
     product_id:156, label:'Câble USB-C vers Lightning',
     photos:[
-      'https://picsum.photos/seed/cable1/800/800',
+      'https://picsum.photos/seed/cableusbc_a/800/800',
+      'https://picsum.photos/seed/cableusbc_b/800/800',
     ]
   },
 ];
@@ -49,8 +51,8 @@ function download(url, dest, depth){
   return new Promise(function(resolve,reject){
     if(depth>5)return reject(new Error('Trop de redirections'));
     var client=url.startsWith('https')?https:http;
-    client.get(url,{headers:{'User-Agent':'Mozilla/5.0 (compatible; Demo/1.0)','Accept':'image/*'}},function(res){
-      if(res.statusCode===301||res.statusCode===302||res.statusCode===303){
+    client.get(url,{headers:{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36','Accept':'image/*,*/*'}},function(res){
+      if(res.statusCode===301||res.statusCode===302||res.statusCode===303||res.statusCode===307||res.statusCode===308){
         return download(res.headers.location,dest,depth+1).then(resolve).catch(reject);
       }
       if(res.statusCode!==200)return reject(new Error('HTTP '+res.statusCode));
@@ -85,7 +87,7 @@ function download(url, dest, depth){
       var filename=Date.now()+'-'+Math.random().toString(36).substr(2,6)+'.jpg';
       var filepath=path.join(dir,filename);
       try{
-        process.stdout.write('  ↓ '+imgUrl.substring(0,70)+'...');
+        process.stdout.write('  ↓ '+imgUrl+'...');
         await download(imgUrl,filepath);
         await p.query(
           'INSERT INTO product_photos(product_id,filename,sort_order) VALUES($1,$2,$3)',
