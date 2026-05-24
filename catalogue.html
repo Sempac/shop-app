@@ -764,7 +764,7 @@ function renderProducts(){
   var pmax=parseFloat(document.getElementById("priceMax").value)||999999;
   var t=T[lang];
   var f=allProducts.filter(function(p){
-    var price=Number(p.catalogue_price||p.sale_price||0);
+    var price=Number(p.price||p.catalogue_price||p.sale_price||0);
     if(pf.type){var cats=TYPE_CATS[pf.type]||[pf.type];if(!cats.includes(p.category))return false;}
     if(pf.brand&&extractBrand(p.name)!==pf.brand)return false;
     if(pf.grade&&p.grade!==pf.grade)return false;
@@ -783,9 +783,10 @@ function renderProducts(){
   if(!f.length){document.getElementById("productGrid").innerHTML='<div class="empty">📭<br><br>'+(t.nostock||"Aucun produit")+"</div>";return;}
   var cond=t.cond||{};
   document.getElementById("productGrid").innerHTML=f.map(function(p){
-    var price=Number(p.catalogue_price||p.sale_price||0);
+    var price=Number(p.price||p.catalogue_price||p.sale_price||0);
     var cl=cond[p.condition]||"";
-    var icon=p.category==="Tablette"?"📟":p.category==="Accessoire"?"🎧":"📱";
+    var accCats=TYPE_CATS.Accessoire||[];
+    var icon=p.category==="Tablette"?"📟":accCats.includes(p.category)?"🎧":(p.category==="PC Portable"||p.category==="PC")?"💻":"📱";
     var storage=extractStorage(p.name);
     var msg=encodeURIComponent((t.wa_msg||"Bonjour : ")+p.name+(p.color?" ("+p.color+")":"")+" — "+price.toFixed(0)+"€");
     var mailSubj=encodeURIComponent("Intéressé par : "+p.name);
