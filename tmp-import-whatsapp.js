@@ -2,100 +2,74 @@ require('dotenv').config();
 const {Pool}=require('pg');
 const fs=require('fs');
 const path=require('path');
-const {Jimp,HorizontalAlign,VerticalAlign}=require('jimp');
+const Jimp=require('jimp');
 
 const pool=new Pool({user:process.env.DB_USER,host:process.env.DB_HOST,database:process.env.DB_NAME,password:process.env.DB_PASSWORD,port:Number(process.env.DB_PORT)||5432});
 
 const TMPDIR=path.join(__dirname,'tmp-photos');
 const UPLOADS=path.join(__dirname,'uploads','products');
 
-/* Produits à importer avec leurs photos (paires dos/face) */
+/* Produits à importer */
 const PRODUCTS=[
   {
     name:'Huawei Nexus 6P',
-    category:'Smartphone',
-    condition:'OCCASION',
-    grade:'B',
-    color:'Noir',
-    sale_price:50,
-    catalogue_price:50,
-    stock_quantity:1,
+    category:'Smartphone',condition:'OCCASION',grade:'B',color:'Noir',
+    sale_price:50,catalogue_price:50,stock_quantity:1,
     photos:['nexus6p.jpg'],
   },
   {
     name:'Samsung Galaxy XCover5',
-    category:'Smartphone',
-    condition:'OCCASION',
-    grade:'B',
-    color:'Noir',
-    sale_price:60,
-    catalogue_price:60,
-    stock_quantity:1,
+    category:'Smartphone',condition:'OCCASION',grade:'B',color:'Noir',
+    sale_price:60,catalogue_price:60,stock_quantity:1,
     photos:['xcover5_back.jpg','xcover5_front.jpg'],
   },
   {
     name:'Samsung Galaxy A12 32Go',
-    category:'Smartphone',
-    condition:'OCCASION',
-    grade:'B',
-    color:'Noir',
-    sale_price:109,
-    catalogue_price:109,
-    stock_quantity:1,
+    category:'Smartphone',condition:'OCCASION',grade:'B',color:'Noir',
+    sale_price:109,catalogue_price:109,stock_quantity:1,
     photos:['a12_back.jpg','a12_front.jpg'],
   },
   {
     name:'LG Nexus 5X',
-    category:'Smartphone',
-    condition:'OCCASION',
-    grade:'B',
-    color:'Blanc',
-    sale_price:50,
-    catalogue_price:50,
-    stock_quantity:1,
+    category:'Smartphone',condition:'OCCASION',grade:'B',color:'Blanc',
+    sale_price:50,catalogue_price:50,stock_quantity:1,
     photos:['lgnexus_back.jpg','lgnexus_front.jpg'],
   },
   {
     name:'BlackBerry DTEK60 32Go',
-    category:'Smartphone',
-    condition:'OCCASION',
-    grade:'B',
-    color:'Noir',
-    sale_price:139,
-    catalogue_price:139,
-    stock_quantity:1,
+    category:'Smartphone',condition:'OCCASION',grade:'B',color:'Noir',
+    sale_price:139,catalogue_price:139,stock_quantity:1,
     photos:['blackberry_dtek60.jpg'],
   },
 ];
 
-/* Nettoyage image : auto-rotate EXIF, normalise luminosité, resize 900x900 centré */
+/* Nettoyage image jimp v0 :
+   - auto-rotate EXIF
+   - normalize (auto-contrast)
+   - légère netteté
+   - autocrop fond uniforme
+   - resize 900x900 fond blanc centré
+*/
 async function processImage(srcPath,destPath){
-  // Jimp v1 : fromFile gère l'auto-rotation EXIF automatiquement
-  const img=await Jimp.fromFile(srcPath);
+  const img=await Jimp.read(srcPath);
 
-  // Normalise les niveaux (auto-contrast / auto-brightness)
-  img.normalize();
+  img.normalize();          // auto-contrast / auto-brightness
+  img.blur(1);              // léger lissage du bruit
+  img.sharpen();            // redonner de la netteté
 
-  // Légère amélioration de la netteté
-  img.sharpen({sigma:0.6});
+  // Recadrage auto des bords uniformes (fond gris/blanc de la table)
+  try{ img.autocrop({tolerance:0.06,cropOnlyFrames:false}); }catch(e){}
 
-  // Recadrage auto des bords uniformes
-  try{ img.autocrop(); }catch(e){}
-
-  // Resize en carré 900x900 avec fond blanc, image centrée
+  // Resize en carré 900x900 avec fond blanc
   const W=900;
-  const PAD=40;
-  const maxDim=W-PAD*2;
-  img.contain({w:maxDim,h:maxDim});
+  const PAD=50;
+  img.scaleToFit(W-PAD*2, W-PAD*2);
+  const bg=new Jimp(W, W, 0xFFFFFFFF);
+  const x=Math.floor((W-img.getWidth())/2);
+  const y=Math.floor((W-img.getHeight())/2);
+  bg.composite(img, x, y);
 
-  // Créer fond blanc et coller l'image centrée
-  const bg=new Jimp({width:W,height:W,color:0xFFFFFFFF});
-  const x=Math.floor((W-img.width)/2);
-  const y=Math.floor((W-img.height)/2);
-  bg.composite(img,x,y);
-
-  // Sauvegarder en JPEG qualité 88
-  await bg.write(destPath,{quality:88});
+  await bg.quality(88).writeAsync(destPath);
 }
 
 (async()=>{
@@ -104,38 +78,30 @@ async function processImage(srcPath,destPath){
   for(const prod of PRODUCTS){
     console.log('➤ '+prod.name+' ('+prod.sale_price+'€)');
 
-    // Vérif photos sources
     const missing=prod.photos.filter(f=>!fs.existsSync(path.join(TMPDIR,f)));
-    if(missing.length){
-      console.log('  ⚠️  Photo(s) manquante(s) : '+missing.join(', ')+' — produit ignoré');
-      continue;
-    }
+    if(missing.length){ console.log('  ⚠️  Photo(s) manquante(s): '+missing.join(', ')); continue; }
 
-    // Insérer le produit
     const res=await pool.query(
       `INSERT INTO products
          (name,category,condition,grade,color,sale_price,catalogue_price,stock_quantity,
           statut_produit,catalogue_visible,purchase_price)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'DISPONIBLE',true,0)
-       RETURNING id`,
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'DISPONIBLE',true,0) RETURNING id`,
       [prod.name,prod.category,prod.condition,prod.grade,prod.color,
        prod.sale_price,prod.catalogue_price,prod.stock_quantity]
     );
     const pid=res.rows[0].id;
     console.log('  ✓ Produit créé — ID '+pid);
 
-    // Créer le dossier uploads
     const dir=path.join(UPLOADS,String(pid));
     fs.mkdirSync(dir,{recursive:true});
 
-    // Traiter et copier chaque photo
     let order=0;
     for(const photoFile of prod.photos){
       const src=path.join(TMPDIR,photoFile);
       const filename=Date.now()+'-'+Math.random().toString(36).substr(2,6)+'.jpg';
       const dest=path.join(dir,filename);
       try{
-        process.stdout.write('  🖼  Traitement '+photoFile+'...');
+        process.stdout.write('  🖼  '+photoFile+'...');
         await processImage(src,dest);
         await pool.query(
           'INSERT INTO product_photos(product_id,filename,sort_order) VALUES($1,$2,$3)',
