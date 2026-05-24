@@ -2,10 +2,55 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<script src="/theme.js"></script>
+<link rel="stylesheet" href="/theme.css">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>The SMARTPHONE — Catalogue</title>
 <style>
 :root{--bg:#0a0a0f;--s:#13131a;--card:#1a1a24;--brd:#2a2a3a;--ac:#e8ff00;--ac2:#00d4ff;--tx:#f0f0f0;--mu:#6b6b85;--gr:#00e676;}
+
+/* ── CATALOGUE : mode clair ── */
+html[data-theme="light"]{--bg:#f4f7fb;--s:#e8edf4;--card:#ffffff;--brd:#d0d7e4;--ac:#1a1a2e;--ac2:#2563eb;--tx:#1a1a2e;--mu:#64748b;--gr:#16a34a;}
+html[data-theme="light"] body{color:#1a1a2e;}
+html[data-theme="light"] .hero{background:linear-gradient(135deg,#eef2ff,#e0e8f8,#eef2ff)!important;border-color:#d0d7e4!important;}
+html[data-theme="light"] .hero::before{background:radial-gradient(ellipse at 65% 40%,rgba(26,26,46,.06),transparent 60%),radial-gradient(ellipse at 30% 70%,rgba(37,99,235,.05),transparent 60%)!important;}
+html[data-theme="light"] .logo span{color:#2563eb;}
+html[data-theme="light"] .rating{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb;}
+html[data-theme="light"] .promo-bar{background:linear-gradient(90deg,#f0f9ff,#e8f5e9,#f0f9ff)!important;border-color:rgba(22,163,74,.25)!important;}
+html[data-theme="light"] .promo-item{color:#374151!important;}
+html[data-theme="light"] .promo-item strong{color:#16a34a!important;}
+html[data-theme="light"] .lb{color:#64748b;border-color:#c8d0e0;}
+html[data-theme="light"] .lb:hover,html[data-theme="light"] .lb.on{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
+html[data-theme="light"] .tab{color:#64748b;}
+html[data-theme="light"] .tab.on{color:#1a1a2e;border-bottom-color:#1a1a2e;}
+html[data-theme="light"] .chip{background:#fff!important;border-color:#c8d0e0!important;color:#374151!important;}
+html[data-theme="light"] .chip:hover{background:#f0f4ff!important;color:#1a1a2e!important;border-color:#93c5fd!important;}
+html[data-theme="light"] .chip.on{background:#1a1a2e!important;color:#fff!important;border-color:#1a1a2e!important;}
+html[data-theme="light"] .sub-chip{background:#f0f4ff!important;border-color:#c0cce8!important;color:#2563eb!important;}
+html[data-theme="light"] .sub-chip:hover{background:#dbeafe!important;color:#1d4ed8!important;}
+html[data-theme="light"] .sub-chip.on{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important;}
+html[data-theme="light"] .adv-wrap{border-color:#d0d7e4!important;}
+html[data-theme="light"] .adv-toggle{background:#f8fafc!important;color:#374151!important;border-color:#d0d7e4!important;}
+html[data-theme="light"] .adv-body{background:#f8fafc!important;border-color:#d0d7e4!important;}
+html[data-theme="light"] .adv-title{color:#2563eb!important;}
+html[data-theme="light"] .search-inp{background:#fff!important;border-color:#c8d0e0!important;color:#0f172a!important;}
+html[data-theme="light"] .search-inp::placeholder{color:#94a3b8!important;}
+html[data-theme="light"] .search-inp:focus{border-color:#1a1a2e!important;}
+html[data-theme="light"] .sort-sel{background:#fff!important;border-color:#c8d0e0!important;color:#0f172a!important;}
+html[data-theme="light"] .sort-sel option{background:#fff;}
+html[data-theme="light"] .count{color:#64748b!important;}
+html[data-theme="light"] .price-inp{background:#fff!important;border-color:#c8d0e0!important;color:#0f172a!important;}
+html[data-theme="light"] .card:hover{border-color:#1a1a2e!important;}
+html[data-theme="light"] .tag-c{background:#dbeafe!important;color:#1e40af!important;}
+html[data-theme="light"] .tag-g{background:#dcfce7!important;color:#166534!important;}
+html[data-theme="light"] .tag-s{background:#f3e8ff!important;color:#6b21a8!important;}
+html[data-theme="light"] .card-price{color:#1a1a2e!important;}
+html[data-theme="light"] .pm-price{color:#1a1a2e!important;}
+html[data-theme="light"] .pm-close{background:rgba(0,0,0,.55)!important;}
+html[data-theme="light"] .pm-thumb.on{border-color:#1a1a2e!important;}
+html[data-theme="light"] .pm-mail{background:#f1f5f9!important;color:#0f172a!important;}
+html[data-theme="light"] .pm-nav{background:rgba(0,0,0,.4)!important;}
+html[data-theme="light"] .pm-nav:hover{background:rgba(0,0,0,.65)!important;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;font-size:15px;}
 .hero{background:linear-gradient(135deg,#0a0a0f,#13131a,#0d0d1a);padding:30px 16px 22px;text-align:center;border-bottom:1px solid var(--brd);position:relative;overflow:hidden;}

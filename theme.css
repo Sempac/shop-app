@@ -1,0 +1,264 @@
+/* ══════════════════════════════════════════════════════
+   THÈME GLOBAL — The SMARTPHONE
+   • [data-theme="dark"]  → mode sombre  (pages claires)
+   • [data-theme="light"] → mode clair   (pages sombres)
+   ══════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────
+   MODE SOMBRE — pages admin à fond clair
+   (stock, catalogue-admin, expenses, lots…)
+   ────────────────────────────────────────── */
+
+html[data-theme="dark"] body {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* Sidebar */
+html[data-theme="dark"] .sidebar {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="dark"] .sidebar h3 { color: #f1f5f9 !important; }
+html[data-theme="dark"] .fg label,
+html[data-theme="dark"] .mfg label,
+html[data-theme="dark"] .msec-title,
+html[data-theme="dark"] .svc-label { color: #94a3b8 !important; }
+
+/* Séparateur redimensionnable */
+html[data-theme="dark"] .resizer { background: #334155 !important; }
+
+/* Chips filtres */
+html[data-theme="dark"] .chip {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .chip:hover {
+  border-color: #3b82f6 !important;
+  color: #3b82f6 !important;
+  background: #1e293b !important;
+}
+html[data-theme="dark"] .chip.on {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: #fff !important;
+}
+html[data-theme="dark"] .chip.on.c-occ  { background:#f59e0b!important;border-color:#f59e0b!important; }
+html[data-theme="dark"] .chip.on.c-neuf { background:#22c55e!important;border-color:#22c55e!important; }
+html[data-theme="dark"] .chip.on.c-rec  { background:#6366f1!important;border-color:#6366f1!important; }
+html[data-theme="dark"] .chip.on.s-ok   { background:#22c55e!important;border-color:#22c55e!important; }
+html[data-theme="dark"] .chip.on.s-low  { background:#f59e0b!important;border-color:#f59e0b!important; }
+html[data-theme="dark"] .chip.on.s-out  { background:#ef4444!important;border-color:#ef4444!important; }
+
+/* Inputs & selects */
+html[data-theme="dark"] .fg input,
+html[data-theme="dark"] .fg select,
+html[data-theme="dark"] .mfg input,
+html[data-theme="dark"] .mfg select,
+html[data-theme="dark"] .form-row input,
+html[data-theme="dark"] .form-row select,
+html[data-theme="dark"] .toolbar input,
+html[data-theme="dark"] .price-input,
+html[data-theme="dark"] .qty-input,
+html[data-theme="dark"] .desc-row textarea {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="dark"] .fg input:focus,
+html[data-theme="dark"] .fg select:focus,
+html[data-theme="dark"] .mfg input:focus,
+html[data-theme="dark"] .mfg select:focus,
+html[data-theme="dark"] .form-row input:focus,
+html[data-theme="dark"] .form-row select:focus,
+html[data-theme="dark"] .toolbar input:focus { border-color: #3b82f6 !important; }
+
+/* Bouton reset sidebar */
+html[data-theme="dark"] .reset-btn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+/* Cartes stats */
+html[data-theme="dark"] .stat {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px #0003 !important;
+}
+
+/* Tableaux */
+html[data-theme="dark"] table {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="dark"] td {
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="dark"] tr:hover td { background: #273549 !important; }
+html[data-theme="dark"] th {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+/* Panel détail */
+html[data-theme="dark"] .detail-panel,
+html[data-theme="dark"] .comp-panel,
+html[data-theme="dark"] .photo-panel {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="dark"] .dp-info {
+  background: #0f172a !important;
+}
+html[data-theme="dark"] .dp-info .lbl { color: #64748b !important; }
+html[data-theme="dark"] .dp-info .val,
+html[data-theme="dark"] .dp-name { color: #f1f5f9 !important; }
+html[data-theme="dark"] .dp-edit-btn {
+  background: #1e3a8a !important;
+  color: #93c5fd !important;
+}
+
+/* Modal */
+html[data-theme="dark"] .modal {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="dark"] .msec {
+  background: #0f172a !important;
+}
+html[data-theme="dark"] .mbtn-cancel {
+  background: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Tableau comparatif */
+html[data-theme="dark"] .comp-table td { border-color: #334155 !important; color: #e2e8f0 !important; }
+html[data-theme="dark"] .comp-table tr:hover td { background: #273549 !important; }
+html[data-theme="dark"] .comp-table tr.best-price td { background: #064e3b !important; }
+
+/* Fournisseurs */
+html[data-theme="dark"] .add-price-form {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+html[data-theme="dark"] .add-price-form h4 { color: #94a3b8 !important; }
+html[data-theme="dark"] .sup-card {
+  background: #0f172a !important;
+  border-left-color: #475569 !important;
+}
+html[data-theme="dark"] .sup-card .sn { color: #f1f5f9 !important; }
+html[data-theme="dark"] .sup-card .ss { color: #64748b !important; }
+
+/* Catalogue-admin — onglets */
+html[data-theme="dark"] .tabs {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+html[data-theme="dark"] .tab { color: #94a3b8 !important; }
+html[data-theme="dark"] .tab.active { color: #f472b6 !important; }
+
+/* Catalogue-admin — barre stats */
+html[data-theme="dark"] .stats {
+  background: #1e3a8a !important;
+  color: #93c5fd !important;
+}
+
+/* Catalogue-admin — rangée description */
+html[data-theme="dark"] .desc-row td { background: #1e293b !important; }
+
+/* Catalogue-admin — services */
+html[data-theme="dark"] .service-row {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="dark"] .service-row input[type=text],
+html[data-theme="dark"] .service-row input[type=number] {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Badge condition (s'assure que le texte reste lisible) */
+html[data-theme="dark"] .cNEUF        { background:#064e3b!important;color:#86efac!important; }
+html[data-theme="dark"] .cOCCASION    { background:#78350f!important;color:#fde68a!important; }
+html[data-theme="dark"] .cRECONDITIONNE{ background:#1e3a8a!important;color:#93c5fd!important; }
+
+/* Boîte alert stock bas */
+html[data-theme="dark"] .alert-box    { background:#451a03!important;border-color:#92400e!important;color:#fde68a!important; }
+
+/* ──────────────────────────────────────────
+   MODE CLAIR — pages admin à fond sombre
+   (index, repairs, commandes, history…)
+   ────────────────────────────────────────── */
+
+html[data-theme="light"] body {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Topbar/header gardent une couleur soutenue en mode clair */
+html[data-theme="light"] .topbar {
+  background: #1e40af !important;
+  color: #fff !important;
+}
+html[data-theme="light"] .header {
+  background: #1e40af !important;
+}
+html[data-theme="light"] header {
+  background: #1a1a2e !important;
+}
+
+/* Panneaux sombres → clairs */
+html[data-theme="light"] .left {
+  background: #1e3a8a !important;
+}
+
+/* Index — barre horloge */
+html[data-theme="light"] .datetime-bar {
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+html[data-theme="light"] .clock      { color: #0f172a !important; }
+html[data-theme="light"] .clock-sec  { color: #94a3b8 !important; }
+html[data-theme="light"] .date-full  { color: #0f172a !important; }
+html[data-theme="light"] .day-name   { color: #2563eb !important; }
+html[data-theme="light"] .week-num   { color: #64748b !important; }
+
+/* Index — main */
+html[data-theme="light"] .main { background: #f1f5f9 !important; }
+
+/* Index — user-bar */
+html[data-theme="light"] .user-bar {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #374151 !important;
+}
+
+/* Index — calendrier */
+html[data-theme="light"] .cal-wrap  { background: #fff !important; border:1px solid #e2e8f0; border-radius:10px; }
+html[data-theme="light"] .cal-title { color: #0f172a !important; }
+html[data-theme="light"] .cal-nav   { color: #64748b !important; }
+html[data-theme="light"] .cal-nav:hover { color: #0f172a !important; }
+html[data-theme="light"] .cal-day-name { color: #64748b !important; }
+html[data-theme="light"] .cal-cell  { color: #374151 !important; }
+html[data-theme="light"] .cal-cell.other-month { color: #cbd5e1 !important; }
+
+/* Alertes commandes */
+html[data-theme="light"] .alertes-bar {
+  background: #fffbeb !important;
+  border-color: #f59e0b !important;
+}
+
+/* group-title (index) */
+html[data-theme="light"] .group-title { color: #0f172a !important; }
+
+/* footer */
+html[data-theme="light"] .footer {
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0;
+  color: #94a3b8 !important;
+}
