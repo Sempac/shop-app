@@ -211,11 +211,6 @@ html[data-theme="light"] header {
   background: #1a1a2e !important;
 }
 
-/* Panneaux sombres → clairs */
-html[data-theme="light"] .left {
-  background: #1e3a8a !important;
-}
-
 /* Index — barre horloge */
 html[data-theme="light"] .datetime-bar {
   background: #fff !important;
