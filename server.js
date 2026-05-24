@@ -2264,6 +2264,17 @@ app.get('/api/catalogue/data', async(req,res) => {
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
+// Photos d'un produit (public — pour le modal catalogue)
+app.get('/api/catalogue/products/:id/photos', async(req,res) => {
+  try {
+    const r = await pool.query(
+      'SELECT filename FROM product_photos WHERE product_id=$1 ORDER BY sort_order,id',
+      [req.params.id]
+    );
+    res.json(r.rows.map(x => x.filename));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
 // QR code (retourne SVG inline)
 app.get('/api/catalogue/qrcode', async(req,res) => {
   try {
