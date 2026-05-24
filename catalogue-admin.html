@@ -16,10 +16,23 @@ header h1{font-size:1.1rem}
 .section.active{display:block}
 
 /* Produits */
-.toolbar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-.toolbar input,.toolbar select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:.9rem}
-.toolbar input{flex:1;min-width:200px}
-.stats{background:#e3f2fd;border-radius:8px;padding:10px 16px;font-size:.9rem;color:#1565c0}
+.toolbar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.toolbar input{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;flex:1;min-width:180px}
+.stats{background:#e3f2fd;border-radius:8px;padding:8px 14px;font-size:.85rem;color:#1565c0}
+/* Filtres chips */
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.fchip{padding:6px 13px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;color:#555;transition:.15s;white-space:nowrap;}
+.fchip:hover{border-color:#e91e63;color:#e91e63;}
+.fchip.on{background:#e91e63;border-color:#e91e63;color:#fff;}
+/* Description inline */
+.btn-desc{background:#f3e5f5;color:#7b1fa2;border:1px solid #ce93d8;padding:4px 9px;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:600;white-space:nowrap;}
+.btn-desc:hover{background:#ce93d8;color:#fff;}
+.desc-row td{background:#faf5ff;padding:8px 12px 12px 46px!important;}
+.desc-row textarea{width:100%;border:1.5px solid #ce93d8;border-radius:8px;padding:8px 10px;font-size:.85rem;resize:vertical;min-height:60px;font-family:inherit;}
+.desc-row textarea:focus{outline:none;border-color:#9c27b0;}
+.desc-actions{display:flex;gap:8px;margin-top:6px;}
+.desc-save{background:#9c27b0;color:#fff;border:none;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:.82rem;}
+.desc-cancel{background:#eee;color:#555;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.82rem;}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 th{background:#f5f5f5;padding:10px 12px;text-align:left;font-size:.82rem;color:#555;font-weight:600}
 td{padding:9px 12px;border-top:1px solid #f0f0f0;font-size:.88rem;vertical-align:middle}
@@ -138,17 +151,20 @@ tr:hover td{background:#fafafa}
 <div id="tab-produits" class="section active">
   <div class="toolbar">
     <input type="text" id="search" placeholder="🔍 Rechercher un produit..." oninput="loadProducts()">
-    <select id="cat-filter" onchange="loadProducts()">
-      <option value="">Toutes catégories</option>
-      <option value="Smartphone">Smartphones</option>
-      <option value="Tablette">Tablettes</option>
-      <option value="Accessoire">Accessoires</option>
-      <option value="Carte SIM">Cartes SIM</option>
-      <option value="Audio">Audio</option>
-      <option value="Chargeur">Chargeurs</option>
-      <option value="Cable">Câbles</option>
-    </select>
     <div class="stats" id="stats">Chargement...</div>
+  </div>
+  <div class="filter-bar" id="filterBar">
+    <button class="fchip on" data-cat="" onclick="setFilter('',this)">Tous</button>
+    <button class="fchip" data-cat="Smartphone" onclick="setFilter('Smartphone',this)">📱 Smartphones</button>
+    <button class="fchip" data-cat="Tablette" onclick="setFilter('Tablette',this)">📟 Tablettes</button>
+    <button class="fchip" data-cat="Coque" onclick="setFilter('Coque',this)">🛡️ Coques</button>
+    <button class="fchip" data-cat="Protection écran" onclick="setFilter('Protection écran',this)">🔲 Protections</button>
+    <button class="fchip" data-cat="Câble" onclick="setFilter('Câble',this)">🔗 Câbles</button>
+    <button class="fchip" data-cat="Chargeur" onclick="setFilter('Chargeur',this)">🔌 Chargeurs</button>
+    <button class="fchip" data-cat="Audio" onclick="setFilter('Audio',this)">🎧 Audio</button>
+    <button class="fchip" data-cat="Pièce détachée" onclick="setFilter('Pièce détachée',this)">🔧 Pièces</button>
+    <button class="fchip" data-cat="Accessoire Info" onclick="setFilter('Accessoire Info',this)">💾 Informatique</button>
+    <button class="fchip" data-cat="Carte SIM" onclick="setFilter('Carte SIM',this)">💳 SIM</button>
   </div>
   <table>
     <thead>
@@ -208,29 +224,56 @@ function showTab(name){
 }
 
 // ---- PRODUITS ----
+var activeCategory='';
+function setFilter(cat,btn){
+  activeCategory=cat;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  loadProducts();
+}
+
 async function loadProducts(){
   const search=document.getElementById('search').value;
-  const cat=document.getElementById('cat-filter').value;
   const params=new URLSearchParams();
   if(search) params.set('search',search);
-  if(cat) params.set('category',cat);
+  if(activeCategory) params.set('category',activeCategory);
   const r=await fetch('/api/catalogue-admin/products?'+params);
   const rows=await r.json();
   const tbody=document.getElementById('products-tbody');
   const visible=rows.filter(r=>r.catalogue_visible).length;
   document.getElementById('stats').textContent=`${rows.length} produits — ${visible} affichés dans le catalogue`;
-  tbody.innerHTML=rows.map(p=>`
+  tbody.innerHTML=rows.map(p=>{
+    const hasDesc=!!(p.catalogue_description&&p.catalogue_description.trim());
+    return `
     <tr id="row-${p.id}">
       <td><button class="toggle ${p.catalogue_visible?'on':'off'}" onclick="toggleVis(${p.id},this)" title="${p.catalogue_visible?'Affiché':'Masqué'}"></button></td>
-      <td><strong>${p.name}</strong>${p.color?' · '+p.color:''}</td>
-      <td>${p.category||''}</td>
-      <td><span class="badge badge-${(p.condition||'').toLowerCase().startsWith('n')?'neuf':(p.condition||'').toLowerCase().startsWith('r')?'rec':'occ'}">${p.condition||''}</span>${p.grade?' '+p.grade:''}</td>
+      <td>
+        <strong>${escHtml(p.name)}</strong>${p.color?' · '+escHtml(p.color):''}
+        ${hasDesc?'<span style="margin-left:6px;font-size:.7rem;color:#9c27b0;font-weight:600" title="'+escHtml(p.catalogue_description||'')+'">📝</span>':''}
+      </td>
+      <td>${escHtml(p.category||'')}</td>
+      <td><span class="badge badge-${(p.condition||'').toLowerCase().startsWith('n')?'neuf':(p.condition||'').toLowerCase().startsWith('r')?'rec':'occ'}">${escHtml(p.condition||'')}</span>${p.grade?' '+p.grade:''}</td>
       <td><input class="price-input" type="number" value="${p.catalogue_price||p.sale_price||''}" id="cp-${p.id}" min="0" step="0.01" placeholder="${p.sale_price||0}"></td>
       <td style="color:#999">${p.sale_price||0} €</td>
       <td><input class="qty-input" type="number" value="${p.stock_quantity}" id="qty-${p.id}" min="0"></td>
       <td id="photocell-${p.id}">${renderPhotoCell(p)}</td>
-      <td><button class="save-btn" onclick="saveProduct(${p.id})">💾</button><span class="saved" id="sv-${p.id}" style="display:none">✓</span></td>
-    </tr>`).join('');
+      <td>
+        <button class="save-btn" onclick="saveProduct(${p.id})">💾</button>
+        <button class="btn-desc" onclick="toggleDesc(${p.id},${JSON.stringify(escHtml(p.catalogue_description||''))})" title="Descriptif catalogue" style="margin-left:4px">📝</button>
+        <span class="saved" id="sv-${p.id}" style="display:none">✓</span>
+      </td>
+    </tr>
+    <tr class="desc-row" id="descrow-${p.id}" style="display:none">
+      <td colspan="9">
+        <div style="font-size:.78rem;color:#7b1fa2;font-weight:600;margin-bottom:4px">📝 Description affichée dans le catalogue :</div>
+        <textarea id="desc-${p.id}" placeholder="Ex: Très bon état, légères traces d'usure, batterie 85%...">${escHtml(p.catalogue_description||'')}</textarea>
+        <div class="desc-actions">
+          <button class="desc-save" onclick="saveDesc(${p.id})">💾 Sauvegarder</button>
+          <button class="desc-cancel" onclick="toggleDesc(${p.id})">Annuler</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 async function toggleVis(id, btn){
@@ -249,6 +292,24 @@ async function saveProduct(id){
 }
 
 // ---- SERVICES ----
+function toggleDesc(id){
+  const row=document.getElementById('descrow-'+id);
+  const open=row.style.display==='none';
+  row.style.display=open?'':'none';
+  if(open) document.getElementById('desc-'+id).focus();
+}
+
+async function saveDesc(id){
+  const val=document.getElementById('desc-'+id).value;
+  await fetch('/api/catalogue-admin/products/'+id,{
+    method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({catalogue_description:val})
+  });
+  document.getElementById('descrow-'+id).style.display='none';
+  // Refresh just the icon
+  loadProducts();
+}
+
 let services=[];
 async function loadServices(){
   const r=await fetch('/api/catalogue-admin/services');
