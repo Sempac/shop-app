@@ -2242,12 +2242,18 @@ app.get('/api/catalogue/data', async(req,res) => {
     settings.rows.forEach(r => cfg[r.key]=r.value);
 
     const products = await pool.query(`
-      SELECT id, name, category, condition, grade, color,
-             COALESCE(catalogue_price, sale_price) as price,
-             stock_quantity, catalogue_description
-      FROM products
-      WHERE catalogue_visible=true AND stock_quantity>0 AND statut_produit='DISPONIBLE'
-      ORDER BY category, price DESC
+      SELECT p.id, p.name, p.category, p.condition, p.grade, p.color,
+             COALESCE(p.catalogue_price, p.sale_price) as price,
+             p.stock_quantity, p.catalogue_description,
+             pp.filename as photo
+      FROM products p
+      LEFT JOIN (
+        SELECT DISTINCT ON (product_id) product_id, filename
+        FROM product_photos
+        ORDER BY product_id, sort_order, id
+      ) pp ON pp.product_id = p.id
+      WHERE p.catalogue_visible=true AND p.stock_quantity>0 AND p.statut_produit='DISPONIBLE'
+      ORDER BY p.category, price DESC
     `);
 
     const services = await pool.query(`
