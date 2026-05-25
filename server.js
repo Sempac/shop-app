@@ -569,7 +569,7 @@ app.post('/api/print/upload',upload.single('file'),async(req,res)=>{try{if(!req.
 app.get('/api/print/queue',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM print_queue ORDER BY uploaded_at DESC LIMIT 50`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/print/:id/done',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='IMPRIME',printed_at=NOW() WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/print/:id/cancel',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='ANNULE' WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
-/* Ouvrir fichier dans l'appli par défaut (Word, LibreOffice…) — Windows uniquement */
+/* Ouvrir fichier dans l'appli par défaut pour modification */
 app.get('/api/print/:id/open',async(req,res)=>{
   try{
     const r=await pool.query(`SELECT * FROM print_queue WHERE id=$1`,[req.params.id]);
@@ -577,6 +577,30 @@ app.get('/api/print/:id/open',async(req,res)=>{
     const fp=require('path').resolve(__dirname,r.rows[0].filepath);
     require('child_process').exec(`start "" "${fp}"`);
     res.json({ok:true,filepath:fp});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* Impression directe Windows sans ouvrir visuellement :
+   - PDF/images/Word → Start-Process -Verb Print (imprime sur l'imprimante par défaut)
+   - Le vendeur voit juste la boîte de dialogue Windows de sélection imprimante si besoin */
+app.get('/api/print/:id/printdirect',async(req,res)=>{
+  try{
+    const r=await pool.query(`SELECT * FROM print_queue WHERE id=$1`,[req.params.id]);
+    if(!r.rows[0])return res.status(404).json({error:'Introuvable'});
+    const fp=require('path').resolve(__dirname,r.rows[0].filepath);
+    const copies=r.rows[0].copies||1;
+    const ext=require('path').extname(fp).toLowerCase();
+    const {exec}=require('child_process');
+    /* SumatraPDF disponible → impression silencieuse multi-copies pour PDF */
+    if(ext==='.pdf'){
+      exec(`powershell -Command "& {$p=Get-Command SumatraPDF.exe -ErrorAction SilentlyContinue; if($p){& $p.Source -print-to-default -print-settings '${copies}x' '${fp.replace(/'/g,"''")}'}else{Start-Process -FilePath '${fp.replace(/'/g,"''")}' -Verb Print}}"`,
+        (err)=>{ if(err) console.error('printdirect pdf:',err.message); });
+    } else {
+      /* Tous les autres types (Word, image, Excel…) */
+      exec(`powershell -Command "Start-Process -FilePath '${fp.replace(/'/g,"''")}' -Verb Print"`,
+        (err)=>{ if(err) console.error('printdirect:',err.message); });
+    }
+    res.json({ok:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
 

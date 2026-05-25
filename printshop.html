@@ -68,14 +68,6 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 .portrait-tag{background:#1e3a5f;color:#7dd3fc;}
 .landscape-tag{background:#3b1d5f;color:#c4b5fd;}
 
-/* Modal éditeur */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;display:none;}
-.modal-overlay.show{display:flex;}
-.modal-box{background:#1e293b;border-radius:16px;padding:28px;max-width:420px;width:90%;text-align:center;}
-.modal-box h3{margin:0 0 12px;font-size:16px;}
-.modal-box p{font-size:13px;color:#94a3b8;margin:8px 0;}
-.modal-btns{display:flex;flex-direction:column;gap:8px;margin-top:18px;}
-.mbtn{padding:14px;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Arial;}
 
 /* ── CLIENT ── */
 .client-wrap{display:none;max-width:440px;margin:0 auto;padding:20px 16px;}
@@ -256,31 +248,6 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 </div>
 </div><!-- fin managerView -->
 
-
-<!-- ════════════════════════════
-     MODAL : Modifier avant impression
-════════════════════════════ -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal-box">
-    <div style="font-size:40px;margin-bottom:10px;">✏️</div>
-    <h3>Modifier avant impression</h3>
-    <p id="editModalFilename" style="color:white;font-weight:bold;"></p>
-    <p>Choisissez comment vous voulez traiter ce document :</p>
-    <div class="modal-btns">
-      <button class="mbtn" style="background:#7c3aed;color:white;" onclick="openInApp()">
-        ✏️ Ouvrir dans Word / LibreOffice
-        <div style="font-size:11px;font-weight:normal;margin-top:3px;opacity:0.8;">Le fichier s'ouvre sur ce PC — modifiez puis imprimez depuis l'appli</div>
-      </button>
-      <button class="mbtn" style="background:#2563eb;color:white;" onclick="downloadAndEdit()">
-        📥 Télécharger pour modifier
-        <div style="font-size:11px;font-weight:normal;margin-top:3px;opacity:0.8;">Enregistrez sur ce PC, modifiez, puis ajoutez à la file</div>
-      </button>
-      <button class="mbtn" style="background:#0f172a;color:#94a3b8;" onclick="closeEditModal()">
-        Annuler
-      </button>
-    </div>
-  </div>
-</div>
 
 
 <!-- ════════════════════════════
@@ -636,11 +603,9 @@ async function loadQueue() {
 
       if (it.status === 'EN_ATTENTE') {
         html += '<div class="qi-btns" id="qi-btns-' + it.id + '">';
-        html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="openForPrint(' + it.id + ')">🖨️ Ouvrir & Imprimer</button>';
-        if (editable) {
-          html += '<button class="qi-btn" style="background:#7c3aed;color:white;" onclick="openEditModal(' + it.id + ',\'' + fname.replace(/'/g,"\\'") + '\',\'' + ('/' + (it.filepath||'')) + '\')">✏️ Modifier</button>';
-        }
-        html += '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + it.id + ')">✕ Annuler</button>';
+        html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="printDirect(' + it.id + ')">🖨️ Imprimer</button>';
+        html += '<button class="qi-btn" style="background:#7c3aed;color:white;font-size:12px;" onclick="openForEdit(' + it.id + ')">✏️ Modifier avant</button>';
+        html += '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + it.id + ')">✕ Annuler</button>';
         html += '</div>';
       }
       html += '</div>';
@@ -651,39 +616,56 @@ async function loadQueue() {
   }
 }
 
-/* ══ IMPRESSION ══
-   On passe par le serveur Windows (start "") pour ouvrir le fichier
-   dans l'app native (PDF Reader, Word, Photos…).
-   Le vendeur imprime avec Ctrl+P dans l'app, choisit son imprimante,
-   puis clique "✅ C'est imprimé !" pour valider dans la file.
-═══════════════════ */
-async function openForPrint(id) {
+/* ══ BOUTON 1 : Imprimer directement ══
+   Envoie la commande au serveur Windows → Start-Process -Verb Print
+   (ou SumatraPDF si disponible pour les PDF)
+   Le fichier ne s'ouvre pas visuellement — Windows envoie à l'imprimante.
+   Après envoi : bouton ✅ pour confirmer dans la file. */
+async function printDirect(id) {
   var btns = document.getElementById('qi-btns-' + id);
-
-  /* Feedback visuel immédiat */
-  if (btns) {
-    btns.innerHTML = '<span style="font-size:12px;color:#93c5fd;">⏳ Ouverture du fichier…</span>';
-  }
-
+  if (btns) btns.innerHTML = '<span style="font-size:12px;color:#93c5fd;">⏳ Envoi à l\'imprimante…</span>';
   try {
-    var res = await fetch('/api/print/' + id + '/open');
+    var res = await fetch('/api/print/' + id + '/printdirect');
     var d   = await res.json();
     if (d.error) throw new Error(d.error);
-
-    /* Fichier ouvert → afficher les boutons de confirmation */
     if (btns) {
       btns.innerHTML =
-        '<div style="font-size:11px;color:#fbbf24;margin-bottom:6px;">📄 Fichier ouvert — faites <b>Ctrl+P</b> dans l\'app, choisissez votre imprimante, puis :</div>' +
-        '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ C\'est imprimé !</button>' +
-        '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
+        '<div style="font-size:11px;color:#86efac;margin-bottom:6px;">✅ Envoyé à l\'imprimante — confirmez quand c\'est sorti :</div>' +
+        '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ Imprimé !</button>' +
+        '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
     }
   } catch(e) {
     if (btns) {
       btns.innerHTML =
-        '<div style="font-size:11px;color:#f87171;margin-bottom:6px;">⚠️ Impossible d\'ouvrir automatiquement.</div>' +
+        '<div style="font-size:11px;color:#f87171;margin-bottom:6px;">⚠️ Erreur : ' + e.message + '</div>' +
         '<button class="qi-btn" style="background:#1e40af;color:white;" onclick="loadQueue()">🔄 Réessayer</button>' +
-        '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ Marquer imprimé quand même</button>' +
-        '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
+        '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
+    }
+  }
+}
+
+/* ══ BOUTON 2 : Modifier avant impression ══
+   Ouvre le fichier dans l'app native (Word, PDF Reader…)
+   Le vendeur modifie, imprime avec Ctrl+P, puis confirme. */
+async function openForEdit(id) {
+  var btns = document.getElementById('qi-btns-' + id);
+  if (btns) btns.innerHTML = '<span style="font-size:12px;color:#a78bfa;">⏳ Ouverture du fichier…</span>';
+  try {
+    var res = await fetch('/api/print/' + id + '/open');
+    var d   = await res.json();
+    if (d.error) throw new Error(d.error);
+    if (btns) {
+      btns.innerHTML =
+        '<div style="font-size:11px;color:#fbbf24;margin-bottom:6px;">📄 Fichier ouvert — modifiez, puis <b>Ctrl+P</b> pour imprimer :</div>' +
+        '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ Imprimé !</button>' +
+        '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
+    }
+  } catch(e) {
+    if (btns) {
+      btns.innerHTML =
+        '<div style="font-size:11px;color:#f87171;margin-bottom:6px;">⚠️ Erreur : ' + e.message + '</div>' +
+        '<button class="qi-btn" style="background:#1e40af;color:white;" onclick="loadQueue()">🔄 Réessayer</button>' +
+        '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
     }
   }
 }
@@ -696,44 +678,6 @@ async function cancelJob(id) {
   await fetch('/api/print/' + id + '/cancel', {method:'PUT'}); loadQueue();
 }
 
-/* ══ MODAL MODIFIER ══ */
-var editJobId   = null;
-var editFileUrl = null;
-
-function openEditModal(id, filename, fileUrl) {
-  editJobId   = id;
-  editFileUrl = fileUrl;
-  document.getElementById('editModalFilename').textContent = '📄 ' + filename;
-  document.getElementById('editModal').classList.add('show');
-}
-function closeEditModal() {
-  document.getElementById('editModal').classList.remove('show');
-  editJobId = null; editFileUrl = null;
-}
-
-async function openInApp() {
-  /* Ouvre le fichier sur le PC serveur (Windows : start) */
-  try {
-    var res = await fetch('/api/print/' + editJobId + '/open');
-    var d   = await res.json();
-    if (d.error) throw new Error(d.error);
-    closeEditModal();
-    alert('✅ Le fichier s\'est ouvert dans Word / LibreOffice.\n\nModifiez-le, puis imprimez directement depuis l\'application (Fichier → Imprimer).\n\nPensez à cliquer "Valider & Imprimer" dans la file pour marquer le travail comme traité.');
-  } catch(e) {
-    alert('Impossible d\'ouvrir automatiquement.\nEssayez "Télécharger pour modifier".\n\n' + e.message);
-  }
-}
-
-function downloadAndEdit() {
-  if (editFileUrl) {
-    var a = document.createElement('a');
-    a.href = editFileUrl;
-    a.download = '';
-    a.click();
-    closeEditModal();
-    alert('📥 Fichier téléchargé.\n\nModifiez-le dans Word / LibreOffice, puis imprimez depuis l\'application.\n\nOu re-déposez la version modifiée dans la zone "Impression directe" ci-dessus.');
-  }
-}
 
 
 /* ════════════════
