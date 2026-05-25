@@ -638,7 +638,7 @@ async function loadQueue() {
         html += '<div class="qi-btns">';
         html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="printAndDone(' + it.id + ')">✅ Valider & Imprimer</button>';
         if (editable) {
-          html += '<button class="qi-btn" style="background:#7c3aed;color:white;" onclick="openEditModal(' + it.id + ',\'' + fname.replace(/'/g,"\\'") + '\',\'' + (it.file_url||'') + '\')">✏️ Modifier</button>';
+          html += '<button class="qi-btn" style="background:#7c3aed;color:white;" onclick="openEditModal(' + it.id + ',\'' + fname.replace(/'/g,"\\'") + '\',\'' + ('/' + (it.filepath||'')) + '\')">✏️ Modifier</button>';
         }
         html += '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + it.id + ')">✕ Annuler</button>';
         html += '</div>';
@@ -657,8 +657,9 @@ async function printAndDone(id) {
     var res  = await fetch('/api/print/queue');
     var data = await res.json();
     var item = data.find(function(d){ return d.id === id; });
-    if (item && item.file_url) {
-      var url  = item.file_url;
+    /* filepath = "uploads/xxxx.pdf" → URL = "/uploads/xxxx.pdf" */
+    if (item && item.filepath) {
+      var url  = '/' + item.filepath;
       var ext  = url.split('?')[0].split('.').pop().toLowerCase();
       var imgExts = ['jpg','jpeg','png','gif','webp','bmp'];
       var isLandscape = item.orientation === 'landscape';
