@@ -565,10 +565,20 @@ app.post('/api/stock/damaged',async(req,res)=>{try{const{product_id,product_name
 /* =======================================================
    IMPRESSION
 ======================================================= */
-app.post('/api/print/upload',upload.single('file'),async(req,res)=>{try{if(!req.file)return res.status(400).json({error:'Aucun fichier reçu'});const{copies=1,color_mode='bw'}=req.body;const r=await pool.query(`INSERT INTO print_queue(filename,filepath,filetype,filesize,copies,color_mode,status) VALUES($1,$2,$3,$4,$5,$6,'EN_ATTENTE') RETURNING *`,[req.file.originalname,'uploads/'+req.file.filename,path.extname(req.file.originalname).replace('.',''),req.file.size,Number(copies),color_mode]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+app.post('/api/print/upload',upload.single('file'),async(req,res)=>{try{if(!req.file)return res.status(400).json({error:'Aucun fichier reçu'});const{copies=1,color_mode='bw',orientation='portrait',source=''}=req.body;const prefix=source==='client'?'[CLIENT] ':'';const r=await pool.query(`INSERT INTO print_queue(filename,filepath,filetype,filesize,copies,color_mode,orientation,status) VALUES($1,$2,$3,$4,$5,$6,$7,'EN_ATTENTE') RETURNING *`,[prefix+req.file.originalname,'uploads/'+req.file.filename,path.extname(req.file.originalname).replace('.',''),req.file.size,Number(copies),color_mode,orientation]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.get('/api/print/queue',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM print_queue ORDER BY uploaded_at DESC LIMIT 50`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/print/:id/done',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='IMPRIME',printed_at=NOW() WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/print/:id/cancel',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='ANNULE' WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+/* Ouvrir fichier dans l'appli par défaut (Word, LibreOffice…) — Windows uniquement */
+app.get('/api/print/:id/open',async(req,res)=>{
+  try{
+    const r=await pool.query(`SELECT * FROM print_queue WHERE id=$1`,[req.params.id]);
+    if(!r.rows[0])return res.status(404).json({error:'Introuvable'});
+    const fp=require('path').resolve(__dirname,r.rows[0].filepath);
+    require('child_process').exec(`start "" "${fp}"`);
+    res.json({ok:true,filepath:fp});
+  }catch(e){res.status(500).json({error:e.message});}
+});
 
 /* =======================================================
    LOTS — /costs et /items AVANT /:id
@@ -772,10 +782,10 @@ app.delete('/api/supplier-prices/:id', async(req,res)=>{
 /* Confirmation impression client (après scan QR) */
 app.post('/api/print/:id/confirm', async(req,res)=>{
   try{
-    const{copies,color_mode}=req.body;
+    const{copies,color_mode,orientation}=req.body;
     const r=await pool.query(
-      `UPDATE print_queue SET copies=$1,color_mode=$2,status='EN_ATTENTE',updated_at=NOW() WHERE id=$3 RETURNING *`,
-      [Number(copies||1),color_mode||'bw',req.params.id]);
+      `UPDATE print_queue SET copies=$1,color_mode=$2,orientation=$3,status='EN_ATTENTE',updated_at=NOW() WHERE id=$4 RETURNING *`,
+      [Number(copies||1),color_mode||'bw',orientation||'portrait',req.params.id]);
     if(!r.rows[0])return res.status(404).json({error:'Travail introuvable ou expiré'});
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
