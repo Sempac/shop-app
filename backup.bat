@@ -9,7 +9,7 @@ set DB_NAME=shop_db
 set DB_USER=postgres
 set DB_HOST=localhost
 set DB_PORT=5432
-set BACKUP_DIR=%USERPROFILE%\OneDrive\Backups\smartphone-pos
+set BACKUP_DIR=C:\Users\PC\OneDrive\Backups\smartphone-pos
 set DATE=%date:~6,4%-%date:~3,2%-%date:~0,2%
 set TIME_STR=%time:~0,2%-%time:~3,2%
 set TIME_STR=%TIME_STR: =0%
@@ -22,7 +22,7 @@ if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 echo [%DATE% %TIME%] Debut sauvegarde... >> "%BACKUP_DIR%\backup.log"
 
 :: Dump PostgreSQL
-set PGPASSWORD=postgres
+set PGPASSWORD=Sempac
 "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h %DB_HOST% -p %DB_PORT% -U %DB_USER% -d %DB_NAME% -F c -f "%BACKUP_DIR%\%FILENAME%"
 
 if %ERRORLEVEL% == 0 (
