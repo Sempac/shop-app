@@ -635,8 +635,8 @@ async function loadQueue() {
       html += '</div>';
 
       if (it.status === 'EN_ATTENTE') {
-        html += '<div class="qi-btns">';
-        html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="printAndDone(' + it.id + ')">✅ Valider & Imprimer</button>';
+        html += '<div class="qi-btns" id="qi-btns-' + it.id + '">';
+        html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="openForPrint(' + it.id + ')">🖨️ Ouvrir & Imprimer</button>';
         if (editable) {
           html += '<button class="qi-btn" style="background:#7c3aed;color:white;" onclick="openEditModal(' + it.id + ',\'' + fname.replace(/'/g,"\\'") + '\',\'' + ('/' + (it.filepath||'')) + '\')">✏️ Modifier</button>';
         }
@@ -651,72 +651,41 @@ async function loadQueue() {
   }
 }
 
-/* ══ IMPRESSION ══ */
-async function printAndDone(id) {
+/* ══ IMPRESSION ══
+   On passe par le serveur Windows (start "") pour ouvrir le fichier
+   dans l'app native (PDF Reader, Word, Photos…).
+   Le vendeur imprime avec Ctrl+P dans l'app, choisit son imprimante,
+   puis clique "✅ C'est imprimé !" pour valider dans la file.
+═══════════════════ */
+async function openForPrint(id) {
+  var btns = document.getElementById('qi-btns-' + id);
+
+  /* Feedback visuel immédiat */
+  if (btns) {
+    btns.innerHTML = '<span style="font-size:12px;color:#93c5fd;">⏳ Ouverture du fichier…</span>';
+  }
+
   try {
-    var res  = await fetch('/api/print/queue');
-    var data = await res.json();
-    var item = data.find(function(d){ return d.id === id; });
-    /* filepath = "uploads/xxxx.pdf" → URL = "/uploads/xxxx.pdf" */
-    if (item && item.filepath) {
-      var url  = '/' + item.filepath;
-      var ext  = url.split('?')[0].split('.').pop().toLowerCase();
-      var imgExts = ['jpg','jpeg','png','gif','webp','bmp'];
-      var isLandscape = item.orientation === 'landscape';
+    var res = await fetch('/api/print/' + id + '/open');
+    var d   = await res.json();
+    if (d.error) throw new Error(d.error);
 
-      if (ext === 'pdf') {
-        var old = document.getElementById('printFrame');
-        if (old) old.remove();
-        var frame = document.createElement('iframe');
-        frame.id = 'printFrame';
-        frame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
-        frame.src = url;
-        document.body.appendChild(frame);
-        frame.onload = function() {
-          try {
-            frame.contentWindow.focus();
-            frame.contentWindow.print();
-          } catch(e) {
-            var w = window.open(url, '_blank');
-            if (w) setTimeout(function(){ try{ w.print(); }catch(e2){} }, 2500);
-          }
-        };
-        setTimeout(function() {
-          if (document.getElementById('printFrame')) {
-            var w = window.open(url, '_blank');
-            if (w) setTimeout(function(){ try{ w.print(); }catch(e2){} }, 2500);
-          }
-        }, 8000);
-
-      } else if (imgExts.indexOf(ext) >= 0) {
-        var pageStyle = isLandscape
-          ? '@page{size:A4 landscape;}img{max-width:100%;max-height:100vh;object-fit:contain;}'
-          : '@page{size:A4 portrait;}img{max-width:100%;max-height:100vh;object-fit:contain;}';
-        var w = window.open('', '_blank');
-        if (w) {
-          w.document.write(
-            '<!DOCTYPE html><html><head><title>Impression</title>' +
-            '<style>*{margin:0;padding:0;}body{display:flex;justify-content:center;align-items:center;min-height:100vh;}' +
-            pageStyle + '</style></head>' +
-            '<body><img src="' + url + '" onload="window.print()"></body></html>'
-          );
-          w.document.close();
-        }
-
-      } else {
-        /* Word, Excel, etc. : télécharger */
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = item.filename || 'document';
-        a.click();
-        var oriMsg = isLandscape ? 'Paysage (Landscape)' : 'Portrait';
-        alert('📥 Fichier téléchargé.\n\nOuvrez-le puis faites Fichier → Imprimer (Ctrl+P).\n⚙️ Orientation demandée : ' + oriMsg);
-      }
+    /* Fichier ouvert → afficher les boutons de confirmation */
+    if (btns) {
+      btns.innerHTML =
+        '<div style="font-size:11px;color:#fbbf24;margin-bottom:6px;">📄 Fichier ouvert — faites <b>Ctrl+P</b> dans l\'app, choisissez votre imprimante, puis :</div>' +
+        '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ C\'est imprimé !</button>' +
+        '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
     }
   } catch(e) {
-    alert('Erreur : impossible d\'ouvrir le fichier.\n' + e.message);
+    if (btns) {
+      btns.innerHTML =
+        '<div style="font-size:11px;color:#f87171;margin-bottom:6px;">⚠️ Impossible d\'ouvrir automatiquement.</div>' +
+        '<button class="qi-btn" style="background:#1e40af;color:white;" onclick="loadQueue()">🔄 Réessayer</button>' +
+        '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ Marquer imprimé quand même</button>' +
+        '<button class="qi-btn" style="background:#fee2e2;color:#ef4444" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
+    }
   }
-  await markDone(id);
 }
 
 async function markDone(id) {
