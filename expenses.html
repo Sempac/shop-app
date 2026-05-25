@@ -148,7 +148,8 @@ table.sticky thead tr th,
 
 <script>
 var currentUser = requireAuth('expenses-limited');
-var userRole = currentUser ? currentUser.role : 'vendeur';
+/* 'admin' est traité comme 'gerant' pour les catégories et permissions */
+var userRole = currentUser ? (currentUser.role === 'admin' ? 'gerant' : currentUser.role) : 'vendeur';
 var allowedCategories = [];
 
 const fmt = n => Number(n||0).toFixed(2) + ' €';
@@ -391,23 +392,8 @@ loadCategories().then(function(){ loadExpenses(); });
 </script>
 <script src="tooltips.js"></script>
 <script>
-/* Figer l'en-tête via translateY au scroll */
-(function() {
-  function initSticky() {
-    document.querySelectorAll('.table-wrap, .scroll-wrap, [class*="wrap"]').forEach(function(wrap) {
-      if (wrap.querySelector('table thead')) {
-        wrap.addEventListener('scroll', function() {
-          var ths = wrap.querySelectorAll('table thead th');
-          var scrollTop = wrap.scrollTop;
-          ths.forEach(function(th) {
-            th.style.transform = 'translateY(' + scrollTop + 'px)';
-          });
-        });
-      }
-    });
-  }
-  if (document.readyState === 'loading') {
-    function calcDepTTC() {
+/* ── Calculs HT/TTC ── */
+function calcDepTTC() {
   var qtyEl = document.getElementById('dep_qty');
   var htEl  = document.getElementById('dep_amount_ht');
   var tvaEl = document.getElementById('dep_tva');
@@ -419,7 +405,6 @@ loadCategories().then(function(){ loadExpenses(); });
     if (ttcEl && document.activeElement !== ttcEl)
       ttcEl.value = (ht * (1 + tva/100)).toFixed(2);
   }
-  /* Affiche le total quand qty > 1 */
   var unitTTC = parseFloat(ttcEl?.value||0);
   var totalLine = document.getElementById('dep_total_line');
   var totalVal  = document.getElementById('dep_total_val');
@@ -443,7 +428,23 @@ function calcDepHT() {
   calcDepTTC();
 }
 
-document.addEventListener('DOMContentLoaded', initSticky);
+/* Figer l'en-tête via translateY au scroll */
+(function() {
+  function initSticky() {
+    document.querySelectorAll('.table-wrap, .scroll-wrap, [class*="wrap"]').forEach(function(wrap) {
+      if (wrap.querySelector('table thead')) {
+        wrap.addEventListener('scroll', function() {
+          var ths = wrap.querySelectorAll('table thead th');
+          var scrollTop = wrap.scrollTop;
+          ths.forEach(function(th) {
+            th.style.transform = 'translateY(' + scrollTop + 'px)';
+          });
+        });
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSticky);
   } else {
     initSticky();
   }
