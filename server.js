@@ -2196,7 +2196,11 @@ app.post('/api/import-facture-pdf/upload', (req,res)=>{
     if(!req.file) return res.status(400).json({error:'Aucun fichier PDF'});
     const pdfPath  = req.file.path;
     const pyScript = path.join(__dirname,'parse_invoice.py');
-    const pyCmd    = process.platform === 'win32' ? 'python' : 'python3';
+    /* Chemin absolu Python — évite les problèmes de PATH du planificateur de tâches Windows */
+    const WIN_PYTHON = 'C:\\Users\\PC\\AppData\\Local\\Python\\bin\\python.exe';
+    const pyCmd = process.platform === 'win32'
+      ? (require('fs').existsSync(WIN_PYTHON) ? '"' + WIN_PYTHON + '"' : 'python')
+      : 'python3';
     const cmd      = pyCmd + ' "' + pyScript + '" "' + pdfPath + '"';
     exec(cmd, {encoding:'utf-8', timeout:60000}, function(err2, stdout, stderr){
       try{ fs.unlinkSync(pdfPath); }catch(e){}
