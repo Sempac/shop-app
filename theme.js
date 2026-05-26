@@ -133,7 +133,7 @@
     ping();
     setInterval(ping, INTERVAL);
   }, 4000);
-})()
+})();
 
 /* ─── Theme manager — The SMARTPHONE ─── */
 (function(){
