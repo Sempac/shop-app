@@ -84,9 +84,9 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 .step-title{font-size:13px;font-weight:bold;color:white;}
 
 /* Upload client */
-.client-drop{border:2px dashed #334155;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:0.2s;margin-top:10px;}
+.client-drop{position:relative;overflow:hidden;border:2px dashed #334155;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:0.2s;margin-top:10px;}
 .client-drop:hover,.client-drop.drag{border-color:#7c3aed;background:#4c1d9522;}
-.client-drop input[type=file]{display:block;width:100%;margin-top:12px;padding:10px;font-size:16px;border-radius:8px;border:1.5px solid #475569;background:#0f172a;color:#94a3b8;cursor:pointer;font-family:Arial;}
+.client-drop input[type=file]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.001;font-size:100px;cursor:pointer;z-index:10;}
 .client-drop .icon{font-size:32px;margin-bottom:6px;}
 .client-file-ok{background:#0f172a;border-radius:8px;padding:10px 12px;margin-top:8px;display:none;}
 .client-file-ok .fn{font-size:13px;font-weight:bold;color:white;}
