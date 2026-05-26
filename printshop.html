@@ -305,13 +305,12 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
       <!-- Étape 2 : fichier -->
       <div class="step-card">
         <div><span class="step-num">2</span><span class="step-title">Choisissez votre fichier</span></div>
-        <div class="client-drop" id="clientDrop" style="position:relative;">
-          <input type="file" id="clientFile" accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.odt"
-            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;font-size:16px;">
+        <label for="clientFile" class="client-drop" id="clientDrop">
           <div class="icon">📎</div>
           <p style="margin:4px 0;font-size:14px;"><b>Appuyez ici pour choisir</b></p>
           <p style="margin:0;font-size:11px;color:#64748b;">PDF · Word · PowerPoint · Excel · JPG · PNG — Max 10MB</p>
-        </div>
+        </label>
+        <input type="file" id="clientFile" accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.odt" style="display:none;font-size:16px;">
         <div class="client-file-ok" id="clientFileOk">
           <div class="fn" id="clientFName"></div>
           <div class="fs" id="clientFSize"></div>
@@ -692,13 +691,7 @@ var currentMethod = null;
 function initClient() {
   var cd = document.getElementById('clientDrop');
   var cf = document.getElementById('clientFile');
-  /* label for= gère le clic nativement sur iOS/Android — pas besoin de cf.click() */
-  cd.addEventListener('dragover', function(e){ e.preventDefault(); cd.classList.add('drag'); });
-  cd.addEventListener('dragleave', function(){ cd.classList.remove('drag'); });
-  cd.addEventListener('drop', function(e){
-    e.preventDefault(); cd.classList.remove('drag');
-    if (e.dataTransfer.files.length) setClientFile(e.dataTransfer.files[0]);
-  });
+  /* label for="clientFile" déclenche le picker nativement sur iOS/Android */
   cf.addEventListener('change', function(){
     if (cf.files.length) setClientFile(cf.files[0]);
   });
