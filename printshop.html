@@ -458,6 +458,12 @@ function initManager() {
     if (fi.files.length) setManagerFile(fi.files[0]);
   });
 
+  /* Charger la liste des imprimantes disponibles */
+  fetch('/api/print/printers').then(function(r){return r.json();}).then(function(list){
+    window._printers = list.filter(function(p){
+      return !['OneNote','Fax','XPS','PDF','Microsoft'].some(function(x){return p.includes(x);});
+    });
+  }).catch(function(){});
   loadQueue();
   setInterval(loadQueue, 15000);
 }
@@ -610,9 +616,15 @@ async function loadQueue() {
       html += '</div>';
 
       if (it.status === 'EN_ATTENTE') {
-        var printerName = it.color_mode === 'color' ? '🌈 MF650C Series (Couleur)' : '⬛ Brother HL-L6300DW (N&B)';
+        var defPrinter = it.color_mode === 'color' ? 'MF650C Series' : 'Brother HL-L6300DW series Printer';
         html += '<div class="qi-btns" id="qi-btns-' + it.id + '">';
-        html += '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">🖨️ Imprimante : <b style="color:#e2e8f0;">' + printerName + '</b></div>';
+        html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">';
+        html += '<span style="font-size:11px;color:#94a3b8;white-space:nowrap;">🖨️ Imprimante :</span>';
+        html += '<select id="printer-' + it.id + '" style="flex:1;padding:5px 8px;background:#0f172a;color:#e2e8f0;border:1.5px solid #334155;border-radius:6px;font-size:11px;font-family:Arial;">';
+        (window._printers||['Brother HL-L6300DW series Printer','MF650C Series']).forEach(function(p){
+          html += '<option value="' + p + '"' + (p===defPrinter?' selected':'') + '>' + p + '</option>';
+        });
+        html += '</select></div>';
         html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="printDirect(' + it.id + ')">🖨️ Imprimer</button>';
         html += '<button class="qi-btn" style="background:#7c3aed;color:white;font-size:12px;" onclick="openForEdit(' + it.id + ')">✏️ Modifier avant</button>';
         html += '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + it.id + ')">✕ Annuler</button>';
@@ -633,7 +645,9 @@ async function printDirect(id) {
   var btns = document.getElementById('qi-btns-' + id);
   if (btns) btns.innerHTML = '<span style="font-size:12px;color:#93c5fd;">⏳ Envoi à l\'imprimante…</span>';
   try {
-    var res = await fetch('/api/print/' + id + '/printdirect');
+    var sel = document.getElementById('printer-' + id);
+    var printer = sel ? encodeURIComponent(sel.value) : '';
+    var res = await fetch('/api/print/' + id + '/printdirect' + (printer ? '?printer=' + printer : ''));
     var d   = await res.json();
     if (d.error) throw new Error(d.error);
     /* Marquer comme imprimé → évite reset auto-refresh */

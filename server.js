@@ -573,6 +573,17 @@ app.post('/api/stock/damaged',async(req,res)=>{try{const{product_id,product_name
 ======================================================= */
 app.post('/api/print/upload',upload.single('file'),async(req,res)=>{try{if(!req.file)return res.status(400).json({error:'Aucun fichier reçu'});const{copies=1,color_mode='bw',orientation='portrait',source=''}=req.body;const prefix=source==='client'?'[CLIENT] ':'';const r=await pool.query(`INSERT INTO print_queue(filename,filepath,filetype,filesize,copies,color_mode,orientation,status) VALUES($1,$2,$3,$4,$5,$6,$7,'EN_ATTENTE') RETURNING *`,[prefix+req.file.originalname,'uploads/'+req.file.filename,path.extname(req.file.originalname).replace('.',''),req.file.size,Number(copies),color_mode,orientation]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.get('/api/print/queue',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM print_queue ORDER BY uploaded_at DESC LIMIT 50`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
+/* Liste des imprimantes Windows disponibles */
+app.get('/api/print/printers',async(req,res)=>{
+  require('child_process').exec(
+    'powershell -Command "Get-WmiObject Win32_Printer | Select-Object -ExpandProperty Name"',
+    (err,stdout)=>{
+      if(err) return res.json(['Brother HL-L6300DW series Printer','MF650C Series']);
+      const list=stdout.split('\n').map(s=>s.trim()).filter(Boolean);
+      res.json(list);
+    }
+  );
+});
 app.put('/api/print/:id/done',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='IMPRIME',printed_at=NOW() WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/print/:id/cancel',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='ANNULE' WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.delete('/api/print/purge',async(req,res)=>{try{const r=await pool.query(`DELETE FROM print_queue WHERE status IN ('IMPRIME','ANNULE')`);res.json({deleted:r.rowCount});}catch(e){res.status(500).json({error:e.message});}});
@@ -582,7 +593,11 @@ app.get('/api/print/:id/open',async(req,res)=>{
     const r=await pool.query(`SELECT * FROM print_queue WHERE id=$1`,[req.params.id]);
     if(!r.rows[0])return res.status(404).json({error:'Introuvable'});
     const fp=require('path').resolve(__dirname,r.rows[0].filepath);
-    require('child_process').exec(`start "" "${fp}"`);
+    const fp2=fp.replace(/'/g,"''");
+    require('child_process').exec(
+      `powershell -Command "Start-Process -FilePath '${fp2}'"`,
+      (err)=>{ if(err) console.error('open:',err.message); }
+    );
     res.json({ok:true,filepath:fp});
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -599,10 +614,10 @@ app.get('/api/print/:id/printdirect',async(req,res)=>{
     const colorMode=r.rows[0].color_mode||'bw';
     const ext=require('path').extname(fp).toLowerCase();
     const {exec}=require('child_process');
-    /* Sélection imprimante selon le mode couleur */
-    const printer = colorMode==='color'
-      ? 'MF650C Series'
-      : 'Brother HL-L6300DW series Printer';
+    /* Imprimante : paramètre URL prioritaire, sinon selon couleur */
+    const printer = req.query.printer
+      ? decodeURIComponent(req.query.printer)
+      : (colorMode==='color' ? 'MF650C Series' : 'Brother HL-L6300DW series Printer');
     const fp2=fp.replace(/'/g,"''");
     const pr2=printer.replace(/'/g,"''");
     const sumatra='C:\\tools\\SumatraPDF.exe';
