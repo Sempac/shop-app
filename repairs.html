@@ -194,7 +194,7 @@ table.sticky thead tr th,
       <!-- Type d'appareil — liste déroulante -->
       <div class="fg">
         <label>Type d'appareil</label>
-        <select id="n_device">
+        <select id="n_device" onchange="updateBrandList()">
           <option value="">— Sélectionner —</option>
           <option>Smartphone</option>
           <option>Tablette</option>
@@ -209,25 +209,8 @@ table.sticky thead tr th,
       <!-- Marque — liste déroulante -->
       <div class="fg">
         <label>Marque</label>
-        <select id="n_brand">
+        <select id="n_brand" onchange="updateModelsList()">
           <option value="">— Sélectionner —</option>
-          <option>Apple</option>
-          <option>Samsung</option>
-          <option>Xiaomi</option>
-          <option>Huawei</option>
-          <option>OnePlus</option>
-          <option>Sony</option>
-          <option>Google</option>
-          <option>Oppo</option>
-          <option>Realme</option>
-          <option>Honor</option>
-          <option>Nokia</option>
-          <option>Motorola</option>
-          <option>Lenovo</option>
-          <option>Asus</option>
-          <option>HP</option>
-          <option>Dell</option>
-          <option>Autre</option>
         </select>
       </div>
 
@@ -235,69 +218,7 @@ table.sticky thead tr th,
       <div class="fg">
         <label>Modèle</label>
         <input id="n_model" list="modelsList" placeholder="Ex: iPhone 14, Galaxy S23...">
-        <datalist id="modelsList">
-          <!-- Apple iPhone -->
-          <option>iPhone 16 Pro Max</option><option>iPhone 16 Pro</option><option>iPhone 16 Plus</option><option>iPhone 16</option>
-          <option>iPhone 15 Pro Max</option><option>iPhone 15 Pro</option><option>iPhone 15 Plus</option><option>iPhone 15</option>
-          <option>iPhone 14 Pro Max</option><option>iPhone 14 Pro</option><option>iPhone 14 Plus</option><option>iPhone 14</option>
-          <option>iPhone 13 Pro Max</option><option>iPhone 13 Pro</option><option>iPhone 13 Mini</option><option>iPhone 13</option>
-          <option>iPhone 12 Pro Max</option><option>iPhone 12 Pro</option><option>iPhone 12 Mini</option><option>iPhone 12</option>
-          <option>iPhone 11 Pro Max</option><option>iPhone 11 Pro</option><option>iPhone 11</option>
-          <option>iPhone XS Max</option><option>iPhone XS</option><option>iPhone XR</option><option>iPhone X</option>
-          <option>iPhone SE 2022</option><option>iPhone SE 2020</option><option>iPhone SE 2016</option>
-          <option>iPhone 8 Plus</option><option>iPhone 8</option><option>iPhone 7 Plus</option><option>iPhone 7</option>
-          <!-- Samsung Galaxy S -->
-          <option>Galaxy S25 Ultra</option><option>Galaxy S25+</option><option>Galaxy S25</option>
-          <option>Galaxy S24 Ultra</option><option>Galaxy S24+</option><option>Galaxy S24</option><option>Galaxy S24 FE</option>
-          <option>Galaxy S23 Ultra</option><option>Galaxy S23+</option><option>Galaxy S23</option><option>Galaxy S23 FE</option>
-          <option>Galaxy S22 Ultra</option><option>Galaxy S22+</option><option>Galaxy S22</option>
-          <option>Galaxy S21 Ultra</option><option>Galaxy S21+</option><option>Galaxy S21</option><option>Galaxy S21 FE</option>
-          <option>Galaxy S20 Ultra</option><option>Galaxy S20+</option><option>Galaxy S20</option><option>Galaxy S20 FE</option>
-          <option>Galaxy S10+</option><option>Galaxy S10</option><option>Galaxy S10e</option>
-          <option>Galaxy S9+</option><option>Galaxy S9</option>
-          <!-- Samsung Galaxy A -->
-          <option>Galaxy A55</option><option>Galaxy A54</option><option>Galaxy A53</option><option>Galaxy A52</option>
-          <option>Galaxy A35</option><option>Galaxy A34</option><option>Galaxy A33</option>
-          <option>Galaxy A25</option><option>Galaxy A24</option><option>Galaxy A23</option>
-          <option>Galaxy A15</option><option>Galaxy A14</option><option>Galaxy A13</option>
-          <option>Galaxy A05s</option><option>Galaxy A05</option>
-          <!-- Samsung Galaxy Z -->
-          <option>Galaxy Z Fold 6</option><option>Galaxy Z Fold 5</option><option>Galaxy Z Fold 4</option><option>Galaxy Z Fold 3</option>
-          <option>Galaxy Z Flip 6</option><option>Galaxy Z Flip 5</option><option>Galaxy Z Flip 4</option><option>Galaxy Z Flip 3</option>
-          <!-- Samsung Galaxy M / Note -->
-          <option>Galaxy M55</option><option>Galaxy M54</option><option>Galaxy M34</option><option>Galaxy M14</option>
-          <option>Galaxy Note 20 Ultra</option><option>Galaxy Note 20</option><option>Galaxy Note 10+</option><option>Galaxy Note 10</option>
-          <!-- Xiaomi -->
-          <option>Xiaomi 14 Ultra</option><option>Xiaomi 14 Pro</option><option>Xiaomi 14</option>
-          <option>Xiaomi 13 Ultra</option><option>Xiaomi 13 Pro</option><option>Xiaomi 13</option>
-          <option>Xiaomi 12 Pro</option><option>Xiaomi 12</option>
-          <option>Redmi Note 13 Pro+</option><option>Redmi Note 13 Pro</option><option>Redmi Note 13</option>
-          <option>Redmi Note 12 Pro+</option><option>Redmi Note 12 Pro</option><option>Redmi Note 12</option>
-          <option>Redmi Note 11 Pro</option><option>Redmi Note 11</option>
-          <option>Redmi 13C</option><option>Redmi 12C</option><option>Redmi 12</option>
-          <option>POCO X6 Pro</option><option>POCO X6</option><option>POCO X5 Pro</option><option>POCO M6 Pro</option>
-          <!-- Huawei -->
-          <option>Huawei P60 Pro</option><option>Huawei P50 Pro</option><option>Huawei P40 Pro</option><option>Huawei P40</option>
-          <option>Huawei P30 Pro</option><option>Huawei P30</option>
-          <option>Huawei Mate 50 Pro</option><option>Huawei Mate 40 Pro</option>
-          <option>Huawei Nova 11</option><option>Huawei Nova 10</option>
-          <!-- OnePlus -->
-          <option>OnePlus 12 Pro</option><option>OnePlus 12</option>
-          <option>OnePlus 11</option><option>OnePlus 10 Pro</option>
-          <option>OnePlus Nord 3</option><option>OnePlus Nord CE 3</option>
-          <!-- Google Pixel -->
-          <option>Pixel 9 Pro XL</option><option>Pixel 9 Pro</option><option>Pixel 9</option>
-          <option>Pixel 8 Pro</option><option>Pixel 8</option><option>Pixel 7a</option><option>Pixel 7 Pro</option><option>Pixel 7</option>
-          <option>Pixel 6a</option><option>Pixel 6 Pro</option><option>Pixel 6</option>
-          <!-- Oppo / Realme / Honor -->
-          <option>Oppo Find X7 Pro</option><option>Oppo Reno 11</option><option>Oppo Reno 10</option>
-          <option>Realme 12 Pro+</option><option>Realme 11 Pro</option><option>Realme GT 5</option>
-          <option>Honor 90 Pro</option><option>Honor Magic 6 Pro</option><option>Honor X8</option>
-          <!-- Sony / Nokia / Motorola -->
-          <option>Sony Xperia 1 VI</option><option>Sony Xperia 5 V</option>
-          <option>Nokia G60</option><option>Nokia XR21</option>
-          <option>Motorola Edge 40 Pro</option><option>Motorola Moto G84</option><option>Motorola Moto G54</option>
-        </datalist>
+        <datalist id="modelsList"></datalist>
       </div>
 
       <div class="fg"><label>N° de série</label><input id="n_serial" placeholder="IMEI / S/N"></div>
@@ -636,6 +557,333 @@ table.sticky thead tr th,
      SCRIPTS
 ═══════════════════════════════════════════════ -->
 <script>
+/* ══════════════════════════════════════════════════════════
+   BASE DE DONNÉES : MARQUES ET MODÈLES PAR TYPE D'APPAREIL
+   ══════════════════════════════════════════════════════════ */
+var BRANDS_DB = {
+  'Smartphone':      ['Apple','Samsung','Xiaomi','Huawei','OnePlus','Sony','Google','Oppo','Realme','Honor','Nokia','Motorola','Alcatel','Wiko','TCL','Autre'],
+  'Tablette':        ['Apple','Samsung','Huawei','Xiaomi','Lenovo','Amazon','Honor','Autre'],
+  'PC portable':     ['Apple','HP','Dell','Lenovo','Asus','Acer','MSI','Microsoft','Autre'],
+  'Ordinateur fixe': ['Apple','HP','Dell','Lenovo','Asus','Acer','Autre'],
+  'Console de jeux': ['Sony','Microsoft','Nintendo','Sega','Autre'],
+  'Montre connectée':['Apple','Samsung','Garmin','Fitbit','Xiaomi','Huawei','Polar','Amazfit','Autre'],
+  'Autre':           ['Autre']
+};
+
+var MODELS_DB = {
+  'Smartphone': {
+    'Apple': [
+      'iPhone 16 Pro Max','iPhone 16 Pro','iPhone 16 Plus','iPhone 16',
+      'iPhone 15 Pro Max','iPhone 15 Pro','iPhone 15 Plus','iPhone 15',
+      'iPhone 14 Pro Max','iPhone 14 Pro','iPhone 14 Plus','iPhone 14',
+      'iPhone 13 Pro Max','iPhone 13 Pro','iPhone 13 Mini','iPhone 13',
+      'iPhone 12 Pro Max','iPhone 12 Pro','iPhone 12 Mini','iPhone 12',
+      'iPhone 11 Pro Max','iPhone 11 Pro','iPhone 11',
+      'iPhone XS Max','iPhone XS','iPhone XR','iPhone X',
+      'iPhone SE 2022','iPhone SE 2020','iPhone SE 2016',
+      'iPhone 8 Plus','iPhone 8','iPhone 7 Plus','iPhone 7','iPhone 6S Plus','iPhone 6S'
+    ],
+    'Samsung': [
+      'Galaxy S25 Ultra','Galaxy S25+','Galaxy S25',
+      'Galaxy S24 Ultra','Galaxy S24+','Galaxy S24','Galaxy S24 FE',
+      'Galaxy S23 Ultra','Galaxy S23+','Galaxy S23','Galaxy S23 FE',
+      'Galaxy S22 Ultra','Galaxy S22+','Galaxy S22',
+      'Galaxy S21 Ultra','Galaxy S21+','Galaxy S21','Galaxy S21 FE',
+      'Galaxy S20 Ultra','Galaxy S20+','Galaxy S20','Galaxy S20 FE',
+      'Galaxy S10+','Galaxy S10','Galaxy S10e','Galaxy S9+','Galaxy S9',
+      'Galaxy A55','Galaxy A54','Galaxy A53','Galaxy A52',
+      'Galaxy A35','Galaxy A34','Galaxy A33','Galaxy A25','Galaxy A24','Galaxy A23',
+      'Galaxy A15','Galaxy A14','Galaxy A13','Galaxy A05s','Galaxy A05',
+      'Galaxy Z Fold 6','Galaxy Z Fold 5','Galaxy Z Fold 4','Galaxy Z Fold 3',
+      'Galaxy Z Flip 6','Galaxy Z Flip 5','Galaxy Z Flip 4','Galaxy Z Flip 3',
+      'Galaxy M55','Galaxy M54','Galaxy M34','Galaxy M14',
+      'Galaxy Note 20 Ultra','Galaxy Note 20','Galaxy Note 10+','Galaxy Note 10'
+    ],
+    'Xiaomi': [
+      'Xiaomi 14 Ultra','Xiaomi 14 Pro','Xiaomi 14',
+      'Xiaomi 13 Ultra','Xiaomi 13 Pro','Xiaomi 13','Xiaomi 12 Pro','Xiaomi 12',
+      'Redmi Note 13 Pro+','Redmi Note 13 Pro','Redmi Note 13',
+      'Redmi Note 12 Pro+','Redmi Note 12 Pro','Redmi Note 12',
+      'Redmi Note 11 Pro','Redmi Note 11',
+      'Redmi 13C','Redmi 12C','Redmi 12',
+      'POCO X6 Pro','POCO X6','POCO X5 Pro','POCO M6 Pro','POCO M5'
+    ],
+    'Huawei': [
+      'Huawei P60 Pro','Huawei P50 Pro','Huawei P40 Pro','Huawei P40',
+      'Huawei P30 Pro','Huawei P30','Huawei P20 Pro','Huawei P20',
+      'Huawei Mate 50 Pro','Huawei Mate 40 Pro','Huawei Mate 30 Pro',
+      'Huawei Nova 11','Huawei Nova 10','Huawei Nova 9'
+    ],
+    'OnePlus': [
+      'OnePlus 12 Pro','OnePlus 12','OnePlus 11','OnePlus 10 Pro','OnePlus 10T',
+      'OnePlus 9 Pro','OnePlus 9',
+      'OnePlus Nord 3','OnePlus Nord CE 3','OnePlus Nord 2T','OnePlus Nord CE 2'
+    ],
+    'Google': [
+      'Pixel 9 Pro XL','Pixel 9 Pro','Pixel 9','Pixel 9a',
+      'Pixel 8 Pro','Pixel 8','Pixel 8a',
+      'Pixel 7 Pro','Pixel 7','Pixel 7a',
+      'Pixel 6 Pro','Pixel 6','Pixel 6a'
+    ],
+    'Oppo': [
+      'Oppo Find X7 Pro','Oppo Find X6 Pro',
+      'Oppo Reno 11 Pro','Oppo Reno 11','Oppo Reno 10 Pro','Oppo Reno 10',
+      'Oppo A98','Oppo A78','Oppo A58'
+    ],
+    'Realme': [
+      'Realme GT 5 Pro','Realme GT 5',
+      'Realme 12 Pro+','Realme 12 Pro','Realme 12',
+      'Realme 11 Pro+','Realme 11 Pro','Realme 11',
+      'Realme C67','Realme C55','Realme C35'
+    ],
+    'Honor': [
+      'Honor Magic 6 Pro','Honor Magic 6','Honor Magic 5 Pro',
+      'Honor 90 Pro','Honor 90','Honor 90 Lite',
+      'Honor X9b','Honor X8b','Honor X8','Honor X7'
+    ],
+    'Sony': [
+      'Sony Xperia 1 VI','Sony Xperia 5 VI',
+      'Sony Xperia 1 V','Sony Xperia 5 V','Sony Xperia 10 VI','Sony Xperia 10 V'
+    ],
+    'Nokia': [
+      'Nokia G60','Nokia G42','Nokia G22','Nokia G21',
+      'Nokia XR21','Nokia XR20','Nokia C32','Nokia C22'
+    ],
+    'Motorola': [
+      'Motorola Edge 50 Pro','Motorola Edge 50','Motorola Edge 40 Pro','Motorola Edge 40',
+      'Motorola Moto G84','Motorola Moto G73','Motorola Moto G54','Motorola Moto G34',
+      'Motorola Moto G24','Motorola Moto G14',
+      'Motorola Razr 40 Ultra','Motorola Razr 40'
+    ],
+    'Alcatel': [
+      'Alcatel 3L (2021)','Alcatel 1SE (2020)','Alcatel 1B (2022)',
+      'Alcatel 1V (2021)','Alcatel 3X','Alcatel 1S',
+      'TCL 20 SE','TCL 20 S'
+    ],
+    'Wiko': [
+      'Wiko T50','Wiko T60','Wiko View5 Plus','Wiko Power U30','Wiko Y62 Plus'
+    ],
+    'TCL': [
+      'TCL 50 XE 5G','TCL 50 SE','TCL 40 SE','TCL 30 SE',
+      'TCL 20 Pro 5G','TCL 20 L+'
+    ],
+    'Autre': []
+  },
+  'Tablette': {
+    'Apple': [
+      'iPad Pro 13" M4 (2024)','iPad Pro 11" M4 (2024)',
+      'iPad Pro 12.9" M2 (2022)','iPad Pro 11" M2 (2022)',
+      'iPad Air 13" M2 (2024)','iPad Air 11" M2 (2024)',
+      'iPad Air M1 (2022)','iPad Air 4 (2020)',
+      'iPad 10e génération (2022)','iPad 9e génération (2021)',
+      'iPad 8e génération (2020)','iPad 7e génération (2019)',
+      'iPad mini 6 (2021)','iPad mini 5 (2019)'
+    ],
+    'Samsung': [
+      'Galaxy Tab S9 Ultra','Galaxy Tab S9+','Galaxy Tab S9','Galaxy Tab S9 FE',
+      'Galaxy Tab S8 Ultra','Galaxy Tab S8+','Galaxy Tab S8',
+      'Galaxy Tab S7+','Galaxy Tab S7','Galaxy Tab S7 FE',
+      'Galaxy Tab A9+','Galaxy Tab A9','Galaxy Tab A8','Galaxy Tab A7 Lite',
+      'Galaxy Tab Active 5','Galaxy Tab Active 4 Pro'
+    ],
+    'Huawei': [
+      'MatePad Pro 12.6','MatePad Pro 11','MatePad 11 (2023)',
+      'MatePad SE 10.4','MatePad T10s','MatePad T10'
+    ],
+    'Xiaomi': [
+      'Xiaomi Pad 6 Pro','Xiaomi Pad 6','Xiaomi Pad 5 Pro','Xiaomi Pad 5',
+      'Redmi Pad SE','Redmi Pad Pro','Redmi Pad'
+    ],
+    'Lenovo': [
+      'Tab P12 Pro','Tab P12','Tab P11 Pro Gen 2','Tab P11 Gen 2',
+      'Tab M10 Plus Gen 3','Tab M10 FHD Plus','Tab M9'
+    ],
+    'Amazon': [
+      'Fire HD 10 (2023)','Fire HD 10 Plus','Fire HD 8 (2022)',
+      'Fire HD 8 Plus','Fire 7 (2022)'
+    ],
+    'Honor': ['Honor Pad X9','Honor Pad X8 Pro','Honor Pad 8'],
+    'Autre': []
+  },
+  'PC portable': {
+    'Apple': [
+      'MacBook Pro 16" M4 Pro','MacBook Pro 14" M4 Pro','MacBook Pro 14" M4',
+      'MacBook Pro 16" M3 Max','MacBook Pro 16" M3 Pro',
+      'MacBook Air 15" M3','MacBook Air 13" M3',
+      'MacBook Air 15" M2','MacBook Air 13" M2',
+      'MacBook Pro 13" M2','MacBook Pro 13" M1'
+    ],
+    'HP': [
+      'HP EliteBook 840 G10','HP EliteBook 840 G9','HP EliteBook 850 G9',
+      'HP ProBook 450 G10','HP ProBook 455 G9',
+      'HP Pavilion 15','HP Pavilion 14','HP Pavilion x360',
+      'HP Envy 13','HP Envy 14','HP Envy x360 13','HP Envy x360 15',
+      'HP Spectre x360 14','HP Spectre x360 13',
+      'HP Omen 16','HP Victus 15','HP Victus 16','HP 15s','HP 14s'
+    ],
+    'Dell': [
+      'Dell XPS 15 (2024)','Dell XPS 14 (2024)','Dell XPS 13 (2024)',
+      'Dell Latitude 5540','Dell Latitude 5440','Dell Latitude 7440',
+      'Dell Inspiron 15 3520','Dell Inspiron 14 5420','Dell Inspiron 16 Plus',
+      'Dell Vostro 3520','Dell Vostro 5620',
+      'Dell Alienware m16','Dell Alienware m18','Dell G15','Dell G16'
+    ],
+    'Lenovo': [
+      'ThinkPad X1 Carbon Gen 12','ThinkPad X1 Carbon Gen 11',
+      'ThinkPad T14s Gen 4','ThinkPad T14 Gen 4','ThinkPad T16 Gen 2',
+      'ThinkPad E14 Gen 5','ThinkPad E15 Gen 4','ThinkPad L14 Gen 4',
+      'IdeaPad 5 Pro','IdeaPad 5','IdeaPad 3','IdeaPad Flex 5',
+      'Legion 5 Pro','Legion 5','Legion Slim 5',
+      'Yoga 7 14"','Yoga 9 14"'
+    ],
+    'Asus': [
+      'ZenBook 14 OLED','ZenBook Pro 14','ZenBook 13 OLED',
+      'VivoBook 15','VivoBook 16','VivoBook S15','VivoBook Pro 15',
+      'ExpertBook B5','ExpertBook B9',
+      'ROG Zephyrus G14','ROG Zephyrus G16',
+      'ROG Strix G16','ROG Strix G15','TUF Gaming F15','TUF Gaming A15'
+    ],
+    'Acer': [
+      'Swift 3','Swift 5','Swift Edge 16',
+      'Aspire 3','Aspire 5','Aspire Vero',
+      'Nitro 5','Nitro 16','Nitro V 15',
+      'Predator Helios 16','Predator Triton 14','TravelMate P2','TravelMate B3'
+    ],
+    'MSI': [
+      'MSI Stealth 14','MSI Stealth 16','MSI Creator 15','MSI Creator Z16',
+      'MSI Prestige 14','MSI Prestige 16',
+      'MSI Raider GE76','MSI Katana 15','MSI Cyborg 15'
+    ],
+    'Microsoft': [
+      'Surface Laptop 6','Surface Laptop 5','Surface Laptop Studio 2',
+      'Surface Pro 10','Surface Pro 9','Surface Book 3',
+      'Surface Laptop Go 3','Surface Laptop Go 2'
+    ],
+    'Autre': []
+  },
+  'Ordinateur fixe': {
+    'Apple': [
+      'Mac mini M4 Pro','Mac mini M4','Mac mini M2 Pro','Mac mini M2',
+      'iMac 24" M4','iMac 24" M3','iMac 24" M1',
+      'Mac Studio M2 Ultra','Mac Studio M2 Max','Mac Pro (2023 M2 Ultra)'
+    ],
+    'HP': [
+      'HP EliteDesk 800 G9','HP ProDesk 400 G9','HP ProDesk 600 G9',
+      'HP Pavilion All-in-One 27','HP Envy All-in-One 34',
+      'HP OMEN 45L','HP Victus 15L'
+    ],
+    'Dell': [
+      'Dell OptiPlex 7010','Dell OptiPlex 5000','Dell OptiPlex 3000',
+      'Dell Inspiron All-in-One 27','Dell Inspiron All-in-One 24',
+      'Dell XPS Tower 8960','Dell Alienware Aurora R16'
+    ],
+    'Lenovo': [
+      'ThinkCentre M70s','ThinkCentre M80s','ThinkCentre neo 50t',
+      'ThinkCentre Tiny M70q','IdeaCentre AiO 3','Legion Tower 5i','Legion Tower 7i'
+    ],
+    'Asus': ['ASUS ExpertCenter D7','ASUS Vivo AiO V241','ASUS Zen AiO Pro Z272'],
+    'Acer': ['Acer Aspire TC','Acer Predator Orion 5000','Acer Veriton M'],
+    'Autre': []
+  },
+  'Console de jeux': {
+    'Sony': [
+      'PlayStation 5 (Slim)','PlayStation 5','PlayStation 5 Digital',
+      'PlayStation 4 Pro','PlayStation 4 Slim','PlayStation 4',
+      'PlayStation 3','PSP','PS Vita'
+    ],
+    'Microsoft': [
+      'Xbox Series X','Xbox Series S',
+      'Xbox One X','Xbox One S','Xbox One','Xbox 360'
+    ],
+    'Nintendo': [
+      'Nintendo Switch OLED','Nintendo Switch','Nintendo Switch Lite',
+      'Nintendo 3DS XL','Nintendo 3DS','Nintendo 2DS',
+      'Nintendo Wii U','Nintendo Wii'
+    ],
+    'Sega': ['Sega Megadrive Mini','Sega Saturn','Sega Dreamcast'],
+    'Autre': []
+  },
+  'Montre connectée': {
+    'Apple': [
+      'Apple Watch Series 10','Apple Watch Series 9','Apple Watch Series 8',
+      'Apple Watch Ultra 2','Apple Watch Ultra',
+      'Apple Watch SE 2','Apple Watch SE'
+    ],
+    'Samsung': [
+      'Galaxy Watch 7 Ultra','Galaxy Watch 7','Galaxy Watch 6 Classic','Galaxy Watch 6',
+      'Galaxy Watch 5 Pro','Galaxy Watch 5','Galaxy Watch 4 Classic','Galaxy Watch 4',
+      'Galaxy Watch FE'
+    ],
+    'Garmin': [
+      'Garmin Fenix 7X Pro','Garmin Fenix 7 Pro','Garmin Fenix 7S',
+      'Garmin Forerunner 965','Garmin Forerunner 265',
+      'Garmin Vivoactive 5','Garmin Venu 3','Garmin Instinct 2X'
+    ],
+    'Fitbit': [
+      'Fitbit Sense 2','Fitbit Versa 4','Fitbit Charge 6','Fitbit Inspire 3','Fitbit Luxe'
+    ],
+    'Xiaomi': [
+      'Xiaomi Watch S3','Xiaomi Watch S2','Xiaomi Watch S1 Pro',
+      'Redmi Watch 4','Redmi Watch 3 Active'
+    ],
+    'Huawei': [
+      'Huawei Watch 4 Pro','Huawei Watch 4','Huawei Watch GT 4','Huawei Watch GT 3 Pro'
+    ],
+    'Polar': ['Polar Vantage V3','Polar Grit X2 Pro','Polar Pacer Pro'],
+    'Amazfit': ['Amazfit GTR 4','Amazfit GTS 4','Amazfit Balance','Amazfit Cheetah'],
+    'Autre': []
+  },
+  'Autre': {'Autre': []}
+};
+
+/* ── Mise à jour dynamique marques selon type d'appareil ── */
+function updateBrandList() {
+  var device   = document.getElementById('n_device').value;
+  var brandSel = document.getElementById('n_brand');
+  var curBrand = brandSel.value;
+  var brands   = (device && BRANDS_DB[device]) ? BRANDS_DB[device] : [];
+  if (!brands.length) brands = ['Autre'];
+
+  brandSel.innerHTML = '<option value="">— Sélectionner —</option>' +
+    brands.map(function(b){
+      return '<option value="' + b + '"' + (b === curBrand ? ' selected' : '') + '>' + b + '</option>';
+    }).join('');
+
+  /* Si la marque actuelle n'est plus dans la liste, reset */
+  if (curBrand && brands.indexOf(curBrand) < 0) {
+    brandSel.value = '';
+    document.getElementById('n_model').value = '';
+  }
+  updateModelsList();
+}
+
+/* ── Mise à jour dynamique modèles selon type + marque ── */
+function updateModelsList() {
+  var device   = document.getElementById('n_device').value;
+  var brand    = document.getElementById('n_brand').value;
+  var datalist = document.getElementById('modelsList');
+  if (!datalist) return;
+
+  var models = [];
+  var devMap  = MODELS_DB[device];
+  if (devMap) {
+    if (brand && devMap[brand]) {
+      models = devMap[brand];
+    } else if (brand === '' && device) {
+      /* Pas de marque choisie → afficher tous les modèles du type */
+      Object.keys(devMap).forEach(function(b){
+        if (b !== 'Autre') models = models.concat(devMap[b]);
+      });
+    }
+  }
+  datalist.innerHTML = models.map(function(m){
+    return '<option value="' + m + '">' + m + '</option>';
+  }).join('');
+}
+
+/* Initialiser les listes au chargement */
+document.addEventListener('DOMContentLoaded', function(){ updateBrandList(); });
+
 var currentId = null;
 var selRow    = null;
 var _currentRepairData = null;
@@ -767,7 +1015,9 @@ async function showRepair(id) {
   document.getElementById('n_customer').value = r.customer_name || '';
   document.getElementById('n_phone').value    = r.phone || '';
   document.getElementById('n_device').value   = r.device_type || '';
+  updateBrandList(); /* met à jour la liste des marques selon le type */
   document.getElementById('n_brand').value    = r.brand || '';
+  updateModelsList(); /* met à jour le datalist selon le type + la marque */
   document.getElementById('n_model').value    = r.model || '';
   document.getElementById('n_serial').value   = r.serial_number || '';
   document.getElementById('n_comment').value  = r.comment || '';
@@ -919,6 +1169,7 @@ function resetForm() {
   document.getElementById('n_entry_date').value       = new Date().toISOString().slice(0,10);
   document.getElementById('n_rep_date').value        = new Date().toISOString().slice(0,10);
   document.getElementById('n_pay_mode').value        = 'cash';
+  updateBrandList(); /* reset brand + model lists */
   var paySection = document.querySelector('.pay-frame');
   if (paySection) paySection.style.display = 'block';
   onRepPaymentChange();
