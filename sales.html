@@ -105,14 +105,19 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 .fi{width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;margin-bottom:8px;font-family:Arial;}
 .fs{width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;font-family:Arial;}
 
-.mixed-box{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;display:none;}
-.mixed-box.show{display:block;}
-.mixed-title{font-size:12px;font-weight:bold;color:#0f172a;margin-bottom:8px;}
-.mixed-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
-.mf label{font-size:10px;color:#64748b;font-weight:bold;display:block;margin-bottom:3px;}
-.mf input{width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:Arial;}
-.mf.credit input{border-color:#f59e0b;background:#fffbeb;color:#92400e;font-weight:bold;}
-.mixed-recap{margin-top:8px;font-size:11px;color:#64748b;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+.pay-frame{background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px;margin-bottom:8px;}
+.pay-frame-title{font-size:13px;font-weight:bold;color:#166534;margin-bottom:10px;}
+.pay-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.pay-row:last-child{margin-bottom:0;}
+.pay-row label{font-size:12px;font-weight:bold;color:#374151;min-width:110px;flex-shrink:0;}
+.pay-row input,.pay-row select{flex:1;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:Arial;background:#fff;color:#0f172a;margin-bottom:0;}
+.pay-row.credit input{border-color:#f59e0b;background:#fffbeb;color:#92400e;font-weight:bold;}
+.mixed-recap{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+.mixed-recap span{font-size:15px;color:#374151;font-weight:bold;padding:6px 10px;background:#fff;border-radius:6px;border:1.5px solid #e2e8f0;}
+.mixed-recap span b{font-size:18px;margin-left:6px;}
+#mx_total{color:#1e40af;}
+#mx_paid {color:#16a34a;}
+#mx_rest {color:#f59e0b;}
 .mixed-err{font-size:11px;color:#ef4444;margin-top:4px;display:none;}
 
 .comment-box{background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:10px;margin-bottom:8px;}
@@ -242,22 +247,29 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
         <div class="fl">Client (optionnel)</div>
         <input class="fi" id="customer" placeholder="Nom du client">
 
-        <div class="fl">Mode de paiement</div>
-        <select class="fs" id="payment" onchange="onPaymentChange()">
-          <option value="card">💳 Carte bancaire</option>
-          <option value="cash">💵 Espèces</option>
-          <option value="mixed">🔀 Mixte (CB + Espèces)</option>
-          <option value="credit">📋 Avec crédit (partiel ou total)</option>
-        </select>
-
-        <div class="mixed-box" id="mixedBox">
-          <div class="mixed-title">💰 Détail du règlement</div>
-          <div class="mixed-grid">
-            <div class="mf"><label>💳 CB (€)</label><input type="number" id="amt_cb" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()"></div>
-            <div class="mf"><label>💵 Espèces (€)</label><input type="number" id="amt_cash" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()"></div>
-            <div class="mf credit"><label>⏳ Crédit (reste)</label><input type="number" id="amt_credit" placeholder="0.00" readonly></div>
+        <div class="pay-frame">
+          <div class="pay-frame-title">💰 Règlement</div>
+          <div class="pay-row">
+            <label>Mode</label>
+            <select id="payment" onchange="onPaymentChange()">
+              <option value="card">💳 Carte bancaire</option>
+              <option value="cash">💵 Espèces</option>
+              <option value="mixed">🔀 Mixte (CB, Espèces, Crédit)</option>
+            </select>
           </div>
-          <div class="mixed-recap">
+          <div class="pay-row" id="mf_cb">
+            <label>💳 CB (€)</label>
+            <input type="number" id="amt_cb" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()">
+          </div>
+          <div class="pay-row" id="mf_cash">
+            <label>💵 Espèces (€)</label>
+            <input type="number" id="amt_cash" placeholder="0.00" min="0" step="0.01" oninput="calcMixed()">
+          </div>
+          <div class="pay-row credit" id="mf_credit">
+            <label>⏳ Crédit</label>
+            <input type="number" id="amt_credit" placeholder="0.00" readonly>
+          </div>
+          <div class="mixed-recap" id="mixedRecap" style="display:none;">
             <span>Total : <b id="mx_total">0.00 €</b></span>
             <span>Encaissé : <b id="mx_paid" style="color:#22c55e">0.00 €</b></span>
             <span>Crédit : <b id="mx_rest" style="color:#f59e0b">0.00 €</b></span>
@@ -606,12 +618,31 @@ function renderCart(){
   }).join('');
   document.getElementById('totalBar').textContent='TOTAL : '+total.toFixed(2)+' €';
   document.getElementById('payBtn').disabled=false;
-  calcMixed();
+  onPaymentChange();
 }
 
 function onPaymentChange(){
   const mode=document.getElementById('payment').value;
-  document.getElementById('mixedBox').classList.toggle('show',mode==='mixed'||mode==='credit');
+  const total=cartTotal();
+  const show=function(id,vis){var el=document.getElementById(id);if(el)el.style.display=vis?'flex':'none';};
+  // Cellules visibles selon mode
+  show('mf_cb',     mode==='card'  ||mode==='mixed');
+  show('mf_cash',   mode==='cash'  ||mode==='mixed');
+  show('mf_credit', mode==='mixed');
+  show('mixedRecap',mode==='mixed');
+  // Pré-remplir
+  const cbEl=document.getElementById('amt_cb');
+  const cashEl=document.getElementById('amt_cash');
+  if(mode==='card'){
+    if(cbEl)  cbEl.value=total>0?total.toFixed(2):'';
+    if(cashEl)cashEl.value='';
+  } else if(mode==='cash'){
+    if(cbEl)  cbEl.value='';
+    if(cashEl)cashEl.value=total>0?total.toFixed(2):'';
+  } else {
+    if(cbEl)  cbEl.value='';
+    if(cashEl)cashEl.value='';
+  }
   calcMixed();
 }
 
@@ -642,15 +673,10 @@ async function checkout(){
   const comment=document.getElementById('comment').value;
   const saleDateVal = document.getElementById('saleDate')?.value || '';
   const total=cartTotal();
-  let cb=0,cash=0,credit=0;
-  if(payment==='card'){cb=total;}
-  else if(payment==='cash'){cash=total;}
-  else if(payment==='mixed'||payment==='credit'){
-    cb=Number(document.getElementById('amt_cb')?.value||0);
-    cash=Number(document.getElementById('amt_cash')?.value||0);
-    if(cb+cash>total+0.01){alert('⚠️ CB + Espèces dépasse le total !');return;}
-    credit=Math.max(0,total-cb-cash);
-  }
+  const cb=Number(document.getElementById('amt_cb')?.value||0);
+  const cash=Number(document.getElementById('amt_cash')?.value||0);
+  if(cb+cash>total+0.01){alert('⚠️ CB + Espèces dépasse le total !');return;}
+  const credit=Math.max(0,total-cb-cash);
   const res=await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({cart,payment,customer,comment,garantie:document.getElementById('garantie')?.value?Number(document.getElementById('garantie').value):null,amount_cb:cb,amount_cash:cash,amount_credit:credit,sale_date:saleDateVal||null})});
   const d=await res.json();
@@ -664,7 +690,6 @@ async function checkout(){
   document.getElementById('comment').value='';
   if(document.getElementById('garantie'))document.getElementById('garantie').value='';
   document.getElementById('payment').value='card';
-  document.getElementById('mixedBox').classList.remove('show');
   if(document.getElementById('amt_cb'))  document.getElementById('amt_cb').value='';
   if(document.getElementById('amt_cash'))document.getElementById('amt_cash').value='';
   renderCart();init();
@@ -919,13 +944,29 @@ async function editOrder(id) {
   /* Mode paiement */
   var pm = o.payment_method || 'card';
   document.getElementById('payment').value = pm;
-  onPaymentChange();
 
-  if (pm === 'mixed' || pm === 'credit') {
-    if (document.getElementById('amt_cb'))   document.getElementById('amt_cb').value   = Number(o.amount_cb||0).toFixed(2);
-    if (document.getElementById('amt_cash')) document.getElementById('amt_cash').value = Number(o.amount_cash||0).toFixed(2);
-    calcMixed();
-  }
+  /* renderCart() appelle onPaymentChange() en interne → il écrase les montants.
+     On doit donc rendre le panier D'ABORD, puis réinjecter les montants sauvegardés. */
+  renderCart();
+
+  /* ── Réappliquer les montants sauvegardés après renderCart ── */
+  var savedCb   = Number(o.amount_cb||0);
+  var savedCash = Number(o.amount_cash||0);
+  var savedCred = Number(o.amount_credit||0);
+
+  var showEl = function(elId, vis) {
+    var el = document.getElementById(elId);
+    if (el) el.style.display = vis ? 'flex' : 'none';
+  };
+  showEl('mf_cb',      pm === 'card'  || pm === 'mixed');
+  showEl('mf_cash',    pm === 'cash'  || pm === 'mixed');
+  showEl('mf_credit',  pm === 'mixed');
+  showEl('mixedRecap', pm === 'mixed');
+
+  if (document.getElementById('amt_cb'))     document.getElementById('amt_cb').value     = savedCb   > 0 ? savedCb.toFixed(2)   : '';
+  if (document.getElementById('amt_cash'))   document.getElementById('amt_cash').value   = savedCash > 0 ? savedCash.toFixed(2) : '';
+  if (document.getElementById('amt_credit')) document.getElementById('amt_credit').value = savedCred.toFixed(2);
+  calcMixed();
 
   /* Changer le bouton en mode édition */
   var payBtn = document.getElementById('payBtn');
@@ -943,8 +984,6 @@ async function editOrder(id) {
     '<button onclick="cancelEditMode()" style="padding:4px 10px;background:#92400e;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">✕ Annuler</button>';
   var cartEl = document.querySelector('#tcCaisse h2');
   if (cartEl) cartEl.parentNode.insertBefore(banner, cartEl);
-
-  renderCart();
 }
 
 function cancelEditMode() {

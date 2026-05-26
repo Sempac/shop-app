@@ -320,6 +320,29 @@ var InputTools = (function() {
   }
 
   /* ═══════════════════════════
+     WRAPPER FLEX (champ + boutons sur la même ligne)
+  ═══════════════════════════ */
+  function wrapInFlexRow(field) {
+    /* Déjà wrappé ? retourner le wrapper existant */
+    if (field.parentNode && field.parentNode.dataset && field.parentNode.dataset.itRow) {
+      return field.parentNode;
+    }
+    /* Récupérer la marge-basse avant déplacement */
+    var mb = window.getComputedStyle(field).marginBottom || '8px';
+    var wrapper = document.createElement('div');
+    wrapper.dataset.itRow = '1';
+    wrapper.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:' + mb + ';';
+    field.parentNode.insertBefore(wrapper, field);
+    wrapper.appendChild(field);
+    /* Le champ occupe tout l'espace restant */
+    field.style.flex      = '1';
+    field.style.minWidth  = '0';
+    field.style.width     = 'auto';
+    field.style.marginBottom = '0';
+    return wrapper;
+  }
+
+  /* ═══════════════════════════
      API PUBLIQUE
   ═══════════════════════════ */
   function addVoice(fieldId, callback) {
@@ -327,7 +350,8 @@ var InputTools = (function() {
     var field = document.getElementById(fieldId);
     if (!field) return;
     var btn = makeBtn('🎤', 'Saisie vocale', function(){ startVoice(fieldId, btn, callback); });
-    field.insertAdjacentElement('afterend', btn);
+    var wrapper = wrapInFlexRow(field);
+    wrapper.appendChild(btn);
   }
 
   function addScan(fieldId, callback) {
@@ -336,7 +360,8 @@ var InputTools = (function() {
     if (!field) return;
     enableBarcode(fieldId, callback);
     var btn = makeBtn('📷', 'Scanner un code barre', function(){ startScan(fieldId, btn, callback); });
-    field.insertAdjacentElement('afterend', btn);
+    var wrapper = wrapInFlexRow(field);
+    wrapper.appendChild(btn);
   }
 
   function addBoth(fieldId, callback) {
@@ -346,8 +371,9 @@ var InputTools = (function() {
     enableBarcode(fieldId, callback);
     var btnScan  = makeBtn('📷', 'Scanner un code barre', function(){ startScan(fieldId, btnScan, callback); });
     var btnVoice = makeBtn('🎤', 'Saisie vocale', function(){ startVoice(fieldId, btnVoice, callback); });
-    field.insertAdjacentElement('afterend', btnScan);
-    btnScan.insertAdjacentElement('afterend', btnVoice);
+    var wrapper = wrapInFlexRow(field);
+    wrapper.appendChild(btnScan);
+    wrapper.appendChild(btnVoice);
   }
 
   return {

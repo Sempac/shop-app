@@ -150,21 +150,22 @@ app.get('/api/daily-report',async(req,res)=>{
         payment_method,COALESCE(final_price,estimated_price,0) AS total,
         COALESCE(amount_cb,CASE WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END) AS amount_cb,
         COALESCE(amount_cash,CASE WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END) AS amount_cash,
-        COALESCE(amount_credit,0) AS amount_credit
-      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
+        COALESCE(amount_credit,0) AS amount_credit,
+        COALESCE(final_price,estimated_price,0) - COALESCE(amount_credit,0) AS encaisse
+      FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
     const totV=await pool.query(`
       SELECT COUNT(*) AS nb_ventes,
-        COALESCE(SUM(total),0) AS grand_total,
+        COALESCE(SUM(total - COALESCE(amount_credit,0)),0) AS grand_total,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0) WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0) WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0)+COALESCE(amount_cash,0) WHEN payment_method IN ('card','cash','mixed') THEN total ELSE 0 END),0) AS total_encaisse,
         COALESCE(SUM(COALESCE(amount_credit,0)),0) AS total_credit
       FROM orders WHERE DATE(created_at)=$1 AND (status IS NULL OR status!='cancelled') AND payment_method!='credit'`,[date]);
     const totR=await pool.query(`
-      SELECT COUNT(*) AS nb_reps,COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS grand_total,
+      SELECT COUNT(*) AS nb_reps,COALESCE(SUM(COALESCE(final_price,estimated_price,0) - COALESCE(amount_credit,0)),0) AS grand_total,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 THEN amount_cb WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_cb,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
-      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
+      FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
     const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
     res.json({date,ventes:ventes.rows,reparations:reps.rows,totaux_ventes:totV.rows[0],totaux_reparations:totR.rows[0],total_depenses:parseFloat(totDep.rows[0].total_depenses)});
   }catch(e){res.status(500).json({error:e.message});}
@@ -176,41 +177,33 @@ app.get('/api/daily-report',async(req,res)=>{
 app.get('/api/rapport-comptable',async(req,res)=>{
   try{const date=req.query.date||new Date().toISOString().split('T')[0];
     const ventes=await pool.query(`
-      SELECT p.name AS nom, COALESCE(p.supplier_name,'—') AS fournisseur,
-        oi.quantity AS qty, oi.price AS prix_unit,
-        (oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity) AS total_ligne,
+      SELECT STRING_AGG(DISTINCT p.name, ', ') AS nom, '—' AS fournisseur,
+        1 AS qty,
+        o.total - COALESCE(o.amount_credit,0) AS total_ligne,
+        COALESCE(o.amount_credit,0) AS amount_credit,
         o.payment_method, o.id AS order_id
       FROM orders o JOIN order_items oi ON oi.order_id=o.id JOIN products p ON p.id=oi.product_id
       WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
-      ORDER BY o.id DESC,oi.id ASC`,[date]);
+      GROUP BY o.id ORDER BY o.id DESC`,[date]);
     const reps=await pool.query(`
       SELECT TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')||' '||COALESCE(device_type,'')) AS nom,
-        1 AS qty,COALESCE(final_price,estimated_price,0) AS total_ligne,payment_method
-      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
-    const totVentes=await pool.query(`
-      SELECT COALESCE(SUM((oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity)),0) AS total_ventes
-      FROM orders o JOIN order_items oi ON oi.order_id=o.id
-      WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'`,[date]);
-    const totVPay=await pool.query(`
+        1 AS qty,
+        COALESCE(final_price,estimated_price,0) - COALESCE(amount_credit,0) AS total_ligne,
+        COALESCE(amount_credit,0) AS amount_credit,
+        payment_method
+      FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
+    const totV=await pool.query(`
       SELECT
-        COALESCE(SUM(CASE
-          WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0)
-          WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
-        COALESCE(SUM(CASE
-          WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0)
-          WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp
+        COALESCE(SUM(total - COALESCE(amount_credit,0)),0) AS total_ventes,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0) WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0) WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp
       FROM orders
       WHERE DATE(created_at)=$1 AND (status IS NULL OR status!='cancelled') AND payment_method!='credit'`,[date]);
-    const totV={rows:[{
-      total_ventes: totVentes.rows[0].total_ventes,
-      total_cb:     totVPay.rows[0].total_cb,
-      total_esp:    totVPay.rows[0].total_esp
-    }]};
     const totR=await pool.query(`
-      SELECT COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS total_reps,
+      SELECT COALESCE(SUM(COALESCE(final_price,estimated_price,0) - COALESCE(amount_credit,0)),0) AS total_reps,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 THEN amount_cb WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_cb,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
-      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
+      FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
     const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
     res.json({date,ventes:ventes.rows,reps:reps.rows,totaux:{
       total_ventes:parseFloat(totV.rows[0].total_ventes),total_reps:parseFloat(totR.rows[0].total_reps),
@@ -229,38 +222,39 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
 
     /* ── mêmes requêtes que /api/rapport-comptable ── */
     const ventes=await pool.query(`
-      SELECT p.name AS nom, COALESCE(p.supplier_name,'—') AS fournisseur,
-        oi.quantity AS qty, oi.price AS prix_unit,
-        (oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity) AS total_ligne,
+      SELECT STRING_AGG(DISTINCT p.name, ', ') AS nom, '—' AS fournisseur,
+        1 AS qty,
+        o.total - COALESCE(o.amount_credit,0) AS total_ligne,
+        COALESCE(o.amount_credit,0) AS amount_credit,
         o.payment_method
       FROM orders o JOIN order_items oi ON oi.order_id=o.id JOIN products p ON p.id=oi.product_id
       WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
-      ORDER BY o.id DESC,oi.id ASC`,[date]);
+      GROUP BY o.id ORDER BY o.id DESC`,[date]);
     const reps=await pool.query(`
       SELECT TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')||' '||COALESCE(device_type,'')) AS nom,
-        1 AS qty,COALESCE(final_price,estimated_price,0) AS total_ligne,payment_method
-      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
-    const totVentes=await pool.query(`
-      SELECT COALESCE(SUM((oi.price*oi.quantity)-(COALESCE(oi.discount,0)*oi.quantity)),0) AS total_ventes
-      FROM orders o JOIN order_items oi ON oi.order_id=o.id
-      WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'`,[date]);
-    const totVPay=await pool.query(`
+        1 AS qty,
+        COALESCE(final_price,estimated_price,0) - COALESCE(amount_credit,0) AS total_ligne,
+        COALESCE(amount_credit,0) AS amount_credit,
+        payment_method
+      FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE') ORDER BY id DESC`,[date]);
+    const totV2=await pool.query(`
       SELECT
+        COALESCE(SUM(total - COALESCE(amount_credit,0)),0) AS total_ventes,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0) WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0) WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp
       FROM orders WHERE DATE(created_at)=$1 AND (status IS NULL OR status!='cancelled') AND payment_method!='credit'`,[date]);
     const totR=await pool.query(`
-      SELECT COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS total_reps,
+      SELECT COALESCE(SUM(COALESCE(final_price,estimated_price,0) - COALESCE(amount_credit,0)),0) AS total_reps,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 THEN amount_cb WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_cb,
         COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
-      FROM repairs WHERE DATE(created_at)=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
+      FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
     const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
 
     const t={
-      total_ventes:parseFloat(totVentes.rows[0].total_ventes),
+      total_ventes:parseFloat(totV2.rows[0].total_ventes),
       total_reps:  parseFloat(totR.rows[0].total_reps),
-      total_cb:    parseFloat(totVPay.rows[0].total_cb)+parseFloat(totR.rows[0].total_cb),
-      total_esp:   parseFloat(totVPay.rows[0].total_esp)+parseFloat(totR.rows[0].total_esp),
+      total_cb:    parseFloat(totV2.rows[0].total_cb)+parseFloat(totR.rows[0].total_cb),
+      total_esp:   parseFloat(totV2.rows[0].total_esp)+parseFloat(totR.rows[0].total_esp),
       total_dep:   parseFloat(totDep.rows[0].total_depenses)
     };
     const totalCA   = t.total_ventes + t.total_reps;
@@ -447,14 +441,25 @@ app.post('/api/repairs',async(req,res)=>{
     const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
     const numRes=await pool.query("SELECT next_numero('REP',$1,'repairs','numero_rep') AS num",[dateStr]);
     const numero=numRes.rows[0].num;
+    const status=req.body.status||'EN_ATTENTE';
+    const cb=Number(req.body.amount_cb||0),cash=Number(req.body.amount_cash||0),credit=Number(req.body.amount_credit||0);
+    let pm=req.body.payment_method||'cash';
+    if(cb>0&&cash>0)pm='mixed';else if(cb>0)pm='card';else if(cash>0)pm='cash';else if(credit>0)pm='credit';
+    const fp=Number(req.body.final_price||req.body.estimated_price||0);
+    const deliveredAt=(status==='TERMINE'||status==='LIVRE')?'NOW()':null;
     const r=await pool.query(
       `INSERT INTO repairs(numero_rep,customer_name,phone,device_type,brand,model,
-        serial_number,issue,estimated_price,comment,garantie,status,created_at)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'EN_ATTENTE',NOW()) RETURNING *`,
+        serial_number,issue,estimated_price,final_price,comment,garantie,
+        status,payment_method,amount_cb,amount_cash,amount_credit,
+        created_at,delivered_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NOW(),
+        CASE WHEN $18 THEN NOW() ELSE NULL END) RETURNING *`,
       [numero,req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',
        req.body.brand||'',req.body.model||'',req.body.serial_number||'',
-       req.body.issue||'',Number(req.body.estimated_price||0),
-       req.body.comment||'',req.body.garantie||null]);
+       req.body.issue||'',fp,fp,
+       req.body.comment||'',req.body.garantie||null,
+       status,pm,cb,cash,credit,
+       !!(status==='LIVRE')]);
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -463,6 +468,7 @@ app.put('/api/repairs/:id',async(req,res)=>{
   try{
     const status=String(req.body.status||'EN_ATTENTE');
     const repair_date=req.body.repair_date||null;
+    const delivery_date=req.body.delivery_date||null;
     const fp=Number(req.body.final_price||0);
     const ep=Number(req.body.estimated_price||0);
     const cb=Number(req.body.amount_cb||0),cash=Number(req.body.amount_cash||0),credit=Number(req.body.amount_credit||0);
@@ -481,9 +487,9 @@ app.put('/api/repairs/:id',async(req,res)=>{
       comment=$11,payment_method=$12,amount_cb=$13,amount_cash=$14,amount_credit=$15,
       updated_at=NOW(),
       created_at=COALESCE(CASE WHEN $17::text IS NOT NULL THEN $17::timestamp ELSE NULL END,created_at),
-      delivered_at=CASE WHEN CAST($1 AS varchar)='TERMINE' THEN NOW() ELSE delivered_at END
+      delivered_at=CASE WHEN $18::text IS NOT NULL AND $18::text!='' THEN $18::timestamp WHEN CAST($1 AS varchar)='LIVRE' THEN COALESCE(delivered_at,NOW()) ELSE delivered_at END
       WHERE id=$16 RETURNING *`,
-      [status,fp,ep,customer_name||'',phone||'',device_type||'',brand||'',model||'',serial_number||'',issue||'',comment||'',pm,cb,cash,credit,req.params.id,repair_date||null]);
+      [status,fp,ep,customer_name||'',phone||'',device_type||'',brand||'',model||'',serial_number||'',issue||'',comment||'',pm,cb,cash,credit,req.params.id,repair_date||null,delivery_date||null]);
     if(credit>0){const rep=r.rows[0];const ex=await client.query(`SELECT id FROM customer_credits WHERE repair_id=$1`,[req.params.id]);
       if(ex.rows.length===0){await client.query(`INSERT INTO customer_credits(customer_name,phone,repair_id,total_amount,amount_paid,amount_due,status) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS')`,
         [rep.customer_name||'Anonyme',rep.phone||'',req.params.id,fp,(cb+cash).toFixed(2),credit.toFixed(2)]);}

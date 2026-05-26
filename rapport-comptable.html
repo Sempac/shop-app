@@ -128,7 +128,7 @@ function renderRapport(date,data){
   const rowsVentes=data.ventes.length===0
     ?`<tr><td colspan="5" style="text-align:center;color:#999;padding:12px">Aucune vente encaissée</td></tr>`
     :data.ventes.map(l=>`<tr>
-        <td>${l.nom}</td>
+        <td>${l.nom}${l.amount_credit>0?'<br><span style="font-size:10px;color:#f59e0b">⏳ Crédit : '+fmt(l.amount_credit)+'</span>':''}</td>
         <td>${l.fournisseur}</td>
         <td class="center">${l.qty}</td>
         <td class="center">Vente</td>
@@ -139,8 +139,8 @@ function renderRapport(date,data){
   const rowsReps=data.reps.length===0
     ?`<tr><td colspan="5" style="text-align:center;color:#999;padding:12px">Aucune réparation ce jour</td></tr>`
     :data.reps.map(l=>`<tr>
-        <td>${l.nom||'Réparation'}</td>
-        <td>${l.fournisseur}</td>
+        <td>${l.nom||'Réparation'}${l.amount_credit>0?'<br><span style="font-size:10px;color:#f59e0b">⏳ Crédit : '+fmt(l.amount_credit)+'</span>':''}</td>
+        <td>${l.fournisseur||'SAV'}</td>
         <td class="center">${l.qty}</td>
         <td class="center">Réparation</td>
         <td class="right">${fmt(l.total_ligne)}</td>

@@ -317,7 +317,8 @@ function renderReport(date, data) {
       fournisseur: v.fournisseur || '—',
       type:        'Vente',
       method:      v.payment_method,
-      total:       parseFloat(v.total || 0),
+      total:       parseFloat(v.encaisse || 0),
+      credit:      parseFloat(v.amount_credit || 0),
     })),
     ...(data.reparations || []).map(r => ({
       id:          'R-' + r.id,
@@ -325,7 +326,8 @@ function renderReport(date, data) {
       fournisseur: 'SAV',
       type:        'Réparation',
       method:      r.payment_method,
-      total:       parseFloat(r.total || 0),
+      total:       parseFloat(r.encaisse || 0),
+      credit:      parseFloat(r.amount_credit || 0),
     })),
   ];
 
@@ -350,7 +352,7 @@ function renderReport(date, data) {
           <span class="badge ${l.type === 'Vente' ? 'badge-vente' : 'badge-rep'}">${l.type}</span>
         </td>
         <td class="center">${paiementHtml(l.method)}</td>
-        <td class="right">${fmtEur(l.total)}</td>
+        <td class="right">${fmtEur(l.total)}${l.credit > 0 ? '<br><span style="font-size:10px;color:#f59e0b;font-weight:normal">⏳ Crédit : '+fmtEur(l.credit)+'</span>' : ''}</td>
       </tr>`).join('');
   }
 
