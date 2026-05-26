@@ -675,7 +675,8 @@ async function openForEdit(id) {
     if (d.error) throw new Error(d.error);
     if (btns) {
       btns.innerHTML =
-        '<div style="font-size:11px;color:#fbbf24;margin-bottom:6px;">📄 Fichier ouvert — modifiez, puis <b>Ctrl+P</b> pour imprimer :</div>' +
+        '<div style="font-size:11px;color:#fbbf24;margin-bottom:6px;">📄 Ouvrez ce fichier sur le PC, modifiez, puis <b>Ctrl+P</b> :</div>' +
+        '<div style="font-size:10px;color:#94a3b8;background:#0f172a;border-radius:4px;padding:4px 6px;margin-bottom:6px;word-break:break-all;">📁 ' + (d.filepath||'') + '</div>' +
         '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ Imprimé !</button>' +
         '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
     }
