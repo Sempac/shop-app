@@ -1,3 +1,114 @@
+/* ─── Offline Guard — détecte si le serveur est KO ─── */
+(function(){
+  var INTERVAL  = 15000; /* vérif toutes les 15 s */
+  var TIMEOUT   = 6000;  /* abandon ping après 6 s */
+  var _shown    = false;
+  var _timer    = null;
+
+  function buildOverlay(){
+    var d = document.createElement('div');
+    d.id = 'og-overlay';
+    d.style.cssText = [
+      'position:fixed;inset:0;z-index:999999;',
+      'background:rgba(15,23,42,0.97);',
+      'display:flex;align-items:center;justify-content:center;',
+      'font-family:Arial,sans-serif;'
+    ].join('');
+    d.innerHTML = [
+      '<div style="background:#fff;border-radius:18px;padding:36px 32px;',
+        'max-width:520px;width:92%;text-align:center;',
+        'box-shadow:0 24px 64px rgba(0,0,0,0.6);">',
+
+        /* Icône + titre */
+        '<div style="font-size:64px;margin-bottom:12px;">🔴</div>',
+        '<h1 style="font-size:21px;color:#0f172a;margin:0 0 8px;line-height:1.3;">',
+          'L\'application des ventes<br>ne répond plus',
+        '</h1>',
+        '<p style="color:#64748b;font-size:13px;margin:0 0 22px;">',
+          'Ne vous inquiétez pas — toutes vos données sont bien sauvegardées.<br>',
+          'Le système a besoin d\'être relancé.',
+        '</p>',
+
+        /* Instructions */
+        '<div style="background:#fef9c3;border:1.5px solid #fbbf24;border-radius:10px;',
+          'padding:16px 18px;text-align:left;margin-bottom:22px;">',
+          '<div style="font-weight:bold;color:#78350f;font-size:13px;margin-bottom:10px;">',
+            '🔄 Comment relancer l\'application des ventes ?',
+          '</div>',
+          '<div style="font-size:13px;color:#78350f;line-height:2;">',
+            '<b>Option 1 — La plus simple :</b><br>',
+            '➡️ Redémarrez le PC.<br>',
+            "L'application des ventes se relancera <b>automatiquement</b>.",
+          '</div>',
+          '<hr style="border:none;border-top:1px solid #fcd34d;margin:12px 0;">',
+          '<div style="font-size:12px;color:#92400e;line-height:1.8;">',
+            '<b>Option 2 — Sans redémarrer :</b><br>',
+            '1. Appuyez sur <b>⊞ Windows</b> → tapez <b>Planificateur de tâches</b><br>',
+            '2. Dans la liste, trouvez <b>ShopApp</b><br>',
+            '3. Clic droit → <b>Exécuter</b><br>',
+            '4. Attendez 10 secondes puis cliquez sur <b>Réessayer</b> ci-dessous',
+          '</div>',
+        '</div>',
+
+        /* Bouton + statut */
+        '<button onclick="window._ogRetry()" style="',
+          'width:100%;padding:14px;background:#22c55e;color:white;',
+          'border:none;border-radius:10px;font-size:15px;font-weight:bold;',
+          'cursor:pointer;font-family:Arial;margin-bottom:10px;">',
+          '🔄 Réessayer maintenant',
+        '</button>',
+        '<div id="og-status" style="font-size:11px;color:#94a3b8;">',
+          'Vérification automatique toutes les 15 secondes…',
+        '</div>',
+      '</div>'
+    ].join('');
+    return d;
+  }
+
+  function show(){
+    if (_shown) return;
+    _shown = true;
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', function(){
+        document.body.appendChild(buildOverlay());
+      });
+    } else {
+      document.body.appendChild(buildOverlay());
+    }
+  }
+
+  function hide(){
+    var el = document.getElementById('og-overlay');
+    if (el) el.remove();
+    _shown = false;
+  }
+
+  function ping(){
+    var ctrl = new AbortController();
+    var t    = setTimeout(function(){ ctrl.abort(); }, TIMEOUT);
+    fetch('/api/products?_og=1', {cache:'no-store', signal:ctrl.signal})
+      .then(function(r){
+        clearTimeout(t);
+        if (r.ok){
+          if (_shown){ hide(); window.location.reload(); }
+        } else { show(); }
+      })
+      .catch(function(){ clearTimeout(t); show(); });
+  }
+
+  window._ogRetry = function(){
+    var el = document.getElementById('og-status');
+    if (el) el.textContent = '⏳ Vérification en cours…';
+    ping();
+  };
+
+  /* Lancer après le chargement initial (évite fausse alerte au boot) */
+  setTimeout(function(){
+    ping();
+    _timer = setInterval(ping, INTERVAL);
+  }, 4000);
+})();
+
 /* ─── Theme manager — The SMARTPHONE ─── */
 (function(){
   // Appliquer le thème AVANT le rendu (évite le flash)
