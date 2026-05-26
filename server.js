@@ -2197,7 +2197,8 @@ app.post('/api/import-facture-pdf/upload', (req,res)=>{
     const pdfPath  = req.file.path;
     const pyScript = path.join(__dirname,'parse_invoice.py');
     try{
-      const out  = execSync('python3 "'+pyScript+'" "'+pdfPath+'"',{encoding:'utf-8'});
+      const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+      const out  = execSync(pyCmd+' "'+pyScript+'" "'+pdfPath+'"',{encoding:'utf-8'});
       const data = JSON.parse(out);
       fs.unlinkSync(pdfPath);
       res.json(data);
