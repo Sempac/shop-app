@@ -4,8 +4,8 @@
  * Inclure dans chaque page : <script src="auth.js"></script>
  */
 
-var AUTH_SESSION_HOURS = 8; /* Durée session en heures */
-var AUTH_LOCK_MINUTES  = 120; /* Verrouillage auto après inactivité */
+var AUTH_SESSION_HOURS = 4; /* Fermeture session après 4h d'inactivité */
+var AUTH_LOCK_MINUTES  = 240; /* Verrouillage auto après 4h d'inactivité */
 
 /* Modules accessibles par rôle */
 var AUTH_MODULES = {
@@ -24,8 +24,9 @@ function getUser() {
     if (!stored) return null;
     var user = JSON.parse(stored);
 
-    /* Vérifier expiration session (8h) */
-    var elapsed = (Date.now() - user.loginAt) / 1000 / 3600;
+    /* Vérifier inactivité (4h depuis dernière action) */
+    var lastAct = user.lastActivity || user.loginAt;
+    var elapsed = (Date.now() - lastAct) / 1000 / 3600;
     if (elapsed > AUTH_SESSION_HOURS) {
       sessionStorage.removeItem('user');
       return null;

@@ -1,7 +1,7 @@
 /* ─── Offline Guard — détecte si le serveur est KO ─── */
 (function(){
   var INTERVAL   = 15000; /* vérif toutes les 15 s */
-  var TIMEOUT    = 6000;  /* abandon ping après 6 s */
+  var TIMEOUT    = 12000; /* abandon ping après 12 s */
   var PHASE2_AT  = 3;     /* passe en phase 2 après 3 échecs (~45 s) */
   var _shown     = false;
   var _failCount = 0;
