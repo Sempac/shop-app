@@ -418,7 +418,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 </div><!-- fin clientView -->
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="/qrcode.min.js"></script>
 <script>
 /* ══ DÉTECTION MODE ══ */
 var isClient = window.location.search.indexOf('client=1') >= 0;
@@ -535,7 +535,7 @@ function printQR() {
     + '<span>✉️ it75tech@gmail.com</span>'
     + '</div>'
     + '<p style="font-size:11px;color:#666;">Choisissez votre fichier · Sélectionnez vos options (copies, couleur, orientation) · Confirmez</p>'
-    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>'
+    + '<script src="/qrcode.min.js"><\/script>'
     + '<script>new QRCode(document.getElementById("qr"),{text:"' + url + '",width:200,height:200,colorDark:"#000",colorLight:"#fff"});<\/script>'
     + '<script>setTimeout(function(){window.print();},800);<\/script>'
     + '</body></html>');
