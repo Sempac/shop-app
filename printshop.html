@@ -624,10 +624,8 @@ async function loadQueue() {
 }
 
 /* ══ BOUTON 1 : Imprimer directement ══
-   Envoie la commande au serveur Windows → Start-Process -Verb Print
-   (ou SumatraPDF si disponible pour les PDF)
-   Le fichier ne s'ouvre pas visuellement — Windows envoie à l'imprimante.
-   Après envoi : bouton ✅ pour confirmer dans la file. */
+   Envoie la commande au serveur Windows → PrintTo vers l'imprimante N&B ou couleur.
+   Marque automatiquement comme IMPRIME pour éviter le reset par l'auto-refresh. */
 async function printDirect(id) {
   var btns = document.getElementById('qi-btns-' + id);
   if (btns) btns.innerHTML = '<span style="font-size:12px;color:#93c5fd;">⏳ Envoi à l\'imprimante…</span>';
@@ -635,12 +633,9 @@ async function printDirect(id) {
     var res = await fetch('/api/print/' + id + '/printdirect');
     var d   = await res.json();
     if (d.error) throw new Error(d.error);
-    if (btns) {
-      btns.innerHTML =
-        '<div style="font-size:11px;color:#86efac;margin-bottom:6px;">✅ Envoyé à l\'imprimante — confirmez quand c\'est sorti :</div>' +
-        '<button class="qi-btn" style="background:#22c55e;color:white;font-size:13px;font-weight:bold;" onclick="markDone(' + id + ')">✅ Imprimé !</button>' +
-        '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + id + ')">✕ Annuler</button>';
-    }
+    /* Marquer comme imprimé → évite reset auto-refresh */
+    await fetch('/api/print/' + id + '/done', {method:'PUT'});
+    loadQueue();
   } catch(e) {
     if (btns) {
       btns.innerHTML =

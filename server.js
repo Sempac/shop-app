@@ -595,18 +595,24 @@ app.get('/api/print/:id/printdirect',async(req,res)=>{
     if(!r.rows[0])return res.status(404).json({error:'Introuvable'});
     const fp=require('path').resolve(__dirname,r.rows[0].filepath);
     const copies=r.rows[0].copies||1;
+    const colorMode=r.rows[0].color_mode||'bw';
     const ext=require('path').extname(fp).toLowerCase();
     const {exec}=require('child_process');
-    /* SumatraPDF disponible → impression silencieuse multi-copies pour PDF */
+    /* Sélection imprimante selon le mode couleur */
+    const printer = colorMode==='color'
+      ? 'MF650C Series'
+      : 'Brother HL-L6300DW series Printer';
+    const fp2=fp.replace(/'/g,"''");
+    const pr2=printer.replace(/'/g,"''");
     if(ext==='.pdf'){
-      exec(`powershell -Command "& {$p=Get-Command SumatraPDF.exe -ErrorAction SilentlyContinue; if($p){& $p.Source -print-to-default -print-settings '${copies}x' '${fp.replace(/'/g,"''")}'}else{Start-Process -FilePath '${fp.replace(/'/g,"''")}' -Verb Print}}"`,
+      /* SumatraPDF si dispo (impression silencieuse multi-copies), sinon PrintTo */
+      exec(`powershell -Command "& {$p=Get-Command SumatraPDF.exe -ErrorAction SilentlyContinue; if($p){& $p.Source -print-to '${pr2}' -print-settings '${copies}x' '${fp2}'}else{Start-Process -FilePath '${fp2}' -Verb PrintTo -ArgumentList '${pr2}'}}"`,
         (err)=>{ if(err) console.error('printdirect pdf:',err.message); });
     } else {
-      /* Tous les autres types (Word, image, Excel…) */
-      exec(`powershell -Command "Start-Process -FilePath '${fp.replace(/'/g,"''")}' -Verb Print"`,
+      exec(`powershell -Command "Start-Process -FilePath '${fp2}' -Verb PrintTo -ArgumentList '${pr2}'"`,
         (err)=>{ if(err) console.error('printdirect:',err.message); });
     }
-    res.json({ok:true});
+    res.json({ok:true, printer});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
