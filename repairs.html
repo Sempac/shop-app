@@ -1061,8 +1061,8 @@ function printSAV(r) {
   w.document.write(
     '<!DOCTYPE html><html><head>' +
     '<script src="/theme.js"><\/script>' +
-    '<link rel="stylesheet" href="/theme.css"><meta charset="UTF-8">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">' +
+    '<link rel="stylesheet" href="/theme.css"><meta charset="UTF-8">' +
+    '<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">' +
     '<style>' + css + '</style>' +
     '<script>window.onload=function(){window.print();}<\/script>' +
     '</head><body>' + body + '</body></html>'
@@ -1123,8 +1123,8 @@ async function printFactureRep(repairId) {
     var html = [
       '<!DOCTYPE html><html><head>' +
       '<script src="/theme.js"><\/script>' +
-      '<link rel="stylesheet" href="/theme.css"><meta charset="UTF-8">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">',
+      '<link rel="stylesheet" href="/theme.css"><meta charset="UTF-8">' +
+      '<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">',
       '<title>Facture Réparation ' + (r.numero_rep||'#'+r.id) + '</title>',
       '<style>',
         'body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#0f172a;font-size:13px;}',
