@@ -1,86 +1,97 @@
 /* ─── Offline Guard — détecte si le serveur est KO ─── */
 (function(){
-  var INTERVAL  = 15000; /* vérif toutes les 15 s */
-  var TIMEOUT   = 6000;  /* abandon ping après 6 s */
-  var _shown    = false;
-  var _timer    = null;
+  var INTERVAL   = 15000; /* vérif toutes les 15 s */
+  var TIMEOUT    = 6000;  /* abandon ping après 6 s */
+  var PHASE2_AT  = 3;     /* passe en phase 2 après 3 échecs (~45 s) */
+  var _shown     = false;
+  var _failCount = 0;
 
-  function buildOverlay(){
+  var CARD = 'background:#fff;border-radius:18px;padding:36px 32px;' +
+             'max-width:460px;width:92%;text-align:center;' +
+             'box-shadow:0 24px 64px rgba(0,0,0,0.6);';
+
+  /* Phase 1 — redémarrage automatique en cours */
+  function phase1HTML(){
+    return '<div style="' + CARD + '">' +
+      '<div style="font-size:56px;margin-bottom:14px;">🔄</div>' +
+      '<h1 style="font-size:20px;color:#0f172a;margin:0 0 12px;line-height:1.4;">' +
+        'Le serveur redémarre automatiquement…' +
+      '</h1>' +
+      '<p style="color:#64748b;font-size:14px;margin:0 0 18px;line-height:1.7;">' +
+        'Ne vous inquiétez pas — vos données sont sauvegardées.<br>' +
+        'La page se rechargera toute seule dès que c\'est prêt.' +
+      '</p>' +
+      '<div id="og-status" style="font-size:12px;color:#94a3b8;">⏳ Vérification en cours…</div>' +
+    '</div>';
+  }
+
+  /* Phase 2 — l'auto a échoué, le vendeur doit agir */
+  function phase2HTML(){
+    return '<div style="' + CARD + '">' +
+      '<div style="font-size:56px;margin-bottom:14px;">⚠️</div>' +
+      '<h1 style="font-size:20px;color:#0f172a;margin:0 0 12px;line-height:1.4;">' +
+        'Le redémarrage automatique n\'a pas fonctionné' +
+      '</h1>' +
+      '<p style="color:#374151;font-size:14px;margin:0 0 20px;line-height:1.7;">' +
+        'Cliquez sur le raccourci<br>' +
+        '<b style="font-size:15px;color:#1e40af;">🖥️ Redémarrer le Serveur Appli Vente</b><br>' +
+        'sur votre bureau, puis attendez 10 secondes.' +
+      '</p>' +
+      '<button onclick="window._ogRetry()" style="' +
+        'width:100%;padding:14px;background:#22c55e;color:#fff;' +
+        'border:none;border-radius:10px;font-size:15px;font-weight:bold;' +
+        'cursor:pointer;font-family:Arial;margin-bottom:10px;">' +
+        '🔄 J\'ai cliqué sur le raccourci — réessayer' +
+      '</button>' +
+      '<div id="og-status" style="font-size:11px;color:#94a3b8;">' +
+        'Vérification automatique toutes les 15 secondes…' +
+      '</div>' +
+    '</div>';
+  }
+
+  function buildOverlay(html){
     var d = document.createElement('div');
     d.id = 'og-overlay';
-    d.style.cssText = [
-      'position:fixed;inset:0;z-index:999999;',
-      'background:rgba(15,23,42,0.97);',
-      'display:flex;align-items:center;justify-content:center;',
-      'font-family:Arial,sans-serif;'
-    ].join('');
-    d.innerHTML = [
-      '<div style="background:#fff;border-radius:18px;padding:36px 32px;',
-        'max-width:520px;width:92%;text-align:center;',
-        'box-shadow:0 24px 64px rgba(0,0,0,0.6);">',
-
-        /* Icône + titre */
-        '<div style="font-size:64px;margin-bottom:12px;">🔴</div>',
-        '<h1 style="font-size:21px;color:#0f172a;margin:0 0 8px;line-height:1.3;">',
-          'L\'application des ventes<br>ne répond plus',
-        '</h1>',
-        '<p style="color:#64748b;font-size:13px;margin:0 0 22px;">',
-          'Ne vous inquiétez pas — toutes vos données sont bien sauvegardées.<br>',
-          'Le système a besoin d\'être relancé.',
-        '</p>',
-
-        /* Instructions */
-        '<div style="background:#fef9c3;border:1.5px solid #fbbf24;border-radius:10px;',
-          'padding:16px 18px;text-align:left;margin-bottom:22px;">',
-          '<div style="font-weight:bold;color:#78350f;font-size:13px;margin-bottom:10px;">',
-            '🔄 Comment relancer l\'application des ventes ?',
-          '</div>',
-          '<div style="font-size:13px;color:#78350f;line-height:2;">',
-            '<b>Option 1 — La plus simple :</b><br>',
-            '➡️ Redémarrez le PC.<br>',
-            "L'application des ventes se relancera <b>automatiquement</b>.",
-          '</div>',
-          '<hr style="border:none;border-top:1px solid #fcd34d;margin:12px 0;">',
-          '<div style="font-size:12px;color:#92400e;line-height:1.8;">',
-            '<b>Option 2 — Sans redémarrer :</b><br>',
-            '1. Appuyez sur <b>⊞ Windows</b> → tapez <b>Planificateur de tâches</b><br>',
-            '2. Dans la liste, trouvez <b>ShopApp</b><br>',
-            '3. Clic droit → <b>Exécuter</b><br>',
-            '4. Attendez 10 secondes puis cliquez sur <b>Réessayer</b> ci-dessous',
-          '</div>',
-        '</div>',
-
-        /* Bouton + statut */
-        '<button onclick="window._ogRetry()" style="',
-          'width:100%;padding:14px;background:#22c55e;color:white;',
-          'border:none;border-radius:10px;font-size:15px;font-weight:bold;',
-          'cursor:pointer;font-family:Arial;margin-bottom:10px;">',
-          '🔄 Réessayer maintenant',
-        '</button>',
-        '<div id="og-status" style="font-size:11px;color:#94a3b8;">',
-          'Vérification automatique toutes les 15 secondes…',
-        '</div>',
-      '</div>'
-    ].join('');
+    d.style.cssText = 'position:fixed;inset:0;z-index:999999;' +
+      'background:rgba(15,23,42,0.97);' +
+      'display:flex;align-items:center;justify-content:center;' +
+      'font-family:Arial,sans-serif;';
+    d.innerHTML = html;
     return d;
   }
 
   function show(){
     if (_shown) return;
     _shown = true;
+    var fn = function(){
+      document.body.appendChild(buildOverlay(phase1HTML()));
+    };
     if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', function(){
-        document.body.appendChild(buildOverlay());
-      });
-    } else {
-      document.body.appendChild(buildOverlay());
-    }
+      document.addEventListener('DOMContentLoaded', fn);
+    } else { fn(); }
   }
 
   function hide(){
     var el = document.getElementById('og-overlay');
     if (el) el.remove();
-    _shown = false;
+    _shown     = false;
+    _failCount = 0;
+  }
+
+  function setStatus(txt){
+    var el = document.getElementById('og-status');
+    if (el) el.textContent = txt;
+  }
+
+  function onFail(){
+    _failCount++;
+    show(); /* no-op si déjà affiché */
+    if (_failCount >= PHASE2_AT){
+      var ov = document.getElementById('og-overlay');
+      if (ov) ov.innerHTML = phase2HTML();
+    } else {
+      setStatus('⏳ Nouvelle vérification dans ' + (INTERVAL / 1000) + ' secondes…');
+    }
   }
 
   function ping(){
@@ -89,25 +100,23 @@
     fetch('/api/products?_og=1', {cache:'no-store', signal:ctrl.signal})
       .then(function(r){
         clearTimeout(t);
-        if (r.ok){
-          if (_shown){ hide(); window.location.reload(); }
-        } else { show(); }
+        if (r.ok){ if (_shown){ hide(); window.location.reload(); } }
+        else { onFail(); }
       })
-      .catch(function(){ clearTimeout(t); show(); });
+      .catch(function(){ clearTimeout(t); onFail(); });
   }
 
   window._ogRetry = function(){
-    var el = document.getElementById('og-status');
-    if (el) el.textContent = '⏳ Vérification en cours…';
+    setStatus('⏳ Vérification en cours…');
     ping();
   };
 
   /* Lancer après le chargement initial (évite fausse alerte au boot) */
   setTimeout(function(){
     ping();
-    _timer = setInterval(ping, INTERVAL);
+    setInterval(ping, INTERVAL);
   }, 4000);
-})();
+})()
 
 /* ─── Theme manager — The SMARTPHONE ─── */
 (function(){
