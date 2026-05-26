@@ -6,6 +6,8 @@
 <meta charset="UTF-8">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>Impression — The SMARTPHONE</title>
 <style>
 *{box-sizing:border-box;}
@@ -83,14 +85,13 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 .step-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:#3b82f6;color:white;border-radius:50%;font-size:12px;font-weight:bold;margin-right:8px;}
 .step-title{font-size:13px;font-weight:bold;color:white;}
 
-/* Upload client */
-.client-drop{border:2px dashed #334155;border-radius:10px;padding:16px 16px 10px;text-align:center;margin-top:10px;}
-.client-drop .icon{font-size:32px;margin-bottom:4px;pointer-events:none;}
-.client-drop .drop-hint{font-size:11px;color:#64748b;margin:0 0 10px;pointer-events:none;}
-/* Le bouton "Choisir" = l'input lui-même */
-#clientFile{display:block;width:100%;cursor:pointer;color:#94a3b8;font-size:13px;font-family:Arial;background:transparent;border:none;}
-#clientFile::-webkit-file-upload-button,
-#clientFile::file-selector-button{display:block;width:100%;padding:15px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;font-family:Arial;margin-bottom:6px;touch-action:manipulation;}
+/* Upload client — bouton label natif */
+.client-upload-btn{display:block;width:100%;padding:22px 16px;background:#7c3aed;color:#fff;border-radius:12px;text-align:center;cursor:pointer;margin-top:12px;-webkit-user-select:none;user-select:none;touch-action:manipulation;position:relative;-webkit-tap-highlight-color:rgba(109,40,217,0.4);}
+.client-upload-btn:active{background:#6d28d9;}
+.client-upload-btn .up-icon{display:block;font-size:28px;margin-bottom:6px;pointer-events:none;}
+.client-upload-btn .up-text{display:block;font-size:17px;font-weight:bold;pointer-events:none;}
+.client-upload-btn .up-fmt{display:block;font-size:11px;opacity:0.75;margin-top:4px;pointer-events:none;}
+.client-upload-btn input[type=file]{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden;}
 .client-file-ok{background:#0f172a;border-radius:8px;padding:10px 12px;margin-top:8px;display:none;}
 .client-file-ok .fn{font-size:13px;font-weight:bold;color:white;}
 .client-file-ok .fs{font-size:11px;color:#64748b;}
@@ -308,12 +309,13 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
       <!-- Étape 2 : fichier -->
       <div class="step-card">
         <div><span class="step-num">2</span><span class="step-title">Choisissez votre fichier</span></div>
-        <div class="client-drop" id="clientDrop">
-          <div class="icon">📎</div>
-          <p class="drop-hint">PDF · Word · Excel · PowerPoint · JPG · PNG — Max 10MB</p>
+        <label class="client-upload-btn" id="clientDrop">
+          <span class="up-icon">📂</span>
+          <span class="up-text">Choisir un fichier</span>
+          <span class="up-fmt">PDF · Word · Excel · PowerPoint · JPG · PNG — Max 10&nbsp;MB</span>
           <input type="file" id="clientFile"
             accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.odt">
-        </div>
+        </label>
         <div class="client-file-ok" id="clientFileOk">
           <div class="fn" id="clientFName"></div>
           <div class="fs" id="clientFSize"></div>
@@ -693,14 +695,6 @@ var currentMethod = null;
 
 function initClient() {
   var cf = document.getElementById('clientFile');
-  /* Drag & drop desktop */
-  var cd = document.getElementById('clientDrop');
-  cd.addEventListener('dragover',  function(e){ e.preventDefault(); cd.classList.add('drag'); });
-  cd.addEventListener('dragleave', function(){ cd.classList.remove('drag'); });
-  cd.addEventListener('drop', function(e){
-    e.preventDefault(); cd.classList.remove('drag');
-    if (e.dataTransfer.files.length) setClientFile(e.dataTransfer.files[0]);
-  });
   cf.addEventListener('change', function(){
     if (cf.files.length) setClientFile(cf.files[0]);
   });
