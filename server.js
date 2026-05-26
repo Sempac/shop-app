@@ -2188,7 +2188,7 @@ app.delete('/api/todos/:id', async(req,res)=>{
 app.post('/api/import-facture-pdf/upload', (req,res)=>{
   const path   = require('path');
   const fs     = require('fs');
-  const {execSync} = require('child_process');
+  const {exec} = require('child_process'); /* async — ne bloque pas le serveur */
   const multer = require('multer');
   const upload = multer({dest: require('os').tmpdir()}).single('pdf');
   upload(req, res, function(err){
@@ -2196,16 +2196,18 @@ app.post('/api/import-facture-pdf/upload', (req,res)=>{
     if(!req.file) return res.status(400).json({error:'Aucun fichier PDF'});
     const pdfPath  = req.file.path;
     const pyScript = path.join(__dirname,'parse_invoice.py');
-    try{
-      const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
-      const out  = execSync(pyCmd+' "'+pyScript+'" "'+pdfPath+'"',{encoding:'utf-8'});
-      const data = JSON.parse(out);
-      fs.unlinkSync(pdfPath);
-      res.json(data);
-    }catch(e2){
-      try{fs.unlinkSync(pdfPath);}catch(e3){}
-      res.status(500).json({error:e2.message.slice(0,200)});
-    }
+    const pyCmd    = process.platform === 'win32' ? 'python' : 'python3';
+    const cmd      = pyCmd + ' "' + pyScript + '" "' + pdfPath + '"';
+    exec(cmd, {encoding:'utf-8', timeout:60000}, function(err2, stdout, stderr){
+      try{ fs.unlinkSync(pdfPath); }catch(e){}
+      if(err2) return res.status(500).json({error:(stderr||err2.message).slice(0,300)});
+      try{
+        const data = JSON.parse(stdout);
+        res.json(data);
+      }catch(e3){
+        res.status(500).json({error:'Réponse Python invalide : ' + stdout.slice(0,200)});
+      }
+    });
   });
 });
 
