@@ -433,11 +433,11 @@ if (isClient) {
 /* ════════════════
    MODE GÉRANT
 ════════════════ */
+/* URL publique fixe — toujours Tailscale, accessible depuis mobile externe */
+var CLIENT_URL = 'https://desktop-dpd7qn6.taild4a8c6.ts.net/printshop.html?client=1';
+
 function initManager() {
-  /* URL fixe Tailscale pour accès depuis mobile/externe */
-  var clientUrl = (window.location.hostname === 'localhost' || window.location.hostname === 'smartphone.local')
-    ? 'https://desktop-dpd7qn6.taild4a8c6.ts.net/printshop.html?client=1'
-    : window.location.origin + '/printshop.html?client=1';
+  var clientUrl = CLIENT_URL;
   document.getElementById('qrUrl').textContent = clientUrl;
   new QRCode(document.getElementById('qrcode'), {
     text: clientUrl, width: 160, height: 160,
@@ -517,7 +517,7 @@ async function uploadAndPrint() {
 }
 
 function printQR() {
-  var url = window.location.origin + '/printshop.html?client=1';
+  var url = CLIENT_URL;
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'
     + '<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">'
@@ -543,7 +543,7 @@ function printQR() {
 }
 
 function copyLink() {
-  var url = window.location.origin + '/printshop.html?client=1';
+  var url = CLIENT_URL;
   navigator.clipboard.writeText(url).then(function(){
     alert('Lien copié !\n' + url);
   });
