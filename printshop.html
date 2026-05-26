@@ -609,7 +609,9 @@ async function loadQueue() {
       html += '</div>';
 
       if (it.status === 'EN_ATTENTE') {
+        var printerName = it.color_mode === 'color' ? '🌈 MF650C Series (Couleur)' : '⬛ Brother HL-L6300DW (N&B)';
         html += '<div class="qi-btns" id="qi-btns-' + it.id + '">';
+        html += '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">🖨️ Imprimante : <b style="color:#e2e8f0;">' + printerName + '</b></div>';
         html += '<button class="qi-btn" style="background:#1e40af;color:white;font-size:13px;font-weight:bold;" onclick="printDirect(' + it.id + ')">🖨️ Imprimer</button>';
         html += '<button class="qi-btn" style="background:#7c3aed;color:white;font-size:12px;" onclick="openForEdit(' + it.id + ')">✏️ Modifier avant</button>';
         html += '<button class="qi-btn" style="background:#7f1d1d;color:#fca5a5;" onclick="cancelJob(' + it.id + ')">✕ Annuler</button>';

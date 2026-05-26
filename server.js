@@ -604,11 +604,14 @@ app.get('/api/print/:id/printdirect',async(req,res)=>{
       : 'Brother HL-L6300DW series Printer';
     const fp2=fp.replace(/'/g,"''");
     const pr2=printer.replace(/'/g,"''");
-    if(ext==='.pdf'){
-      /* SumatraPDF si dispo (impression silencieuse multi-copies), sinon PrintTo */
-      exec(`powershell -Command "& {$p=Get-Command SumatraPDF.exe -ErrorAction SilentlyContinue; if($p){& $p.Source -print-to '${pr2}' -print-settings '${copies}x' '${fp2}'}else{Start-Process -FilePath '${fp2}' -Verb PrintTo -ArgumentList '${pr2}'}}"`,
-        (err)=>{ if(err) console.error('printdirect pdf:',err.message); });
+    const sumatra='C:\\tools\\SumatraPDF.exe';
+    const pdfTypes=['.pdf','.jpg','.jpeg','.png','.bmp','.tiff','.tif','.gif'];
+    if(pdfTypes.includes(ext)){
+      /* SumatraPDF — impression silencieuse multi-copies PDF + images */
+      exec(`"${sumatra}" -print-to "${printer}" -print-settings "${copies}x" "${fp}"`,
+        (err)=>{ if(err) console.error('printdirect sumatra:',err.message); });
     } else {
+      /* Word, Excel, PPT → PrintTo via Windows shell */
       exec(`powershell -Command "Start-Process -FilePath '${fp2}' -Verb PrintTo -ArgumentList '${pr2}'"`,
         (err)=>{ if(err) console.error('printdirect:',err.message); });
     }
