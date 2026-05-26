@@ -242,6 +242,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
         <div style="display:flex;gap:6px;align-items:center;">
           <span class="new-badge" id="newBadge">🔔 Nouveau !</span>
           <button onclick="loadQueue()" style="padding:5px 10px;background:#334155;color:#94a3b8;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">🔄</button>
+          <button onclick="purgeQueue()" style="padding:5px 10px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">🗑️ Purger</button>
         </div>
       </h3>
       <div id="queueList">
@@ -676,6 +677,13 @@ async function openForEdit(id) {
 
 async function markDone(id) {
   await fetch('/api/print/' + id + '/done', {method:'PUT'}); loadQueue();
+}
+async function purgeQueue() {
+  if (!confirm('Supprimer tous les jobs Imprimés et Annulés ?')) return;
+  var res = await fetch('/api/print/purge', {method:'DELETE'});
+  var d = await res.json();
+  loadQueue();
+  alert('✅ ' + (d.deleted||0) + ' job(s) supprimé(s)');
 }
 async function cancelJob(id) {
   if (!confirm('Annuler ce travail ?')) return;

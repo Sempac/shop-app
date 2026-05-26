@@ -575,6 +575,7 @@ app.post('/api/print/upload',upload.single('file'),async(req,res)=>{try{if(!req.
 app.get('/api/print/queue',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM print_queue ORDER BY uploaded_at DESC LIMIT 50`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/print/:id/done',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='IMPRIME',printed_at=NOW() WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/print/:id/cancel',async(req,res)=>{try{const r=await pool.query(`UPDATE print_queue SET status='ANNULE' WHERE id=$1 RETURNING *`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+app.delete('/api/print/purge',async(req,res)=>{try{const r=await pool.query(`DELETE FROM print_queue WHERE status IN ('IMPRIME','ANNULE')`);res.json({deleted:r.rowCount});}catch(e){res.status(500).json({error:e.message});}});
 /* Ouvrir fichier dans l'appli par défaut pour modification */
 app.get('/api/print/:id/open',async(req,res)=>{
   try{
