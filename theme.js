@@ -17,11 +17,28 @@
       '<h1 style="font-size:20px;color:#0f172a;margin:0 0 12px;line-height:1.4;">' +
         'Le serveur redémarre automatiquement…' +
       '</h1>' +
-      '<p style="color:#64748b;font-size:14px;margin:0 0 18px;line-height:1.7;">' +
+      '<p style="color:#64748b;font-size:14px;margin:0 0 16px;line-height:1.7;">' +
         'Ne vous inquiétez pas — vos données sont sauvegardées.<br>' +
-        'La page se rechargera toute seule dès que c\'est prêt.' +
+        'La page se rechargera toute seule dès que c\'est prêt <b>(~1 minute)</b>.' +
       '</p>' +
-      '<div id="og-status" style="font-size:12px;color:#94a3b8;">⏳ Vérification en cours…</div>' +
+      '<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;' +
+        'padding:14px 16px;text-align:left;margin-bottom:16px;">' +
+        '<div style="font-size:13px;font-weight:bold;color:#1e40af;margin-bottom:6px;">' +
+          '⚡ Vous ne voulez pas attendre ?' +
+        '</div>' +
+        '<div style="font-size:13px;color:#1e3a8a;line-height:1.8;">' +
+          'Double-cliquez sur le raccourci<br>' +
+          '<b>🖥️ Redémarrer le Serveur Appli Vente</b><br>' +
+          'sur votre bureau, puis cliquez sur <b>Réessayer</b> ci-dessous.' +
+        '</div>' +
+      '</div>' +
+      '<button onclick="window._ogRetry()" style="' +
+        'width:100%;padding:12px;background:#3b82f6;color:#fff;' +
+        'border:none;border-radius:10px;font-size:14px;font-weight:bold;' +
+        'cursor:pointer;font-family:Arial;margin-bottom:10px;">' +
+        '🔄 Réessayer maintenant' +
+      '</button>' +
+      '<div id="og-status" style="font-size:11px;color:#94a3b8;">⏳ Vérification automatique toutes les 15 secondes…</div>' +
     '</div>';
   }
 
