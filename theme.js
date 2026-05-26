@@ -1,8 +1,9 @@
 /* ─── Offline Guard — détecte si le serveur est KO ─── */
 (function(){
-  var INTERVAL   = 15000; /* vérif toutes les 15 s */
+  var INTERVAL   = 20000; /* vérif toutes les 20 s */
   var TIMEOUT    = 12000; /* abandon ping après 12 s */
-  var PHASE2_AT  = 3;     /* passe en phase 2 après 3 échecs (~45 s) */
+  var SHOW_AT    = 3;     /* afficher overlay après 3 échecs (~60 s de silence) */
+  var PHASE2_AT  = 8;     /* passe en phase 2 après 8 échecs (~160 s) */
   var _shown     = false;
   var _failCount = 0;
 
@@ -102,6 +103,7 @@
 
   function onFail(){
     _failCount++;
+    if (_failCount < SHOW_AT) return; /* silence les premiers échecs (import lent, micro-freeze) */
     show(); /* no-op si déjà affiché */
     if (_failCount >= PHASE2_AT){
       var ov = document.getElementById('og-overlay');
