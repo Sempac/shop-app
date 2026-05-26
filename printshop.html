@@ -84,9 +84,13 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
 .step-title{font-size:13px;font-weight:bold;color:white;}
 
 /* Upload client */
-.client-drop{display:block;border:2px dashed #334155;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:0.2s;margin-top:10px;-webkit-user-select:none;user-select:none;}
-.client-drop:hover,.client-drop.drag{border-color:#7c3aed;background:#4c1d9522;}
-.client-drop .icon{font-size:32px;margin-bottom:6px;}
+.client-drop{border:2px dashed #334155;border-radius:10px;padding:16px 16px 10px;text-align:center;margin-top:10px;}
+.client-drop .icon{font-size:32px;margin-bottom:4px;pointer-events:none;}
+.client-drop .drop-hint{font-size:11px;color:#64748b;margin:0 0 10px;pointer-events:none;}
+/* Le bouton "Choisir" = l'input lui-même */
+#clientFile{display:block;width:100%;cursor:pointer;color:#94a3b8;font-size:13px;font-family:Arial;background:transparent;border:none;}
+#clientFile::-webkit-file-upload-button,
+#clientFile::file-selector-button{display:block;width:100%;padding:15px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;font-family:Arial;margin-bottom:6px;touch-action:manipulation;}
 .client-file-ok{background:#0f172a;border-radius:8px;padding:10px 12px;margin-top:8px;display:none;}
 .client-file-ok .fn{font-size:13px;font-weight:bold;color:white;}
 .client-file-ok .fs{font-size:11px;color:#64748b;}
@@ -305,12 +309,10 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;min-height:100vh;
       <div class="step-card">
         <div><span class="step-num">2</span><span class="step-title">Choisissez votre fichier</span></div>
         <div class="client-drop" id="clientDrop">
-          <div class="icon" style="pointer-events:none;">📎</div>
-          <p style="margin:4px 0;font-size:14px;pointer-events:none;"><b>Appuyez ici pour choisir</b></p>
-          <p style="margin:0;font-size:11px;color:#64748b;pointer-events:none;">PDF · Word · PowerPoint · Excel · JPG · PNG — Max 10MB</p>
+          <div class="icon">📎</div>
+          <p class="drop-hint">PDF · Word · Excel · PowerPoint · JPG · PNG — Max 10MB</p>
           <input type="file" id="clientFile"
-            accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.odt"
-            style="display:none;">
+            accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.odt">
         </div>
         <div class="client-file-ok" id="clientFileOk">
           <div class="fn" id="clientFName"></div>
@@ -690,24 +692,15 @@ var clientFile = null;
 var currentMethod = null;
 
 function initClient() {
-  var cd = document.getElementById('clientDrop');
   var cf = document.getElementById('clientFile');
-
-  /* iOS Safari : .click() synchrone dans un vrai gesture handler = autorisé */
-  cd.addEventListener('click', function(e) {
-    e.stopPropagation();
-    cf.click();
-  });
-
   /* Drag & drop desktop */
+  var cd = document.getElementById('clientDrop');
   cd.addEventListener('dragover',  function(e){ e.preventDefault(); cd.classList.add('drag'); });
   cd.addEventListener('dragleave', function(){ cd.classList.remove('drag'); });
   cd.addEventListener('drop', function(e){
-    e.preventDefault();
-    cd.classList.remove('drag');
+    e.preventDefault(); cd.classList.remove('drag');
     if (e.dataTransfer.files.length) setClientFile(e.dataTransfer.files[0]);
   });
-
   cf.addEventListener('change', function(){
     if (cf.files.length) setClientFile(cf.files[0]);
   });
