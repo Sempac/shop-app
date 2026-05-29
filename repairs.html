@@ -171,7 +171,7 @@ table.sticky thead tr th,
   </div>
 
   <table class="rl">
-    <thead><tr><th>#</th><th>Client</th><th>Marque</th><th>Modèle</th><th>Statut</th></tr></thead>
+    <thead><tr><th>#</th><th>Client</th><th>Marque</th><th>Modèle</th><th>Statut</th><th>Prix</th></tr></thead>
     <tbody id="repairList"></tbody>
   </table>
 </div>
@@ -969,11 +969,14 @@ function renderList(data) {
     return;
   }
   tbody.innerHTML = data.map(function(r) {
+    var prix = Number(r.final_price||r.estimated_price||0);
     return '<tr data-id="' + r.id + '" class="' + (r.id === currentId ? 'selected' : '') + '">' +
       '<td><b>' + (r.numero_rep||('#'+r.id)) + '</b></td>' +
       '<td>' + (r.customer_name||'—') + '</td>' +
-      '<td style="font-size:11px">' + (r.brand||'—') + ' ' + (r.model||'') + '</td>' +
+      '<td style="font-size:11px">' + (r.brand||'—') + '</td>' +
+      '<td style="font-size:11px">' + (r.model||'—') + '</td>' +
       '<td><span class="sbadge ' + (r.status||'') + '">' + (r.status||'—') + '</span></td>' +
+      '<td style="font-weight:bold;color:#16a34a">' + (prix > 0 ? prix.toFixed(2)+' €' : '—') + '</td>' +
       '</tr>';
   }).join('');
 

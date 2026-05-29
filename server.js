@@ -101,20 +101,24 @@ app.post('/api/orders',async(req,res)=>{
   finally{client.release();}
 });
 app.get('/api/orders/search',async(req,res)=>{
-  try{const{date_min,date_max,id,payment,customer}=req.query;
-    let q=`SELECT * FROM orders WHERE 1=1`;const p=[];
-    if(id){p.push(id);q+=` AND id=$${p.length}`;}
-    if(date_min){p.push(date_min);q+=` AND DATE(created_at)>=$${p.length}`;}
-    if(date_max){p.push(date_max);q+=` AND DATE(created_at)<=$${p.length}`;}
-    if(payment){p.push(payment);q+=` AND payment_method=$${p.length}`;}
-    if(customer){p.push('%'+customer+'%');q+=` AND customer_name ILIKE $${p.length}`;}
-    q+=` ORDER BY id DESC LIMIT 200`;
+  try{const{date_min,date_max,id,payment,customer,product}=req.query;
+    const p=[];
+    let q=`SELECT o.*, (SELECT STRING_AGG(COALESCE(p2.name,'Produit supprimé'),', ' ORDER BY COALESCE(p2.name,'Produit supprimé')) FROM order_items oi2 LEFT JOIN products p2 ON p2.id=oi2.product_id WHERE oi2.order_id=o.id) AS designation
+      FROM orders o
+      WHERE 1=1`;
+    if(id){p.push(id);q+=` AND o.id=$${p.length}`;}
+    if(date_min){p.push(date_min);q+=` AND DATE(o.created_at)>=$${p.length}`;}
+    if(date_max){p.push(date_max);q+=` AND DATE(o.created_at)<=$${p.length}`;}
+    if(payment){p.push(payment);q+=` AND o.payment_method=$${p.length}`;}
+    if(customer){p.push('%'+customer+'%');q+=` AND o.customer_name ILIKE $${p.length}`;}
+    if(product){p.push('%'+product+'%');q+=` AND EXISTS (SELECT 1 FROM order_items oi3 LEFT JOIN products p3 ON p3.id=oi3.product_id WHERE oi3.order_id=o.id AND p3.name ILIKE $${p.length})`;}
+    q+=` ORDER BY o.id DESC LIMIT 200`;
     const r=await pool.query(q,p);res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}
 });
 app.get('/api/orders/:id',async(req,res)=>{
   try{const order=await pool.query(`SELECT * FROM orders WHERE id=$1`,[req.params.id]);
-    const items=await pool.query(`SELECT oi.*,p.name FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=$1 ORDER BY oi.id`,[req.params.id]);
+    const items=await pool.query(`SELECT oi.*,COALESCE(p.name,'Produit supprimé') AS name FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=$1 ORDER BY oi.id`,[req.params.id]);
     res.json({order:order.rows[0],items:items.rows});
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -141,8 +145,8 @@ app.get('/api/daily-report',async(req,res)=>{
         CASE WHEN COALESCE(o.amount_cb,0)>0 OR COALESCE(o.amount_cash,0)>0 THEN COALESCE(o.amount_cash,0) WHEN o.payment_method='cash' THEN o.total ELSE 0 END AS amount_cash,
         COALESCE(o.amount_credit,0) AS amount_credit,
         CASE WHEN COALESCE(o.amount_cb,0)>0 OR COALESCE(o.amount_cash,0)>0 THEN COALESCE(o.amount_cb,0)+COALESCE(o.amount_cash,0) WHEN o.payment_method IN ('card','cash','mixed') THEN o.total ELSE 0 END AS encaisse,
-        o.comment,STRING_AGG(DISTINCT p.name,', ') AS designation
-      FROM orders o JOIN order_items oi ON oi.order_id=o.id JOIN products p ON p.id=oi.product_id
+        o.comment,STRING_AGG(DISTINCT COALESCE(p.name,'Produit supprimé'),', ') AS designation
+      FROM orders o JOIN order_items oi ON oi.order_id=o.id LEFT JOIN products p ON p.id=oi.product_id
       WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
       GROUP BY o.id ORDER BY o.id DESC`,[date]);
     const reps=await pool.query(`
@@ -177,12 +181,12 @@ app.get('/api/daily-report',async(req,res)=>{
 app.get('/api/rapport-comptable',async(req,res)=>{
   try{const date=req.query.date||new Date().toISOString().split('T')[0];
     const ventes=await pool.query(`
-      SELECT STRING_AGG(DISTINCT p.name, ', ') AS nom, '—' AS fournisseur,
+      SELECT STRING_AGG(DISTINCT COALESCE(p.name,'Produit supprimé'), ', ') AS nom, '—' AS fournisseur,
         1 AS qty,
         o.total - COALESCE(o.amount_credit,0) AS total_ligne,
         COALESCE(o.amount_credit,0) AS amount_credit,
         o.payment_method, o.id AS order_id
-      FROM orders o JOIN order_items oi ON oi.order_id=o.id JOIN products p ON p.id=oi.product_id
+      FROM orders o JOIN order_items oi ON oi.order_id=o.id LEFT JOIN products p ON p.id=oi.product_id
       WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
       GROUP BY o.id ORDER BY o.id DESC`,[date]);
     const reps=await pool.query(`
@@ -222,12 +226,12 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
 
     /* ── mêmes requêtes que /api/rapport-comptable ── */
     const ventes=await pool.query(`
-      SELECT STRING_AGG(DISTINCT p.name, ', ') AS nom, '—' AS fournisseur,
+      SELECT STRING_AGG(DISTINCT COALESCE(p.name,'Produit supprimé'), ', ') AS nom, '—' AS fournisseur,
         1 AS qty,
         o.total - COALESCE(o.amount_credit,0) AS total_ligne,
         COALESCE(o.amount_credit,0) AS amount_credit,
         o.payment_method
-      FROM orders o JOIN order_items oi ON oi.order_id=o.id JOIN products p ON p.id=oi.product_id
+      FROM orders o JOIN order_items oi ON oi.order_id=o.id LEFT JOIN products p ON p.id=oi.product_id
       WHERE DATE(o.created_at)=$1 AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
       GROUP BY o.id ORDER BY o.id DESC`,[date]);
     const reps=await pool.query(`

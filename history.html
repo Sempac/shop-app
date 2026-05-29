@@ -12,10 +12,13 @@ body{margin:0;font-family:Arial;display:flex;height:100vh;}
 input,select{width:100%;padding:10px;margin-bottom:8px;box-sizing:border-box;border:1px solid #334155;border-radius:6px;background:#1e293b;color:white;font-family:Arial;}
 input::placeholder{color:#475569;}
 button{width:100%;padding:10px;margin-bottom:10px;border:none;cursor:pointer;font-weight:bold;border-radius:6px;font-family:Arial;}
-.home-btn{padding:14px!important;background:#1e40af;color:white;font-size:15px;margin-bottom:12px;}
+.nav-btns{display:flex;gap:6px;margin-bottom:12px;}
+.nav-btns button{flex:1;padding:10px 6px;font-size:12px;margin-bottom:0;}
+.home-btn{background:#1e40af;color:white;}
+.stock-btn{background:#059669;color:white;}
+.compta-btn{background:#7c3aed;color:white;}
 .search-btn{background:#3b82f6;color:white;}
 .reset-btn{background:#ef4444;color:white;}
-.compta-btn{background:#7c3aed;color:white;}
 .item{background:#111827;padding:10px;margin-bottom:5px;cursor:pointer;border-radius:6px;font-size:13px;border-left:3px solid transparent;}
 .item:hover{background:#1e293b;border-left-color:#3b82f6;}
 label{color:#94a3b8;font-size:11px;font-weight:bold;text-transform:uppercase;display:block;margin-bottom:3px;}
@@ -48,7 +51,11 @@ td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
 <body>
 
 <div class="left">
-  <button class="home-btn" onclick="location.href='index.html'">🏠 Retour Accueil</button>
+  <div class="nav-btns">
+    <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
+    <button class="stock-btn" onclick="location.href='stock.html'">📦 Stock</button>
+    <button class="compta-btn" onclick="location.href='rapport-comptable.html'">📋 Comptable</button>
+  </div>
   <h3 style="margin:0 0 12px;font-size:15px">🔍 Recherche ventes</h3>
   <label>ID vente</label><input id="id" placeholder="Ex: 101">
   <label>Date min</label><input id="date_min" type="date">
@@ -62,9 +69,9 @@ td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
     <option value="credit">📋 Crédit</option>
   </select>
   <label>Client</label><input id="customer" placeholder="Nom du client">
+  <label>Produit</label><input id="product" placeholder="Ex: Alcatel, iPhone, SIM...">
   <button class="search-btn" onclick="searchOrders()">🔎 Rechercher</button>
   <button class="reset-btn"  onclick="resetFilters()">♻ Réinitialiser</button>
-  <button class="compta-btn" onclick="location.href='rapport-comptable.html'">📋 Rapport comptable</button>
   <div id="list" style="margin-top:10px"></div>
 </div>
 
@@ -87,7 +94,7 @@ function pmLabel(pm){
 }
 
 function resetFilters(){
-  ['id','date_min','date_max','customer'].forEach(id=>document.getElementById(id).value='');
+  ['id','date_min','date_max','customer','product'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('payment').value='';
   document.getElementById('list').innerHTML='';
   document.getElementById('detail').innerHTML='<div class="empty">← Sélectionnez une vente</div>';
@@ -101,11 +108,13 @@ async function searchOrders(){
   const dateMax=document.getElementById('date_max').value;
   const payment=document.getElementById('payment').value;
   const customer=document.getElementById('customer').value;
+  const product=document.getElementById('product').value.trim();
   if(id)      params.append('id',id);
   if(dateMin) params.append('date_min',dateMin);
   if(dateMax) params.append('date_max',dateMax);
   if(payment) params.append('payment',payment);
   if(customer)params.append('customer',customer);
+  if(product) params.append('product',product);
   try{
     const res=await fetch('/api/orders/search?'+params.toString());
     const data=await res.json();
@@ -117,7 +126,8 @@ async function searchOrders(){
       div.className='item';
       div.innerHTML=`
         <b>#${o.id}</b> — ${o.customer_name||'CLIENT'}<br>
-        <span style="color:#94a3b8;font-size:12px">${pmLabel(o.payment_method)} · <b style="color:#22c55e">${fmt(o.total)}</b> · ${new Date(o.created_at).toLocaleDateString('fr-FR')}</span>`;
+        <span style="color:#94a3b8;font-size:12px">${pmLabel(o.payment_method)} · <b style="color:#22c55e">${fmt(o.total)}</b> · ${new Date(o.created_at).toLocaleDateString('fr-FR')}</span>
+        ${o.designation?`<br><span style="color:#7dd3fc;font-size:11px">🛍 ${o.designation}</span>`:''}`;
       div.onclick=()=>loadOrder(o.id);
       list.appendChild(div);
     });

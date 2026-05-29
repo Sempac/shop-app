@@ -196,8 +196,9 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
 <div class="left">
   <div class="left-top">
     <div style="display:flex;gap:6px;margin-bottom:8px;">
-      <button class="home-btn" style="flex:1;margin-bottom:0;" onclick="location.href='index.html'">🏠 Accueil</button>
-      <button onclick="location.href='rapport-comptable.html'" style="padding:10px 14px;background:#1e40af;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">📊 Rapport Comptable</button>
+      <button onclick="location.href='index.html'" style="flex:1;padding:9px 6px;background:#1e40af;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;margin-bottom:0;">🏠 Accueil</button>
+      <button onclick="location.href='stock.html'" style="flex:1;padding:9px 6px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;margin-bottom:0;">📦 Stock</button>
+      <button onclick="location.href='rapport-comptable.html'" style="flex:1;padding:9px 6px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;margin-bottom:0;">📊 Comptable</button>
     </div>
     <div class="stock-alert-bar" id="stockAlertBar">⚠️ <span id="stockAlertMsg"></span></div>
     <div class="search-row">
@@ -312,6 +313,7 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
       <input type="date" id="hf_from">
       <input type="date" id="hf_to">
       <input type="text" id="hf_q" placeholder="Client, N° vente..." style="flex:1;min-width:120px;">
+      <input type="text" id="hf_product" placeholder="🛍 Produit..." style="flex:1;min-width:120px;">
       <select id="hf_pay">
         <option value="">Tous paiements</option>
         <option value="card">💳 CB</option>
@@ -784,14 +786,16 @@ var selectedOrderId = null;
 async function loadHisto() {
   var from = document.getElementById('hf_from').value;
   var to   = document.getElementById('hf_to').value;
-  var q    = document.getElementById('hf_q').value.trim();
-  var pay  = document.getElementById('hf_pay').value;
+  var q       = document.getElementById('hf_q').value.trim();
+  var product = document.getElementById('hf_product').value.trim();
+  var pay     = document.getElementById('hf_pay').value;
 
   var url = '/api/orders/search?';
-  if (from) url += 'date_min=' + from + '&';
-  if (to)   url += 'date_max=' + to   + '&';
-  if (q)    url += (isNaN(q) ? 'customer=' + encodeURIComponent(q) : 'id=' + q) + '&';
-  if (pay)  url += 'payment=' + pay + '&';
+  if (from)    url += 'date_min=' + from + '&';
+  if (to)      url += 'date_max=' + to   + '&';
+  if (q)       url += (isNaN(q) ? 'customer=' + encodeURIComponent(q) : 'id=' + q) + '&';
+  if (product) url += 'product=' + encodeURIComponent(product) + '&';
+  if (pay)     url += 'payment=' + pay + '&';
 
   try {
     var res = await fetch(url);
@@ -818,6 +822,7 @@ function renderHistoList() {
         '<div>' +
           '<div class="hi-id">#' + o.id + ' — ' + date + ' ' + time + '</div>' +
           '<div class="hi-client">' + (o.customer_name || 'Client anonyme') + '</div>' +
+          (o.designation ? '<div style="font-size:11px;color:#3b82f6;margin-top:2px;">🛍 ' + o.designation + '</div>' : '') +
         '</div>' +
         '<div style="text-align:right">' +
           '<div class="hi-total">' + Number(o.total||0).toFixed(2) + ' €</div>' +
