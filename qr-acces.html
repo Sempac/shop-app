@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>QR Code — The SMARTPHONE</title>
+<style>
+body{margin:0;font-family:Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f1f5f9;}
+.card{background:white;border-radius:16px;padding:40px;text-align:center;box-shadow:0 4px 20px #0002;max-width:340px;}
+.logo{font-size:48px;margin-bottom:8px;}
+h1{margin:0 0 4px;font-size:20px;color:#0f172a;}
+p{margin:0 0 20px;font-size:13px;color:#64748b;}
+.qr-box{background:white;border:2px solid #e2e8f0;border-radius:12px;padding:16px;display:inline-block;margin-bottom:16px;}
+.url{font-size:12px;color:#3b82f6;font-weight:bold;background:#eff6ff;padding:6px 12px;border-radius:6px;margin-bottom:20px;word-break:break-all;}
+button{padding:12px 24px;background:#1e40af;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Arial;}
+button:hover{background:#1d4ed8;}
+@media print{button{display:none;}.card{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">📱</div>
+  <h1>The SMARTPHONE</h1>
+  <p>Accès à l'application caisse</p>
+  <div class="qr-box">
+    <div id="qrcode"></div>
+  </div>
+  <div class="url">http://100.126.44.43:3000</div>
+  <button onclick="window.print()">🖨️ Imprimer</button>
+</div>
+<script src="/qrcode.min.js"></script>
+<script>
+new QRCode(document.getElementById('qrcode'), {
+  text: 'http://100.126.44.43:3000',
+  width: 220,
+  height: 220,
+  colorDark: '#0f172a',
+  colorLight: '#ffffff'
+});
+</script>
+</body>
+</html>
