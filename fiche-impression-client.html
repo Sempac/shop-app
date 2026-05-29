@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Fiche Impression Client — The SMARTPHONE</title>
+<style>
+@page { size: A4; margin: 0; }
+*{ box-sizing: border-box; }
+body{
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: white;
+  color: #0f172a;
+}
+
+.page{
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 14mm 14mm 10mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── EN-TÊTE ── */
+.header{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid #0f172a;
+  padding-bottom: 10px;
+  margin-bottom: 18px;
+}
+.header-left h1{ margin: 0; font-size: 24px; font-weight: 900; color: #0f172a; }
+.header-left p { margin: 3px 0 0; font-size: 12px; color: #475569; }
+.header-right{ font-size: 11px; color: #475569; text-align: right; line-height: 1.6; }
+
+/* ── TITRE PRINCIPAL ── */
+.title-box{
+  background: #0f172a;
+  color: white;
+  border-radius: 14px;
+  padding: 18px 30px;
+  text-align: center;
+  width: 100%;
+  margin-bottom: 22px;
+}
+.title-box .icon{ font-size: 42px; margin-bottom: 6px; }
+.title-box h2{ margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 0.5px; }
+.title-box p { margin: 6px 0 0; font-size: 13px; color: #94a3b8; }
+
+/* ── QR CODE ── */
+.qr-section{
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 22px 28px;
+  width: 100%;
+  margin-bottom: 22px;
+}
+.qr-box{
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  flex-shrink: 0;
+}
+.qr-info h3{ margin: 0 0 8px; font-size: 16px; color: #0f172a; }
+.qr-info p { margin: 0 0 6px; font-size: 13px; color: #475569; line-height: 1.6; }
+.qr-info .scan-arrow{ font-size: 28px; margin-bottom: 8px; display: block; }
+
+/* ── ÉTAPES ── */
+.steps-title{
+  width: 100%;
+  font-size: 14px;
+  font-weight: bold;
+  color: #0f172a;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.steps{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 22px;
+}
+.step{
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+}
+.step .num{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  background: #0f172a;
+  color: white;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.step .ico{ font-size: 24px; margin-bottom: 6px; display: block; }
+.step p{ margin: 0; font-size: 11px; color: #374151; line-height: 1.4; }
+
+/* ── ALTERNATIVES ── */
+.alt-title{
+  width: 100%;
+  font-size: 14px;
+  font-weight: bold;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+.alternatives{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 22px;
+}
+.alt-box{
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.alt-box.wa{ background: #dcfce7; border: 1.5px solid #86efac; }
+.alt-box.em{ background: #eff6ff; border: 1.5px solid #bfdbfe; }
+.alt-box .alt-icon{ font-size: 26px; flex-shrink: 0; }
+.alt-box h4{ margin: 0 0 3px; font-size: 13px; color: #0f172a; }
+.alt-box p { margin: 0; font-size: 11px; color: #475569; line-height: 1.5; }
+.alt-box strong{ color: #0f172a; }
+
+/* ── TARIFS ── */
+.tarifs{
+  width: 100%;
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+.tarifs h4{ margin: 0 0 10px; font-size: 13px; color: #92400e; }
+.tarif-grid{ display: flex; gap: 20px; flex-wrap: wrap; }
+.tarif-item{ font-size: 12px; color: #374151; }
+.tarif-item b{ color: #0f172a; }
+
+/* ── PIED ── */
+.footer{
+  width: 100%;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* ── BOUTON IMPRESSION (masqué à l'impression) ── */
+.print-btn{
+  position: fixed;
+  bottom: 24px; right: 24px;
+  padding: 12px 22px;
+  background: #0f172a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: Arial;
+  box-shadow: 0 4px 14px #0003;
+}
+@media print{ .print-btn{ display: none; } }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- EN-TÊTE -->
+  <div class="header">
+    <div class="header-left">
+      <h1>🖨️ The SMARTPHONE</h1>
+      <p>Vente · Réparation · Impression</p>
+    </div>
+    <div class="header-right">
+      📍 1 Avenue d'Italie, 75013 Paris<br>
+      📞 01 47 07 18 66 · 06 86 84 82 79<br>
+      ✉️ smartphonesatelier4@gmail.com
+    </div>
+  </div>
+
+  <!-- TITRE -->
+  <div class="title-box">
+    <div class="icon">📄</div>
+    <h2>SERVICE IMPRESSION</h2>
+    <p>Imprimez vos documents depuis votre téléphone en quelques secondes</p>
+  </div>
+
+  <!-- QR CODE + TEXTE -->
+  <div class="qr-section">
+    <div class="qr-box">
+      <div id="qrcode"></div>
+    </div>
+    <div class="qr-info">
+      <span class="scan-arrow">📲</span>
+      <h3>Scannez ce QR Code avec votre téléphone</h3>
+      <p>Vous serez dirigé vers notre interface d'impression.<br>
+      Choisissez votre fichier, sélectionnez vos options<br>
+      et confirmez — le vendeur s'occupe du reste !</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:8px;">
+        PDF · Word · Excel · PowerPoint · JPG · PNG
+      </p>
+    </div>
+  </div>
+
+  <!-- ÉTAPES -->
+  <div class="steps-title">📋 Comment ça marche ?</div>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <span class="ico">📱</span>
+      <p><b>Scannez</b> le QR Code ci-dessus</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <span class="ico">📂</span>
+      <p><b>Choisissez</b> votre fichier depuis le téléphone</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <span class="ico">⚙️</span>
+      <p><b>Sélectionnez</b> copies, couleur, orientation</p>
+    </div>
+    <div class="step">
+      <div class="num">4</div>
+      <span class="ico">✅</span>
+      <p><b>Confirmez</b> — prêt en quelques secondes !</p>
+    </div>
+  </div>
+
+  <!-- ALTERNATIVES -->
+  <div class="alt-title">📨 Pas de réseau mobile ? Autres options :</div>
+  <div class="alternatives">
+    <div class="alt-box wa">
+      <div class="alt-icon">💬</div>
+      <div>
+        <h4>WhatsApp</h4>
+        <p>Envoyez votre fichier en pièce jointe au<br>
+        <strong>06 86 84 82 79</strong><br>
+        Précisez copies, couleur et orientation.</p>
+      </div>
+    </div>
+    <div class="alt-box em">
+      <div class="alt-icon">✉️</div>
+      <div>
+        <h4>Email</h4>
+        <p>Envoyez votre fichier en pièce jointe à<br>
+        <strong>it75tech@gmail.com</strong><br>
+        Précisez copies, couleur et orientation.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TARIFS -->
+  <div class="tarifs">
+    <h4>💰 Tarifs impression</h4>
+    <div class="tarif-grid">
+      <div class="tarif-item">⬛ N&amp;B A4 : <b>0,10 € / page</b></div>
+      <div class="tarif-item">🌈 Couleur A4 : <b>0,50 € / page</b></div>
+      <div class="tarif-item">📄 Recto-verso : <b>tarif réduit</b></div>
+      <div class="tarif-item">📦 Reliure / plastification : <b>nous consulter</b></div>
+    </div>
+  </div>
+
+  <!-- PIED DE PAGE -->
+  <div class="footer">
+    <span>The SMARTPHONE — 1 Avenue d'Italie, 75013 Paris</span>
+    <span>01 47 07 18 66 · smartphonesatelier4@gmail.com</span>
+  </div>
+
+</div>
+
+<button class="print-btn" onclick="window.print()">🖨️ Imprimer cette fiche</button>
+
+<script src="/qrcode.min.js"></script>
+<script>
+new QRCode(document.getElementById('qrcode'), {
+  text: 'https://desktop-dpd7qn6.taild4a8c6.ts.net/printshop.html?client=1',
+  width: 180,
+  height: 180,
+  colorDark: '#0f172a',
+  colorLight: '#ffffff'
+});
+</script>
+</body>
+</html>
