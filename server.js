@@ -356,7 +356,7 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
     [
       ['CB',                 fmt(t.total_cb)],
       ['Espèces (ES)',       fmt(t.total_esp)],
-      ['Dépenses (DP)',    '− '+fmt(t.total_dep)],
+      ['Dépenses (DP)',    t.total_dep>0 ? '− '+fmt(t.total_dep) : fmt(t.total_dep)],
     ].forEach(([lbl,val])=>{
       doc.font('Helvetica').fontSize(9).fillColor('#000')
          .text(lbl,40,y,{width:420}).text(val,colX[4],y,{width:colW[4],align:'right'});
