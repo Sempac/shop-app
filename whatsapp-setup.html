@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+.card{background:#1e293b;border-radius:16px;padding:32px;max-width:440px;width:95%;text-align:center;}
+h2{margin:0 0 6px;font-size:18px;}
+p{margin:0 0 20px;font-size:13px;color:#94a3b8;line-height:1.6;}
+.status{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:bold;margin-bottom:20px;}
+.s-qr{background:#1e3a8a;color:#93c5fd;}
+.s-ready{background:#166534;color:#86efac;}
+.s-disconnected{background:#7f1d1d;color:#fca5a5;}
+.s-connecting{background:#78350f;color:#fcd34d;}
+.qr-box{background:white;border-radius:12px;padding:16px;display:inline-block;margin-bottom:16px;}
+.info{background:#0f172a;border-radius:8px;padding:12px 16px;font-size:12px;color:#64748b;text-align:left;margin-bottom:16px;line-height:1.7;}
+.info b{color:#94a3b8;}
+button{width:100%;padding:12px;background:#25d366;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Arial;}
+button:hover{background:#16a34a;}
+.btn-test{background:#1e40af;margin-top:8px;}
+.btn-test:hover{background:#1d4ed8;}
+.msg{margin-top:12px;font-size:12px;padding:10px;border-radius:6px;}
+.msg.ok{background:#166534;color:#86efac;}
+.msg.err{background:#7f1d1d;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="font-size:44px;margin-bottom:10px;">💬</div>
+  <h2>WhatsApp — Configuration</h2>
+  <p>Scannez le QR code avec WhatsApp sur le téléphone du magasin pour connecter l'envoi automatique des rapports.</p>
+
+  <div id="statusBadge" class="status s-disconnected">⏳ Chargement...</div>
+
+  <div id="qrSection" style="display:none;">
+    <div class="qr-box">
+      <div id="qrcode"></div>
+    </div>
+    <p style="font-size:12px;color:#f59e0b;margin-bottom:16px;">⚠️ QR code valable ~60 secondes — actualisez si expiré</p>
+  </div>
+
+  <div id="readySection" style="display:none;">
+    <div style="font-size:56px;margin-bottom:10px;">✅</div>
+    <p style="color:#86efac;font-size:15px;font-weight:bold;">WhatsApp connecté !<br>Les rapports seront envoyés automatiquement.</p>
+  </div>
+
+  <div class="info">
+    <b>Numéro destinataire :</b> <span id="waTo">—</span><br>
+    <b>Statut :</b> <span id="waStatus">—</span><br>
+    <b>Envoi :</b> Chaque soir après fermeture
+  </div>
+
+  <button onclick="refresh()">🔄 Actualiser</button>
+  <button class="btn-test" onclick="sendTest()">📤 Envoyer un message test</button>
+  <div id="msg"></div>
+</div>
+
+<script src="/qrcode.min.js"></script>
+<script>
+var qrInstance = null;
+
+async function refresh() {
+  try {
+    var res  = await fetch('/api/whatsapp/status');
+    var data = await res.json();
+    var badge = document.getElementById('statusBadge');
+    var qrSec = document.getElementById('qrSection');
+    var rdSec = document.getElementById('readySection');
+
+    document.getElementById('waTo').textContent = data.to || '—';
+    document.getElementById('waStatus').textContent = data.status;
+
+    badge.className = 'status s-' + data.status;
+    badge.textContent = {
+      qr:           '📱 Scannez le QR code',
+      ready:        '✅ Connecté',
+      connecting:   '⏳ Connexion...',
+      disconnected: '❌ Déconnecté'
+    }[data.status] || data.status;
+
+    if (data.status === 'qr' && data.qr) {
+      qrSec.style.display = 'block';
+      rdSec.style.display = 'none';
+      var el = document.getElementById('qrcode');
+      el.innerHTML = '';
+      qrInstance = new QRCode(el, {
+        text: data.qr, width: 220, height: 220,
+        colorDark: '#0f172a', colorLight: '#ffffff'
+      });
+    } else if (data.status === 'ready') {
+      qrSec.style.display = 'none';
+      rdSec.style.display = 'block';
+    } else {
+      qrSec.style.display = 'none';
+      rdSec.style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('statusBadge').textContent = '❌ Serveur inaccessible';
+  }
+}
+
+async function sendTest() {
+  var msg = document.getElementById('msg');
+  msg.className = 'msg';
+  msg.textContent = '⏳ Envoi en cours...';
+  try {
+    var res  = await fetch('/api/whatsapp/test', {method:'POST'});
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    msg.className = 'msg ok';
+    msg.textContent = '✅ Message test envoyé !';
+  } catch(e) {
+    msg.className = 'msg err';
+    msg.textContent = '❌ ' + e.message;
+  }
+}
+
+/* Auto-refresh toutes les 5s si QR en attente */
+refresh();
+setInterval(function() {
+  var badge = document.getElementById('statusBadge');
+  if (badge.classList.contains('s-qr') || badge.classList.contains('s-connecting')) {
+    refresh();
+  }
+}, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>The SMARTPHONE — Affiche impression</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 210mm;
+    height: 297mm;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #fff;
+  }
+
+  /* ── Panneau A5 (148.5mm × 210mm) ────────────────────────── */
+  .panel {
+    width: 210mm;
+    height: 148.5mm;
+    display: flex;
+    border-bottom: 1.5px dashed #b0b8d0;
+    overflow: hidden;
+  }
+  .panel:last-child { border-bottom: none; }
+
+  /* ── Côté gauche bleu ────────────────────────────────────── */
+  .qr-side {
+    width: 72mm;
+    background: linear-gradient(160deg, #1e3a8a 0%, #1e40af 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4mm;
+    padding: 6mm;
+    flex-shrink: 0;
+  }
+  .store-name {
+    color: #fff;
+    font-size: 11pt;
+    font-weight: 900;
+    text-align: center;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+  .store-name span {
+    font-size: 18pt;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+  .qr-side img {
+    border-radius: 10px;
+    border: 3px solid rgba(255,255,255,0.9);
+    background: white;
+    padding: 3px;
+  }
+  .scan-label {
+    color: #fff;
+    font-size: 13pt;
+    font-weight: 700;
+    text-align: center;
+  }
+  .scan-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: 8pt;
+    text-align: center;
+  }
+
+  /* ── Côté droit infos ────────────────────────────────────── */
+  .info-side {
+    flex: 1;
+    padding: 7mm 8mm 6mm 8mm;
+    display: flex;
+    flex-direction: column;
+    gap: 3mm;
+  }
+  .section-title {
+    font-size: 15pt;
+    font-weight: 800;
+    color: #1e3a8a;
+    border-bottom: 2px solid #1e3a8a;
+    padding-bottom: 2mm;
+    margin-bottom: 1mm;
+  }
+
+  /* Étapes */
+  .steps { display: flex; flex-direction: column; gap: 2.5mm; }
+  .step { display: flex; align-items: flex-start; gap: 3mm; }
+  .step-num {
+    background: #1e40af;
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 700;
+    width: 5.5mm;
+    height: 5.5mm;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.5mm;
+  }
+  .step-txt { font-size: 9.5pt; color: #1e293b; line-height: 1.35; }
+
+  /* Formats */
+  .formats {
+    font-size: 8pt;
+    color: #475569;
+    background: #f1f5f9;
+    border-radius: 5px;
+    padding: 2mm 3mm;
+  }
+
+  /* Tarifs */
+  .prices {
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+    background: #fefce8;
+    border: 1.5px solid #fde047;
+    border-radius: 6px;
+    padding: 2mm 3mm;
+  }
+  .price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9pt;
+  }
+  .price-label { color: #374151; }
+  .price-val {
+    font-weight: 800;
+    color: #92400e;
+    background: #fef3c7;
+    padding: 0.5mm 2mm;
+    border-radius: 4px;
+    font-size: 9.5pt;
+  }
+
+  /* Séparateur */
+  .divider { border-top: 1px solid #e2e8f0; }
+
+  /* Contacts */
+  .contacts { display: flex; flex-direction: column; gap: 1.5mm; }
+  .contact-row { font-size: 9pt; color: #1e293b; }
+
+</style>
+</head>
+<body>
+  
+  <div class="panel">
+
+    <!-- Côté gauche : QR code -->
+    <div class="qr-side">
+      <div class="store-name">THE<br><span>SMARTPHONE</span></div>
+      <img src="data:image/png;base64,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qSs0MU896QrdME/dME99innqTeapra7QDfPUDfPUtzJPfSvz1KccAQCwcAQAwMIRAAALRwAALBwBALBwBADAwhEAAAs/wlpXaGKeektX6IZ5atIVeot5atIVmpinJl2hiXlq0hV6Yp660RV6U1foiXnqTV2hG+apra7Q38o89aau0MQ8tXUEAMDCEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALPwIr+kKbZmn/mZdobd0hSbmqUlXaKsrNDFPTcxTb+oKfYp56k1doSfmqRtdoYl56i1doRtdoYl56i1HAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCwcAQAwMKPXtYV+lt1hSbmqUlXaGKeektXaGKempinJl2hiXnqLV2hG+apT+kKfUpXaGKeutEVmpinJl2hiXlqqyv0SV2hT+kKTcxTW0cAACwcAQCwcAQAwMIRAAALRwAALBwBALBwBADAwo8umaew0xV6Yp6adIW+WVdoyzz1SV2hJ+apv5V5atIVelNXaGKemnSFnpinJuapSVdo0hW6YZ560hWamKe+1REAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCw8Ov3HwIA4H/pCACAhSMAABaOAABYOAIAYOEIAICFIwAAFv4fj1SArZiJ0DQAAAAASUVORK5CYII=" alt="QR Code" width="150" height="150">
+      <div class="scan-label">📲 Scannez-moi !</div>
+      <div class="scan-sub">Gratuit · Sans inscription</div>
+    </div>
+
+    <!-- Côté droit : infos -->
+    <div class="info-side">
+
+      <div class="section-title">🖨️ Service d'impression</div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-txt">Scannez le QR code avec votre téléphone</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-txt">Envoyez votre fichier via <b>WhatsApp</b>, <b>Email</b> ou en le <b>glissant</b> depuis votre téléphone</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-txt">Votre impression est prête en quelques minutes !</div>
+        </div>
+      </div>
+
+      <div class="formats">
+        📎 PDF · Word · Excel · PowerPoint · Photos (JPG, PNG)
+      </div>
+
+      <div class="prices">
+        <div class="price-row">
+          <span class="price-label">🖨️ Impression N&B</span>
+          <span class="price-val">0,30 €</span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">🌈 Impression couleur</span>
+          <span class="price-val">0,80 €</span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">📠 Scan</span>
+          <span class="price-val">1,00 €</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="contacts">
+        <div class="contact-row">📞 <strong>01 47 07 18 66</strong> &nbsp;·&nbsp; 📱 <strong>06 86 84 82 79</strong></div>
+        <div class="contact-row">✉️ smartphonesatelier4@gmail.com</div>
+      </div>
+
+
+    </div>
+  </div>
+  
+  <div class="panel">
+
+    <!-- Côté gauche : QR code -->
+    <div class="qr-side">
+      <div class="store-name">THE<br><span>SMARTPHONE</span></div>
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAAAklEQVR4AewaftIAABNBSURBVO3B0bEcSYxlwcuwpwcEgVyQAnJBEEjC5f9Oom0Qk1bF7uP+6/cfAgDgf+kIAICFIwAAFo4AAFg4AgBg4QgAgIUjAAAWjgAAWPjRPzBP/Vt1hSbmqRtdoS3z1KQrNDFPTbpCN8xTk67QW8xTk67QDfPUk67QxDw16QrdME9tdYX+ZuapJ12hG+apSVdoYp76t+oKPTkCAGDhCACAhSMAABaOAABYOAIAYOEIAICFIwAAFn50qSv0rcxTn2SemnSFPsU8daMrtGWeepN5atIVmnSFnpinJl2hG+apSVdoYp56Yp6adIVumKdudIUmXaEn5qlv1hX6VuaprSMAABaOAABYOAIAYOEIAICFIwAAFo4AAFg4AgBg4UcvM0+9qSv0rbpCn9IVepN56i1doYl5atIVmpinJl2hb2WemnSFtsxTk67Qt+oKTcxT38o89aau0FuOAABYOAIAYOEIAICFIwAAFo4AAFg4AgBg4QgAgIUf4VFX6IZ5aqsrNDFPTbpCE/PUpCv0lq7Qm8xT38o89a26QhPz1JvMU5Ou0Fu6QvjfOwIAYOEIAICFIwAAFo4AAFg4AgBg4QgAgIUjAAAWfoQ189SkK/Qp5qlJV2hinpp0hbbMU5Ou0CeZp7bMU5Ou0A3z1JZ56kZX6IZ56oZ56klXaNIVwv+9IwAAFo4AAFg4AgBg4QgAgIUjAAAWjgAAWDgCAGDhRy/rCv2tzFOTrtAN89STrtCNrtDEPDXpCk3MU3+rrtBbzFMT89SNrtDEPPWkK3TDPPVJXaEn5qlJV+hbdYX+VkcAACwcAQCwcAQAwMIRAAALRwAALBwBALDwo0vmKfzPzFOTrtAT89SkKzQxT026QhPz1KQrNDFPPekKTcxTk67QxDx1wzz1pCt0oys0MU99inlq0hWamKcmXaGJeepTzFOTrtAN89S/0REAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCw8KN/0BXC/8w8NekKTcxTT7pC38w8tWWemnSFPqkr9F/UFfpbdYVudIVudIX+i44AAFg4AgBg4QgAgIUjAAAWjgAAWDgCAGDhCACAhR+9zDz1pq7QE/PUpCt0oyv0KeapSVcI/zPz1KeYpyZdoYl5atIV2jJPvck8NekKTcxTW12hiXnqU7pCN8xTb+oKPTkCAGDhCACAhSMAABaOAABYOAIAYOEIAICFIwAAFn70D8xTN7pCN8xTE/PUk67QxDw16QrdME+9pSv0SV2hiXnqSVfohnlq0hWamKcmXaEn5qk3macmXaFP6Qp9q67Qja7QxDz1b9UV2joCAGDhCACAhSMAABaOAABYOAIAYOEIAICFIwAAFn79/kMvMk/d6ApNzFNbXaEb5qlJV2hintrqCk3MU5Ou0LcyT026QhPz1KQrNDFPfauu0MQ89bfqCm2ZpyZdoYl5atIVeot56kZXaGKeutEVenIEAMDCEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALPz6/YcG5qk3dYUm5qmtrtDfyjz1zbpCE/PUk67QDfPU36or9CnmqUlX6IZ5atIVmpin3tIVumGemnSFJuapt3SFJuapSVdo6wgAgIUjAAAWjgAAWDgCAGDhCACAhSMAABZ+9LKu0I2u0JZ56kZXaGKemnSFvlVX6FuZpyZdoRvmqX8r89SWeeqbdYWemKcm5qkbXaGJeWrSFXqLeepTjgAAWDgCAGDhCACAhSMAABaOAABYOAIAYOEIAICFX7//0MA8NekKvck8tdUVumGemnSFJuapSVdoyzw16QrdME9NukIT89STrtAnmacmXaEt89QndYWemKcmXaEb5qlP6QpNzFOTrtDEPPWWrtDEPDXpCn3KEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALBwBALDw6/cfumCe+rfqCt0wT026Qk/MU2/qCt0wT026QlvmqUlX6N/KPDXpCk3MU5/SFbphnvpWXaG/lXnqRlfoyREAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCw8KNLXaEb5qkbXaFPMU9NukJbXaGJeepvZZ66YZ6adIU+xTw16Qq9qSv0FvPUm7pCbzFP3TBPTbpCE/PUW7pCk67QxDy1dQQAwMIRAAALRwAALBwBALBwBADAwhEAAAtHAAAs/Pr9hwbmqUlX6JPMU5/SFZqYpyZdoSfmqRtdoRvmqUlXaGKeetIVmpin3tQVmpinnnSFJuapv1VX6JPMU1tdoYl5atIVepN56klX6E3mqUlXaOsIAICFIwAAFo4AAFg4AgBg4QgAgIUjAAAWjgAAWPj1+w/9R5mnbnSFbpinnnSFbpinbnSFbpinvlVXaGKe+pSu0FvMU2/qCt0wT026Qm8xT93oCr3FPPWmrtDWEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALBwBALDwo39gnrrRFbphnpp0hZ6Ypz7JPPUW89SkKzQxT90wT211hSbmqTeZpyZdoU8xT31KV+ibmaeedIUm5qkbXaGJeWqrK3SjKzQxT03MU5Ou0JMjAAAWjgAAWDgCAGDhCACAhSMAABaOAABY+NGHmafe0hWamKdumKfeYp66YZ76pK7Qt+oKTcxTT7pCb+oKTcxTk67QE/PUxDx1oyt0oys0MU89MU9NukIT89SnmKcmXaE3dYW2jgAAWDgCAGDhCACAhSMAABaOAABYOAIAYOEIAICFH73MPHWjK7RlnnpTV+gt5qlJV2hinrphnrphnnrSFXpTV2hinvoU89SkKzTpCk3MU1tdoRvmqUlXaGKeeot56lt1hW6Ypz7lCACAhSMAABaOAABYOAIAYOEIAICFIwAAFo4AAFj40Yd1hSbmqa2u0A3z1MQ8NekKfUpX6IZ56kZX6Il56k3mqUlX6C3mqW/VFXpTV2hinpp0hb6VeepGV2jLPDXpCn3KEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALBwBALDwo5d1hSbmqbeYp97UFfoU89SkKzQxT026Qt+qKzQxT03MU5/SFZqYpyZdoUlX6Il56pO6QhPz1KQr9MQ8NekKTcxTbzJPfYp56kZX6MkRAAALRwAALBwBALBwBADAwhEAAAtHAAAsHAEAsPDr9x96kXnqTV2ht5inbnSFtsxT/1ZdoTeZpyZdobeYpyZdoRvmqUlXCP8/89SNrtBbzFM3ukIT89SNrtCTIwAAFo4AAFg4AgBg4QgAgIUjAAAWjgAAWDgCAGDhRy/rCt0wT22ZpyZdob9VV2hinpp0hSbmqUlXaGKeemKemnSFJuapN5mnnnSFbpin3mSe+pSu0A3z1FZXaNIVmpinbpinJl2ht5inJl2hiXlq6wgAgIUjAAAWjgAAWDgCAGDhCACAhSMAABZ+9A/MU5Ou0MQ8NekKvaUr9M3MU0+6Qp/UFZqYpz6lKzQxT93oCr2lK/StzFOTrtCbukIT89SWeepNXaG3dIW+1REAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCw8Ov3H7pgnvqv6grdME9tdYUm5qlJV+hN5qmtrtAN89S36gpNzFOTrtCWeepv1hV6Yp6adIUm5qm/VVdoYp6adIW2jgAAWDgCAGDhCACAhSMAABaOAABYOAIAYOEIAICFH/0D89SkK/RJ5qknXaE3mafe0hW60RWamKcmXaGJeepbdYVumKc+pSs0MU+9pSt0wzw16QrdME99q67QxDz1pCs0MU/d6Aq95QgAgIUjAAAWjgAAWDgCAGDhCACAhSMAABaOAABY+PX7Dw3MUze6QjfMU5Ou0BPz1I2u0JvMU1tdoYl5atIVumGe+lt1hd5inpp0hSbmqUlXaGKeetIVumGe+qSu0BPz1I2u0A3z1FZX6IZ56kZXaOsIAICFIwAAFo4AAFg4AgBg4QgAgIUjAAAWjgAAWPjRv1hXaGKeepN5aqsrNDFP3TBP3egKTcxTW12hiXnqU8xTN8xTN8xTW+apSVdo0hV6k3lqYp560hWamKcm5qlJV+hGV2jLPDXpCn3KEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALBwBALDw6/cfGpinJl2hb2WemnSFJuapSVdoYp56S1foTeapSVdoyzz1pq7QDfPUVlfohnnqLV2hG+Yp/N/rCk3MU5Ou0MQ8daMr9OQIAICFIwAAFo4AAFg4AgBg4QgAgIUjAAAWfv3+QxfMUze6Qt/KPDXpCk3MU5/SFfq3Mk/9W3WFJuapt3SFJuapT+oKPTFPTbpC/1XmqRtdoSdHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCwcAQAwMKP/oF5atIVepN56lO6QhPz1KQrtGWeepN56lO6QhPz1KQrNDFPvaUrNDFP3TBPTbpCE/PUk67Qm7pCN8xTW12hiXnqRlfoLeapSVdoYp660RXaOgIAYOEIAICFIwAAFo4AAFg4AgBg4QgAgIUjAAAWfv3+QwPz1I2u0JvMU0+6QhPz1I2u0FvMUze6QhPz1KQrNDFPvaUrNDFPfUpX6IZ5atIVeot5atIVepN56i1doU8yT211hW6YpyZdobccAQCwcAQAwMIRAAALRwAALBwBALBwBADAwhEAAAs/+gddoU8yT026Qk/MU5Ou0MQ8NTFP3egKPekKTcxTE/PUJ3WFvlVXaMs8daMr9CldoTeZpyZdoYl5atIVemKe+luZpyZdoTeZpyZdoSdHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCwcAQAwMKP/oF5atIVumGeektX6JO6QhPz1JOu0I2u0MQ89bfqCk3MUxPz1FZX6JuZp550hW6YpyZdoYl5atIVmpinnnSF/qu6Qp9yBADAwhEAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACz86B90hSbmqUlX6E3mqU/pCr3FPDXpCn1SV+gt5qk3dYUm5qlPMU9NukJb5qkbXaEbXaGJeWrSFdoyT026QhPz1KQrtGWe+lsdAQCwcAQAwMIRAAALRwAALBwBALBwBADAwhEAAAs/+rCu0MQ8tdUVmpinJl2hiXnqU8xT38w89aQrNOkK3TBPTcxTbzFPTbpCN8xTk67QlnlqYp6adIUm5qlvZZ6adIVumKeedIVumKcmXaG3HAEAsHAEAMDCEQAAC0cAACwcAQCwcAQAwMKv33/ognlq0hV6k3lqqyv0JvPUpCv0xDz1N+sKbZmnbnSFJuapT+kK3TBPTbpCT8xTN7pCN8xTk67QxDz1t+oKPTFPfbOu0JMjAAAWjgAAWDgCAGDhCACAhSMAABaOAABYOAIAYOFHLzNP3egKTbpCW+apSVfoTeapJ12hiXnqRlfov6ortGWe+lt1hSbmqRvmqW/VFbphnpp0hba6QjfMU59yBADAwhEAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACz8+v2HBuapN3WF3mKe+lt1hW6YpyZdoRvmqbd0hW6Yp75VV+hTzFOTrtDEPPVJXaEn5qn/qq7QpxwBALBwBADAwhEAAAtHAAAsHAEAsHAEAMDCEQAAC79+/yH8j8xTb+oKvcU89aau0JZ56pO6Qm8xT93oCt0wTz3pCr3JPHWjKzQxT211hSbmqUlX6C3mqUlX6FsdAQCwcAQAwMIRAAALRwAALBwBALBwBADAwhEAAAs/+gfmqX+rrtCkKzQxT90wTz3pCr2pK/Qm89RWV+iGeeqGeepJV+hGV2hinrrRFXpinpp0hSbmqUlXaGKeutEV+lbmqUlXaMs8NekKTcxTN7pCT44AAFg4AgBg4QgAgIUjAAAWjgAAWDgCAGDhCACAhR9d6gp9K/PUJ3WFtsxTk67QpCt0wzx1oyu0ZZ6adIXe1BX6Vl2ht5inbpin3mSe+lZdobd0hW50hSbmqa0jAAAWjgAAWDgCAGDhCACAhSMAABaOAABY+NHLzFNv6gq9xTx1wzy11RWamKc+qSs0MU896QrdME/dME99innqTeapra7QDfPUDfPUtzJPfSvz1KccAQCwcAQAwMIRAAALRwAALBwBALBwBADAwhEAAAs/wlpXaGKeektX6IZ5atIVeot5atIVmpinJl2hiXlq0hV6Yp660RV6U1foiXnqTV2hG+apra7Q38o89aau0MQ8tXUEAMDCEQAAC0cAACwcAQCwcAQAwMIRAAALRwAALPwIr+kKbZmn/mZdobd0hSbmqUlXaKsrNDFPTcxTb+oKfYp56k1doSfmqRtdoYl56i1doRtdoYl56i1HAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCwcAQAwMKPXtYV+lt1hSbmqUlXaGKeektXaGKempinJl2hiXnqLV2hG+apT+kKfUpXaGKeutEVmpinJl2hiXlqqyv0SV2hT+kKTcxTW0cAACwcAQCwcAQAwMIRAAALRwAALBwBALBwBADAwo8umaew0xV6Yp6adIW+WVdoyzz1SV2hJ+apv5V5atIVelNXaGKemnSFnpinJuapSVdo0hW6YZ560hWamKe+1REAAAtHAAAsHAEAsHAEAMDCEQAAC0cAACwcAQCw8Ov3HwIA4H/pCACAhSMAABaOAABYOAIAYOEIAICFIwAAFv4fj1SArZiJ0DQAAAAASUVORK5CYII=" alt="QR Code" width="150" height="150">
+      <div class="scan-label">📲 Scannez-moi !</div>
+      <div class="scan-sub">Gratuit · Sans inscription</div>
+    </div>
+
+    <!-- Côté droit : infos -->
+    <div class="info-side">
+
+      <div class="section-title">🖨️ Service d'impression</div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-txt">Scannez le QR code avec votre téléphone</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-txt">Envoyez votre fichier via <b>WhatsApp</b>, <b>Email</b> ou en le <b>glissant</b> depuis votre téléphone</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-txt">Votre impression est prête en quelques minutes !</div>
+        </div>
+      </div>
+
+      <div class="formats">
+        📎 PDF · Word · Excel · PowerPoint · Photos (JPG, PNG)
+      </div>
+
+      <div class="prices">
+        <div class="price-row">
+          <span class="price-label">🖨️ Impression N&B</span>
+          <span class="price-val">0,30 €</span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">🌈 Impression couleur</span>
+          <span class="price-val">0,80 €</span>
+        </div>
+        <div class="price-row">
+          <span class="price-label">📠 Scan</span>
+          <span class="price-val">1,00 €</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="contacts">
+        <div class="contact-row">📞 <strong>01 47 07 18 66</strong> &nbsp;·&nbsp; 📱 <strong>06 86 84 82 79</strong></div>
+        <div class="contact-row">✉️ smartphonesatelier4@gmail.com</div>
+      </div>
+
+
+    </div>
+  </div>
+</body>
+</html>

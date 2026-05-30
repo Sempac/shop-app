@@ -1,9 +1,16 @@
-100.126.44.43
+Smartphone@Admin2026
+
+SUPPRIMER LE LOT ENTR2E EN DOUBLE/
+
+delete * from 
 
 
 
 git add index.html sales.html repairs.html devis.html add_fournisseur_vendeur.sql
-git status
+ 
+ git status
+
+
 Vérifiez que tout est bon puis :
 
 git commit -m "feature: harmonisation ventes/repairs/devis + filtres repairs + calendrier lundi + ordre modules"
@@ -17,8 +24,9 @@ ssh pc@100.126.44.43
 cd C:\apps\shop-app
 git pull origin master
 npm install
+
 Puis psql :
-sql
+"C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d shop_db
 SET search_path TO public;
 \i 'C:/apps/shop-app/add_fournisseur_vendeur.sql'
 Puis redémarrez :
@@ -27,6 +35,7 @@ node server.js
 
 cd C:\apps\shop-app
 git pull origin master
+
 Puis psql :
 "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d shop_db
 

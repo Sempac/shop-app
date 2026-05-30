@@ -1,6 +1,7 @@
 const express=require('express');
 require('dotenv').config();
 const initRapportAuto = require('./rapport-auto');
+const waClient = require('./wa-client');
 const cors=require('cors');
 const {Pool}=require('pg');
 const multer=require('multer');
@@ -2647,4 +2648,29 @@ app.put('/api/catalogue-admin/products/:id/photos/reorder',requireCatAdmin,async
   }catch(e){res.status(500).json({error:e.message});}
 });
 
-app.listen(3000,()=>console.log('🚀 The SMARTPHONE POS — http://localhost:3000'));
+/* =======================================================
+   WHATSAPP — status, QR, test
+======================================================= */
+app.get('/api/whatsapp/status',(req,res)=>{
+  res.json({
+    status: waClient.getStatus(),
+    qr:     waClient.getQR(),
+    to:     process.env.WA_TO ? '+'+process.env.WA_TO : null
+  });
+});
+
+app.post('/api/whatsapp/test',async(req,res)=>{
+  try{
+    const to=process.env.WA_TO;
+    if(!to)return res.status(400).json({error:'WA_TO non configuré dans .env'});
+    await waClient.sendReport(to,
+      '✅ Test WhatsApp — The SMARTPHONE\nLe rapport automatique est bien configuré 🎉');
+    res.json({ok:true});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.listen(3000,()=>{
+  console.log('🚀 The SMARTPHONE POS — http://localhost:3000');
+  /* Démarrer WhatsApp en arrière-plan */
+  try{ waClient.initWhatsApp(); }catch(e){ console.error('[WhatsApp] Erreur démarrage:',e.message); }
+});

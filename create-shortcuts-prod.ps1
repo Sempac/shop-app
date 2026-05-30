@@ -7,7 +7,7 @@ $lnk = $WshShell.CreateShortcut("$bureau\Application des Ventes.lnk")
 $lnk.TargetPath       = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
 $lnk.Arguments        = '--app=http://localhost:3000 --window-size=1400,900 --disable-features=TabStrip'
 $lnk.WorkingDirectory = 'C:\Program Files\Google\Chrome\Application'
-$lnk.IconLocation     = 'C:\apps\shop-app\app-icon.ico, 0'
+$lnk.IconLocation     = 'C:\apps\shop-app\icon-sales.ico, 0'
 $lnk.Description      = 'Application des Ventes'
 $lnk.Save()
 Write-Host "OK: Application des Ventes.lnk"
@@ -21,7 +21,7 @@ $lnk2 = $WshShell.CreateShortcut("$bureau\$newName.lnk")
 $lnk2.TargetPath       = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
 $lnk2.Arguments        = "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"C:\apps\shop-app\restart-app.ps1`""
 $lnk2.WorkingDirectory = 'C:\apps\shop-app'
-$lnk2.IconLocation     = 'C:\apps\shop-app\app-icon.ico, 0'
+$lnk2.IconLocation     = 'C:\apps\shop-app\icon-restart.ico, 0'
 $lnk2.Description      = "Relance le serveur de l'application des ventes"
 $lnk2.WindowStyle      = 1
 $lnk2.Save()
