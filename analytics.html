@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — The SMARTPHONE</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
+
+/* ── Header ── */
+.header{background:#1e293b;border-bottom:1px solid #334155;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.header h1{font-size:18px;font-weight:700;color:#f1f5f9;display:flex;align-items:center;gap:10px;}
+.header h1 span{font-size:22px;}
+.nav-links{display:flex;gap:8px;}
+.nav-links a{color:#94a3b8;text-decoration:none;font-size:13px;padding:6px 12px;border-radius:6px;transition:background .15s;}
+.nav-links a:hover{background:#334155;color:#f1f5f9;}
+.nav-links a.active{background:#3b82f6;color:white;}
+
+/* ── Controls ── */
+.controls{padding:16px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.period-btn{padding:7px 16px;border:1px solid #334155;background:transparent;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;}
+.period-btn.active,.period-btn:hover{background:#3b82f6;border-color:#3b82f6;color:white;}
+.refresh-btn{margin-left:auto;padding:7px 16px;border:1px solid #334155;background:#1e293b;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s;}
+.refresh-btn:hover{background:#334155;color:#f1f5f9;}
+#lastUpdate{font-size:11px;color:#475569;margin-left:6px;}
+
+/* ── Grid ── */
+.grid{padding:0 24px 24px;display:grid;gap:16px;}
+.grid-kpi{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+.grid-2{grid-template-columns:repeat(auto-fill,minmax(340px,1fr));}
+.grid-3{grid-template-columns:1fr 1fr 2fr;}
+
+@media(max-width:900px){.grid-3{grid-template-columns:1fr;}}
+
+/* ── KPI Cards ── */
+.kpi{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi.blue::before{background:linear-gradient(90deg,#3b82f6,#60a5fa);}
+.kpi.green::before{background:linear-gradient(90deg,#22c55e,#4ade80);}
+.kpi.orange::before{background:linear-gradient(90deg,#f97316,#fb923c);}
+.kpi.red::before{background:linear-gradient(90deg,#ef4444,#f87171);}
+.kpi.purple::before{background:linear-gradient(90deg,#a855f7,#c084fc);}
+.kpi.teal::before{background:linear-gradient(90deg,#14b8a6,#2dd4bf);}
+.kpi-icon{font-size:28px;margin-bottom:8px;}
+.kpi-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.kpi-value{font-size:22px;font-weight:700;color:#f1f5f9;}
+.kpi-sub{font-size:11px;color:#64748b;margin-top:4px;}
+
+/* ── Chart Cards ── */
+.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;}
+.card-title{font-size:13px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title span{font-size:16px;}
+.chart-wrap{position:relative;}
+
+/* ── Interpretation box ── */
+.insight{margin-top:14px;padding:10px 14px;background:#0f172a;border-radius:8px;border-left:3px solid #3b82f6;font-size:12px;color:#94a3b8;line-height:1.6;}
+.insight strong{color:#60a5fa;}
+
+/* ── Table ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:7px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #334155;}
+.tbl td{padding:7px 10px;border-bottom:1px solid #1e293b;color:#e2e8f0;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#1e293b20;}
+.tbl .num{text-align:right;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;}
+.badge-vente{background:#1e3a5f;color:#60a5fa;}
+.badge-prestation{background:#1a2e2e;color:#2dd4bf;}
+
+/* ── Loading ── */
+.loading{display:flex;align-items:center;justify-content:center;height:120px;color:#475569;font-size:13px;gap:10px;}
+.spinner{width:20px;height:20px;border:2px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── Section label ── */
+.section-label{font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1px;padding:8px 24px 4px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>📊</span> Analytics — The SMARTPHONE</h1>
+  <div class="nav-links">
+    <a href="/">🏠 Accueil</a>
+    <a href="/analytics.html" class="active">📊 Analytics</a>
+    <a href="/rapport-comptable.html">📋 Rapports</a>
+  </div>
+</div>
+
+<div class="controls">
+  <span style="font-size:12px;color:#64748b;font-weight:600;">Période :</span>
+  <button class="period-btn" onclick="setPeriod(7)">7 jours</button>
+  <button class="period-btn active" onclick="setPeriod(30)">30 jours</button>
+  <button class="period-btn" onclick="setPeriod(90)">90 jours</button>
+  <button class="period-btn" onclick="setPeriod(365)">12 mois</button>
+  <button class="refresh-btn" onclick="loadAll()">🔄 Actualiser</button>
+  <span id="lastUpdate"></span>
+</div>
+
+<!-- KPIs -->
+<div class="section-label">Vue d'ensemble</div>
+<div class="grid grid-kpi" id="kpiGrid">
+  <div class="loading"><div class="spinner"></div> Chargement...</div>
+</div>
+
+<!-- Courbe CA + Dépenses -->
+<div class="section-label">Évolution du chiffre d'affaires</div>
+<div class="grid" style="grid-template-columns:1fr;">
+  <div class="card">
+    <div class="card-title"><span>📈</span> CA journalier — Ventes vs Réparations vs Dépenses</div>
+    <div class="chart-wrap"><canvas id="chartTrend" height="100"></canvas></div>
+    <div class="insight" id="insightTrend"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- Paiements + Top produits -->
+<div class="section-label">Paiements & Produits</div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title"><span>💳</span> Répartition des paiements</div>
+    <div class="chart-wrap" style="max-width:280px;margin:0 auto;"><canvas id="chartPay" height="200"></canvas></div>
+    <div class="insight" id="insightPay"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>🏆</span> Top 10 produits (CA)</div>
+    <div class="chart-wrap"><canvas id="chartTop" height="200"></canvas></div>
+    <div class="insight" id="insightTop"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- Dépenses + Réparations + Mensuel -->
+<div class="section-label">Dépenses & Réparations</div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title"><span>💸</span> Dépenses par catégorie</div>
+    <div class="chart-wrap" style="max-width:280px;margin:0 auto;"><canvas id="chartDep" height="200"></canvas></div>
+    <div class="insight" id="insightDep"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>🔧</span> Réparations par statut</div>
+    <div class="chart-wrap"><canvas id="chartRep" height="200"></canvas></div>
+    <div class="insight" id="insightRep"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- Mensuel 12 mois -->
+<div class="section-label">Tendance mensuelle (12 mois)</div>
+<div class="grid" style="grid-template-columns:1fr;">
+  <div class="card">
+    <div class="card-title"><span>📅</span> CA mensuel — Ventes + Réparations + Dépenses</div>
+    <div class="chart-wrap"><canvas id="chartMonthly" height="90"></canvas></div>
+    <div class="insight" id="insightMonthly"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<script>
+/* ── Globals ── */
+var days = 30;
+var charts = {};
+
+var PALETTE = {
+  blue:   '#3b82f6', blueA:  'rgba(59,130,246,.15)',
+  green:  '#22c55e', greenA: 'rgba(34,197,94,.15)',
+  orange: '#f97316', orangeA:'rgba(249,115,22,.15)',
+  red:    '#ef4444', redA:   'rgba(239,68,68,.15)',
+  purple: '#a855f7', purpleA:'rgba(168,85,247,.15)',
+  teal:   '#14b8a6', tealA:  'rgba(20,184,166,.15)',
+  yellow: '#eab308', yellowA:'rgba(234,179,8,.15)',
+  pink:   '#ec4899',
+};
+
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+Chart.defaults.font.size = 11;
+
+/* ── Utilities ── */
+function fmt(n){ return Number(n||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function fmtShort(n){ var v=Number(n||0); return v>=1000 ? (v/1000).toFixed(1)+'k€' : v.toFixed(0)+'€'; }
+
+function destroyChart(id){
+  if(charts[id]){ charts[id].destroy(); delete charts[id]; }
+}
+
+function fillDates(rows, key, days){
+  var map = {};
+  rows.forEach(r => map[r.jour || r.mois] = parseFloat(r[key]||0));
+  var result = [];
+  for(var i=days-1;i>=0;i--){
+    var d = new Date(); d.setDate(d.getDate()-i);
+    var k = d.toISOString().split('T')[0];
+    result.push({jour:k, val:map[k]||0});
+  }
+  return result;
+}
+
+function moisLabel(mois){
+  var parts = mois.split('-');
+  var noms = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+  return noms[parseInt(parts[1])-1]+' '+parts[0].slice(2);
+}
+
+function setPeriod(d){
+  days = d;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadAll();
+}
+
+/* ── Load all ── */
+async function loadAll(){
+  await Promise.all([
+    loadOverview(),
+    loadTrend(),
+    loadPayments(),
+    loadTopProducts(),
+    loadExpensesCat(),
+    loadRepairsStatus(),
+    loadMonthly()
+  ]);
+  document.getElementById('lastUpdate').textContent =
+    'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ── OVERVIEW KPIs ── */
+async function loadOverview(){
+  var g = document.getElementById('kpiGrid');
+  var data;
+  try{
+    var r = await fetch('/api/analytics/overview?days='+days);
+    data = await r.json();
+  }catch(e){ g.innerHTML='<div style="color:#ef4444;padding:16px;">Erreur de chargement</div>'; return; }
+
+  var totalCA   = data.ventes.ca + data.reparations.ca;
+  var totalCB   = data.ventes.cb + data.reparations.cb;
+  var totalEsp  = data.ventes.esp + data.reparations.esp;
+  var netCaisse = totalCA - data.depenses;
+
+  g.innerHTML = [
+    kpiCard('blue','💰','Chiffre d\'Affaires',fmt(totalCA),data.ventes.nb+data.reparations.nb+' opération(s)'),
+    kpiCard('green','🛒','Ventes',fmt(data.ventes.ca),data.ventes.nb+' vente(s)'),
+    kpiCard('teal','🔧','Réparations',fmt(data.reparations.ca),data.reparations.nb+' réparation(s)'),
+    kpiCard('orange','💳','CB',fmt(totalCB),'Carte bancaire'),
+    kpiCard('purple','💵','Espèces',fmt(totalEsp),'Paiements cash'),
+    kpiCard('red','💸','Dépenses',fmt(data.depenses),'Charges de la période'),
+    kpiCard('green','🏦','Net Caisse',fmt(netCaisse),'CA – Dépenses'),
+    kpiCard('orange','⚠️','Avoirs en cours',fmt(data.credits_en_cours),'Crédits clients'),
+  ].join('');
+}
+
+function kpiCard(color,icon,label,value,sub){
+  return '<div class="kpi '+color+'"><div class="kpi-icon">'+icon+'</div><div class="kpi-label">'+label+'</div><div class="kpi-value">'+value+'</div><div class="kpi-sub">'+sub+'</div></div>';
+}
+
+/* ── REVENUE TREND ── */
+async function loadTrend(){
+  var data;
+  try{ var r=await fetch('/api/analytics/revenue-trend?days='+days); data=await r.json(); }
+  catch(e){ document.getElementById('insightTrend').textContent='Erreur'; return; }
+
+  var vRows = fillDates(data.ventes,    'ca',    days);
+  var rRows = fillDates(data.reparations,'ca',   days);
+  var dRows = fillDates(data.depenses,  'total', days);
+
+  var labels  = vRows.map(r => {
+    var d = new Date(r.jour+'T12:00:00');
+    return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+  });
+  var vData  = vRows.map(r=>r.val);
+  var rData  = rRows.map(r=>r.val);
+  var dData  = dRows.map(r=>r.val);
+  var netData = vData.map((_,i)=>vData[i]+rData[i]-dData[i]);
+
+  destroyChart('trend');
+  var ctx = document.getElementById('chartTrend').getContext('2d');
+  charts['trend'] = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Ventes',data:vData,borderColor:PALETTE.blue,backgroundColor:PALETTE.blueA,tension:.3,fill:true,pointRadius:days>30?0:3},
+        {label:'Réparations',data:rData,borderColor:PALETTE.green,backgroundColor:PALETTE.greenA,tension:.3,fill:true,pointRadius:days>30?0:3},
+        {label:'Dépenses',data:dData,borderColor:PALETTE.red,backgroundColor:PALETTE.redA,tension:.3,fill:true,pointRadius:days>30?0:3},
+        {label:'Net Caisse',data:netData,borderColor:PALETTE.yellow,backgroundColor:'transparent',tension:.3,borderDash:[5,3],pointRadius:days>30?0:2,borderWidth:2},
+      ]
+    },
+    options:{
+      responsive:true,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'top'},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmt(ctx.parsed.y);}}}},
+      scales:{
+        x:{grid:{color:'#1e293b'},ticks:{maxTicksLimit:days>30?12:days}},
+        y:{grid:{color:'#1e293b20'},ticks:{callback:fmtShort},beginAtZero:true}
+      }
+    }
+  });
+
+  /* Interpretation */
+  var maxV = Math.max(...vData), maxR = Math.max(...rData);
+  var totalV = vData.reduce((a,b)=>a+b,0), totalR = rData.reduce((a,b)=>a+b,0);
+  var activeDays = vData.filter(v=>v>0).length;
+  var avgDaily   = (totalV+totalR)/Math.max(activeDays,1);
+  var pctRep     = totalV+totalR>0 ? Math.round(totalR/(totalV+totalR)*100) : 0;
+  document.getElementById('insightTrend').innerHTML =
+    '<strong>Analyse :</strong> Sur les '+days+' derniers jours, le CA total est de <strong>'+fmt(totalV+totalR)+'</strong>. ' +
+    'Les réparations représentent <strong>'+pctRep+'%</strong> du CA. ' +
+    'Moyenne journalière (jours actifs) : <strong>'+fmt(avgDaily)+'</strong>. ' +
+    'Pic ventes : <strong>'+fmt(maxV)+'</strong> — Pic réparations : <strong>'+fmt(maxR)+'</strong>.';
+}
+
+/* ── PAYMENTS ── */
+async function loadPayments(){
+  var data;
+  try{ var r=await fetch('/api/analytics/payments?days='+days); data=await r.json(); }
+  catch(e){ document.getElementById('insightPay').textContent='Erreur'; return; }
+
+  /* Agrège ventes + reparations */
+  var totals = {};
+  [...data.ventes,...data.reparations].forEach(row => {
+    var pm = row.payment_method || 'inconnu';
+    if(!totals[pm]) totals[pm]={ca:0,nb:0};
+    totals[pm].ca  += parseFloat(row.ca||0);
+    totals[pm].nb  += parseInt(row.nb||0);
+  });
+
+  var labelsMap = {card:'💳 CB',cash:'💵 Espèces',credit:'🎁 Avoir',mixed:'🔀 Mixte',inconnu:'❓ Autre'};
+  var colors    = [PALETTE.blue,PALETTE.green,PALETTE.purple,PALETTE.orange,PALETTE.teal,PALETTE.red];
+  var keys      = Object.keys(totals).sort((a,b)=>totals[b].ca-totals[a].ca);
+  var labels    = keys.map(k=>labelsMap[k]||k);
+  var caVals    = keys.map(k=>totals[k].ca);
+  var nbVals    = keys.map(k=>totals[k].nb);
+  var total     = caVals.reduce((a,b)=>a+b,0);
+
+  destroyChart('pay');
+  var ctx = document.getElementById('chartPay').getContext('2d');
+  charts['pay'] = new Chart(ctx, {
+    type:'doughnut',
+    data:{labels,datasets:[{data:caVals,backgroundColor:colors,borderColor:'#0f172a',borderWidth:2,hoverOffset:6}]},
+    options:{
+      responsive:true,cutout:'62%',
+      plugins:{
+        legend:{position:'bottom',labels:{padding:12,color:'#94a3b8'}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.label+': '+fmt(ctx.parsed)+' ('+Math.round(ctx.parsed/total*100)+'%)'; }}}
+      }
+    }
+  });
+
+  /* Insight */
+  var topPm   = keys[0];
+  var topPct  = total>0 ? Math.round(totals[topPm].ca/total*100) : 0;
+  var cbPct   = totals['card'] ? Math.round(totals['card'].ca/total*100) : 0;
+  var espPct  = totals['cash'] ? Math.round(totals['cash'].ca/total*100) : 0;
+  document.getElementById('insightPay').innerHTML =
+    '<strong>Analyse :</strong> La CB représente <strong>'+cbPct+'%</strong> du CA, ' +
+    'les espèces <strong>'+espPct+'%</strong>. ' +
+    (totals['credit'] ? 'Avoirs utilisés : <strong>'+fmt(totals['credit'].ca)+'</strong>.' : '');
+}
+
+/* ── TOP PRODUITS ── */
+async function loadTopProducts(){
+  var data;
+  try{ var r=await fetch('/api/analytics/top-products?days='+days); data=await r.json(); }
+  catch(e){ document.getElementById('insightTop').textContent='Erreur'; return; }
+
+  var labels = data.map(p=>(p.name||'?').substring(0,28));
+  var caVals = data.map(p=>parseFloat(p.ca||0));
+  var qteVals= data.map(p=>parseInt(p.qte||0));
+
+  destroyChart('top');
+  var ctx = document.getElementById('chartTop').getContext('2d');
+  charts['top'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'CA (€)',data:caVals,
+        backgroundColor:caVals.map((_,i)=>i===0?PALETTE.yellow:(i<3?PALETTE.blue:PALETTE.blueA.replace('.15)','.6)'))),
+        borderRadius:4,borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return fmt(ctx.parsed.x)+' | Qté: '+qteVals[ctx.dataIndex];}}}},
+      scales:{
+        x:{grid:{color:'#1e293b20'},ticks:{callback:fmtShort}},
+        y:{grid:{display:false},ticks:{color:'#94a3b8'}}
+      }
+    }
+  });
+
+  var top3 = data.slice(0,3).map(p=>p.name||'?').join(', ');
+  document.getElementById('insightTop').innerHTML =
+    '<strong>Top 3 :</strong> <strong>'+top3+'</strong>. ' +
+    'Ces produits génèrent <strong>'+fmt(caVals.slice(0,3).reduce((a,b)=>a+b,0))+'</strong> sur un total de <strong>'+fmt(caVals.reduce((a,b)=>a+b,0))+'</strong>.';
+}
+
+/* ── DÉPENSES PAR CATÉGORIE ── */
+async function loadExpensesCat(){
+  var data;
+  try{ var r=await fetch('/api/analytics/expenses-by-cat?days='+days); data=await r.json(); }
+  catch(e){ document.getElementById('insightDep').textContent='Erreur'; return; }
+
+  if(!data.length){
+    document.getElementById('insightDep').textContent='Aucune dépense sur la période.';
+    destroyChart('dep');
+    document.getElementById('chartDep').parentElement.innerHTML='<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#475569;font-size:13px;">Aucune dépense</div>';
+    return;
+  }
+
+  var colors = [PALETTE.red,PALETTE.orange,PALETTE.yellow,PALETTE.purple,PALETTE.teal,PALETTE.pink,PALETTE.blue,PALETTE.green];
+  var labels  = data.map(d=>d.category||'Autre');
+  var vals    = data.map(d=>parseFloat(d.total||0));
+  var total   = vals.reduce((a,b)=>a+b,0);
+
+  destroyChart('dep');
+  var ctx = document.getElementById('chartDep').getContext('2d');
+  charts['dep'] = new Chart(ctx, {
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderColor:'#0f172a',borderWidth:2,hoverOffset:6}]},
+    options:{
+      responsive:true,cutout:'60%',
+      plugins:{
+        legend:{position:'bottom',labels:{padding:10,color:'#94a3b8',boxWidth:12}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.label+': '+fmt(ctx.parsed)+' ('+Math.round(ctx.parsed/total*100)+'%)'; }}}
+      }
+    }
+  });
+
+  var topDep = data[0];
+  document.getElementById('insightDep').innerHTML =
+    '<strong>Total dépenses :</strong> <strong>'+fmt(total)+'</strong>. ' +
+    'Poste principal : <strong>'+(topDep.category||'Autre')+'</strong> ('+fmt(topDep.total)+' — '+Math.round(topDep.total/total*100)+'%).';
+}
+
+/* ── RÉPARATIONS PAR STATUT ── */
+async function loadRepairsStatus(){
+  var data;
+  try{ var r=await fetch('/api/analytics/repairs-status'); data=await r.json(); }
+  catch(e){ document.getElementById('insightRep').textContent='Erreur'; return; }
+
+  var statusLabels = {
+    'RECU':'📥 Reçu','EN_COURS':'🔧 En cours','TERMINE':'✅ Terminé','LIVRE':'📦 Livré',
+    'EN_ATTENTE':'⏳ En attente','ANNULE':'❌ Annulé','NON_REPARABLE':'🚫 Non réparable'
+  };
+  var statusColors = {
+    'RECU':PALETTE.blue,'EN_COURS':PALETTE.orange,'TERMINE':PALETTE.green,'LIVRE':PALETTE.teal,
+    'EN_ATTENTE':PALETTE.yellow,'ANNULE':PALETTE.red,'NON_REPARABLE':PALETTE.purple
+  };
+
+  var labels = data.map(d=>statusLabels[d.status]||d.status);
+  var nbVals = data.map(d=>parseInt(d.nb||0));
+  var caVals = data.map(d=>parseFloat(d.ca||0));
+  var colors = data.map(d=>statusColors[d.status]||PALETTE.teal);
+
+  destroyChart('rep');
+  var ctx = document.getElementById('chartRep').getContext('2d');
+  charts['rep'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Nb réparations',data:nbVals,backgroundColor:colors,borderRadius:4,yAxisID:'y'},
+        {label:'CA (€)',data:caVals,type:'line',borderColor:PALETTE.yellow,backgroundColor:'transparent',pointRadius:4,yAxisID:'y2',borderWidth:2}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'top'},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+(ctx.dataset.yAxisID==='y2'?fmt(ctx.parsed.y):ctx.parsed.y);}}}},
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:'#1e293b20'},beginAtZero:true,title:{display:true,text:'Nb',color:'#64748b'}},
+        y2:{position:'right',grid:{display:false},ticks:{callback:fmtShort},title:{display:true,text:'CA',color:'#64748b'}}
+      }
+    }
+  });
+
+  var enCours    = data.find(d=>d.status==='EN_COURS');
+  var enAttente  = data.find(d=>d.status==='EN_ATTENTE');
+  var total      = nbVals.reduce((a,b)=>a+b,0);
+  document.getElementById('insightRep').innerHTML =
+    '<strong>Total :</strong> '+total+' réparation(s). ' +
+    (enCours   ? 'En cours : <strong>'+enCours.nb+'</strong>. '   : '') +
+    (enAttente ? 'En attente pièces : <strong>'+enAttente.nb+'</strong>. ' : '') +
+    'CA total facturé : <strong>'+fmt(caVals.reduce((a,b)=>a+b,0))+'</strong>.';
+}
+
+/* ── MENSUEL 12 MOIS ── */
+async function loadMonthly(){
+  var data;
+  try{ var r=await fetch('/api/analytics/monthly'); data=await r.json(); }
+  catch(e){ document.getElementById('insightMonthly').textContent='Erreur'; return; }
+
+  /* Construire ensemble des mois sur 12 mois */
+  var allMois = new Set();
+  [...data.ventes,...data.reparations,...data.depenses].forEach(d=>allMois.add(d.mois));
+  var moisList = Array.from(allMois).sort();
+  var labels   = moisList.map(moisLabel);
+
+  function getVal(rows, mois, key){ var r=rows.find(r=>r.mois===mois); return r?parseFloat(r[key]||0):0; }
+
+  var vData  = moisList.map(m=>getVal(data.ventes,'ca',m));    // wrong — getVal(data.ventes,m,'ca')
+  var rData  = moisList.map(m=>getVal(data.reparations,m,'ca'));
+  var dData  = moisList.map(m=>getVal(data.depenses,m,'total'));
+  var netData= moisList.map((_,i)=>vData[i]+rData[i]-dData[i]);
+
+  // Fix: getVal should look at 'mois' field
+  vData  = moisList.map(m=>{ var row=data.ventes.find(r=>r.mois===m); return row?parseFloat(row.ca||0):0; });
+  rData  = moisList.map(m=>{ var row=data.reparations.find(r=>r.mois===m); return row?parseFloat(row.ca||0):0; });
+  dData  = moisList.map(m=>{ var row=data.depenses.find(r=>r.mois===m); return row?parseFloat(row.total||0):0; });
+  netData= moisList.map((_,i)=>vData[i]+rData[i]-dData[i]);
+
+  destroyChart('monthly');
+  var ctx = document.getElementById('chartMonthly').getContext('2d');
+  charts['monthly'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Ventes',data:vData,backgroundColor:PALETTE.blue,stack:'ca',borderRadius:2},
+        {label:'Réparations',data:rData,backgroundColor:PALETTE.green,stack:'ca',borderRadius:2},
+        {label:'Dépenses',data:dData,backgroundColor:PALETTE.red,stack:'dep',borderRadius:2,type:'bar'},
+        {label:'Net Caisse',data:netData,type:'line',borderColor:PALETTE.yellow,backgroundColor:'transparent',pointRadius:4,borderWidth:2,tension:.3,stack:undefined}
+      ]
+    },
+    options:{
+      responsive:true,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top'},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmt(ctx.parsed.y);}}}
+      },
+      scales:{
+        x:{grid:{color:'#1e293b20'},stacked:true},
+        y:{grid:{color:'#1e293b20'},ticks:{callback:fmtShort},stacked:true,beginAtZero:true}
+      }
+    }
+  });
+
+  /* Insight mensuel */
+  var bestMoisIdx = netData.indexOf(Math.max(...netData));
+  var worstMoisIdx= netData.indexOf(Math.min(...netData));
+  var moyNet      = netData.reduce((a,b)=>a+b,0)/Math.max(netData.length,1);
+  document.getElementById('insightMonthly').innerHTML =
+    '<strong>Analyse 12 mois :</strong> ' +
+    'Meilleur mois (net caisse) : <strong>'+(labels[bestMoisIdx]||'—')+'</strong> ('+fmt(netData[bestMoisIdx]||0)+'). ' +
+    'Mois le plus difficile : <strong>'+(labels[worstMoisIdx]||'—')+'</strong> ('+fmt(netData[worstMoisIdx]||0)+'). ' +
+    'Net caisse moyen : <strong>'+fmt(moyNet)+'</strong>/mois.';
+}
+
+/* ── Init ── */
+loadAll();
+</script>
+</body>
+</html>

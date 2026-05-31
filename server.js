@@ -2649,6 +2649,128 @@ app.put('/api/catalogue-admin/products/:id/photos/reorder',requireCatAdmin,async
 });
 
 /* =======================================================
+   ANALYTICS — Dashboard
+======================================================= */
+app.get('/api/analytics/overview', async(req,res)=>{
+  try{
+    const days = parseInt(req.query.days)||30;
+    const since = new Date(); since.setDate(since.getDate()-days);
+    const sinceStr = since.toISOString().split('T')[0];
+
+    const [v,r,d,cr] = await Promise.all([
+      pool.query(`SELECT COUNT(*) AS nb, COALESCE(SUM(total),0) AS ca,
+        COALESCE(SUM(CASE WHEN payment_method='card' THEN total WHEN COALESCE(amount_cb,0)>0 THEN amount_cb ELSE 0 END),0) AS cb,
+        COALESCE(SUM(CASE WHEN payment_method='cash' THEN total WHEN COALESCE(amount_cash,0)>0 THEN amount_cash ELSE 0 END),0) AS esp,
+        COALESCE(SUM(COALESCE(amount_credit,0)),0) AS credit
+        FROM orders WHERE DATE(created_at)>=$1 AND (status IS NULL OR status!='cancelled')`, [sinceStr]),
+      pool.query(`SELECT COUNT(*) AS nb, COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS ca,
+        COALESCE(SUM(CASE WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) WHEN COALESCE(amount_cb,0)>0 THEN amount_cb ELSE 0 END),0) AS cb,
+        COALESCE(SUM(CASE WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) WHEN COALESCE(amount_cash,0)>0 THEN amount_cash ELSE 0 END),0) AS esp
+        FROM repairs WHERE DATE(created_at)>=$1`, [sinceStr]),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE DATE(date)>=$1`, [sinceStr]),
+      pool.query(`SELECT COALESCE(SUM(amount_due),0) AS total FROM customer_credits WHERE status='EN_COURS'`)
+    ]);
+    res.json({
+      ventes:    {nb:parseInt(v.rows[0].nb), ca:parseFloat(v.rows[0].ca), cb:parseFloat(v.rows[0].cb), esp:parseFloat(v.rows[0].esp), credit:parseFloat(v.rows[0].credit)},
+      reparations:{nb:parseInt(r.rows[0].nb), ca:parseFloat(r.rows[0].ca), cb:parseFloat(r.rows[0].cb), esp:parseFloat(r.rows[0].esp)},
+      depenses:  parseFloat(d.rows[0].total),
+      credits_en_cours: parseFloat(cr.rows[0].total),
+      days
+    });
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/analytics/revenue-trend', async(req,res)=>{
+  try{
+    const days = parseInt(req.query.days)||30;
+    const since = new Date(); since.setDate(since.getDate()-days);
+    const sinceStr = since.toISOString().split('T')[0];
+    const [v,r,d] = await Promise.all([
+      pool.query(`SELECT DATE(created_at) AS jour, COALESCE(SUM(total),0) AS ca
+        FROM orders WHERE DATE(created_at)>=$1 AND (status IS NULL OR status!='cancelled')
+        GROUP BY jour ORDER BY jour`, [sinceStr]),
+      pool.query(`SELECT DATE(COALESCE(delivered_at,created_at)) AS jour, COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS ca
+        FROM repairs WHERE DATE(created_at)>=$1 AND status IN ('TERMINE','LIVRE')
+        GROUP BY jour ORDER BY jour`, [sinceStr]),
+      pool.query(`SELECT DATE(date) AS jour, COALESCE(SUM(amount),0) AS total
+        FROM expenses WHERE DATE(date)>=$1 GROUP BY jour ORDER BY jour`, [sinceStr])
+    ]);
+    res.json({ventes:v.rows, reparations:r.rows, depenses:d.rows});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/analytics/payments', async(req,res)=>{
+  try{
+    const days = parseInt(req.query.days)||30;
+    const since = new Date(); since.setDate(since.getDate()-days);
+    const sinceStr = since.toISOString().split('T')[0];
+    const [v,r] = await Promise.all([
+      pool.query(`SELECT payment_method, COUNT(*) AS nb, COALESCE(SUM(total),0) AS ca
+        FROM orders WHERE DATE(created_at)>=$1 AND (status IS NULL OR status!='cancelled')
+        GROUP BY payment_method`, [sinceStr]),
+      pool.query(`SELECT payment_method, COUNT(*) AS nb, COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS ca
+        FROM repairs WHERE DATE(created_at)>=$1 GROUP BY payment_method`, [sinceStr])
+    ]);
+    res.json({ventes:v.rows, reparations:r.rows});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/analytics/top-products', async(req,res)=>{
+  try{
+    const days = parseInt(req.query.days)||30;
+    const since = new Date(); since.setDate(since.getDate()-days);
+    const sinceStr = since.toISOString().split('T')[0];
+    const r = await pool.query(`
+      SELECT COALESCE(p.name,'Produit supprimé') AS name, p.category,
+        SUM(oi.quantity) AS qte, SUM(oi.quantity*(oi.price-COALESCE(oi.discount,0))) AS ca
+      FROM order_items oi
+      LEFT JOIN products p ON p.id=oi.product_id
+      JOIN orders o ON o.id=oi.order_id
+      WHERE DATE(o.created_at)>=$1 AND (o.status IS NULL OR o.status!='cancelled')
+      GROUP BY p.name,p.category ORDER BY ca DESC LIMIT 10`, [sinceStr]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/analytics/expenses-by-cat', async(req,res)=>{
+  try{
+    const days = parseInt(req.query.days)||30;
+    const since = new Date(); since.setDate(since.getDate()-days);
+    const sinceStr = since.toISOString().split('T')[0];
+    const r = await pool.query(`SELECT category, COALESCE(SUM(amount),0) AS total, COUNT(*) AS nb
+      FROM expenses WHERE DATE(date)>=$1 GROUP BY category ORDER BY total DESC`, [sinceStr]);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/analytics/repairs-status', async(req,res)=>{
+  try{
+    const r = await pool.query(`SELECT status, COUNT(*) AS nb,
+      COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS ca
+      FROM repairs GROUP BY status ORDER BY nb DESC`);
+    res.json(r.rows);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+app.get('/api/analytics/monthly', async(req,res)=>{
+  try{
+    const [v,r,d] = await Promise.all([
+      pool.query(`SELECT TO_CHAR(created_at,'YYYY-MM') AS mois, COALESCE(SUM(total),0) AS ca, COUNT(*) AS nb
+        FROM orders WHERE (status IS NULL OR status!='cancelled')
+        AND created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY mois ORDER BY mois`),
+      pool.query(`SELECT TO_CHAR(created_at,'YYYY-MM') AS mois, COALESCE(SUM(COALESCE(final_price,estimated_price,0)),0) AS ca, COUNT(*) AS nb
+        FROM repairs WHERE created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY mois ORDER BY mois`),
+      pool.query(`SELECT TO_CHAR(date,'YYYY-MM') AS mois, COALESCE(SUM(amount),0) AS total
+        FROM expenses WHERE date >= NOW() - INTERVAL '12 months'
+        GROUP BY mois ORDER BY mois`)
+    ]);
+    res.json({ventes:v.rows, reparations:r.rows, depenses:d.rows});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* =======================================================
    WHATSAPP — status, QR, test
 ======================================================= */
 app.get('/api/whatsapp/status',(req,res)=>{
