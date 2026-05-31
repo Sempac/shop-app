@@ -20,6 +20,7 @@ function initWhatsApp() {
       }),
       puppeteer: {
         headless: true,
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -69,7 +70,12 @@ function initWhatsApp() {
       console.error('[WhatsApp] Échec auth :', msg);
     });
 
-    client.initialize();
+    /* Catch async rejections from initialize() (e.g. Chrome not found) */
+    client.initialize().catch(e => {
+      _ready  = false;
+      _status = 'disconnected';
+      console.error('[WhatsApp] Erreur initialize :', e.message);
+    });
     console.log('[WhatsApp] Initialisation en cours...');
 
   } catch(e) {
