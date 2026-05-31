@@ -185,7 +185,11 @@ function destroyChart(id){
 
 function fillDates(rows, key, days){
   var map = {};
-  rows.forEach(r => map[r.jour || r.mois] = parseFloat(r[key]||0));
+  /* Normalize: timestamp "2026-05-12T22:00:00.000Z" → "2026-05-12" */
+  rows.forEach(r => {
+    var k = (r.jour || r.mois || '').split('T')[0];
+    map[k] = parseFloat(r[key]||0);
+  });
   var result = [];
   for(var i=days-1;i>=0;i--){
     var d = new Date(); d.setDate(d.getDate()-i);
