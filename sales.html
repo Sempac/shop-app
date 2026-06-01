@@ -394,6 +394,20 @@ const CAT_ICONS={'Tous':'⚡','Smartphone':'📱','Tablette':'📟','PC Portable
   'Carte SIM':'📶','Accessoire Info':'⌨️','Coque':'🛡️','Protection écran':'🔲',
   'Chargeur':'🔌','Câble':'🔗','Audio':'🎧','Pièce détachée':'🔧','Prestation':'🛠️'};
 
+function localDate(d){
+  if(!d) return '';
+  const dt=(d instanceof Date)?d:new Date(d);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+
+function canonCat(c){
+  if(!c) return c;
+  var n=c.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  var MAP={'piece detachee':'Pièce détachée','cable':'Câble','carte sim':'Carte SIM',
+           'protection ecran':'Protection écran','accessoire info':'Accessoire Info'};
+  return MAP[n]||c;
+}
+
 const GRADE_COLORS={'NEUF':'#22c55e','Grade A+':'#eab308','Grade A':'#3b82f6',
   'Grade B':'#06b6d4','Grade C':'#f59e0b','Grade D':'#ef4444','Pour pièces':'#94a3b8'};
 
@@ -435,13 +449,19 @@ function checkStockAlerts(){
   if(al.length||ru.length){bar.style.display='block';document.getElementById('stockAlertMsg').textContent=`${ru.length} rupture(s), ${al.length} stock(s) faible(s)`;}
 }
 
+const CAT_ORDER=['Tous','Coque','Protection écran','Chargeur','Câble','Audio','Carte SIM','Smartphone','Tablette'];
+const CAT_LABELS={'Protection écran':'Verre/Prot.'};
+
 function buildCats(){
-  const cats=['Tous',...new Set(allProducts.map(p=>p.category).filter(Boolean).sort())];
+  const existing=new Set(allProducts.map(p=>canonCat(p.category)).filter(Boolean));
+  const ordered=CAT_ORDER.filter(c=>c==='Tous'||existing.has(c));
+  const rest=[...existing].filter(c=>CAT_ORDER.indexOf(c)<0).sort();
+  const cats=[...ordered,...rest];
   const grid=document.getElementById('catGrid');grid.innerHTML='';
   cats.forEach(cat=>{
     const el=document.createElement('div');
     el.className='cat-btn'+(cat==='Tous'?' active':'');
-    el.innerHTML=`<span class="ci">${CAT_ICONS[cat]||'📦'}</span>${cat}`;
+    el.innerHTML=`<span class="ci">${CAT_ICONS[cat]||'📦'}</span>${CAT_LABELS[cat]||cat}`;
     el.onclick=()=>{activeCat=cat;document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');filterProducts();};
     grid.appendChild(el);
   });
@@ -474,7 +494,7 @@ async function filterProducts(){
 
   const q=norm(qRaw);
   let filtered=allProducts.filter(p=>{
-    const mc=activeCat==='Tous'||p.category===activeCat;
+    const mc=activeCat==='Tous'||canonCat(p.category)===activeCat;
     const md=activeCond==='all'||(p.condition||'NEUF')===activeCond;
     const qRaw=document.getElementById('search').value.trim();
     const mt=!q||norm(p.name).includes(q)
@@ -943,7 +963,7 @@ async function editOrder(id) {
   document.getElementById('customer').value = o.customer_name || '';
   document.getElementById('comment').value  = o.comment || '';
   if (document.getElementById('saleDate') && o.created_at) {
-    document.getElementById('saleDate').value = o.created_at.slice(0,10);
+    document.getElementById('saleDate').value = localDate(o.created_at);
   }
   if (document.getElementById('garantie')) {
     document.getElementById('garantie').value = o.garantie || '';

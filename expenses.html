@@ -154,7 +154,12 @@ var userRole = currentUser ? (currentUser.role === 'admin' ? 'gerant' : currentU
 var allowedCategories = [];
 
 const fmt = n => Number(n||0).toFixed(2) + ' €';
-const today    = new Date().toISOString().slice(0,10);
+function localDate(d){
+  if(!d) return '';
+  const dt=(d instanceof Date)?d:new Date(d);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+const today    = localDate(new Date());
 const firstDay = today.slice(0,8) + '01';
 document.getElementById('dep_date').value = today;
 document.getElementById('f_from').value   = firstDay;
@@ -324,7 +329,7 @@ async function editExpense(id) {
   document.getElementById('dep_amount_ht').value  = unitHT;
   document.getElementById('dep_tva').value        = exp.taux_tva || '20';
   document.getElementById('dep_cat').value        = exp.category || '';
-  document.getElementById('dep_date').value       = exp.date ? exp.date.slice(0,10) : '';
+  document.getElementById('dep_date').value       = exp.date ? localDate(exp.date) : '';
   calcDepTTC();
   /* Stocker l'ID en cours d'édition */
   window._editingExpenseId = id;

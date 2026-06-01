@@ -1029,9 +1029,9 @@ async function showRepair(id) {
   document.getElementById('n_garantie').value = r.garantie || '';
   document.getElementById('n_status').value   = r.status || 'EN_ATTENTE';
   /* Date d'entrée = created_at, modifiable */
-  document.getElementById('n_entry_date').value = r.created_at ? r.created_at.slice(0,10) : new Date().toISOString().slice(0,10);
+  document.getElementById('n_entry_date').value = localDate(r.created_at || new Date());
   /* Date de livraison = delivered_at si dispo (statut LIVRE), sinon aujourd'hui */
-  document.getElementById('n_rep_date').value = r.delivered_at ? r.delivered_at.slice(0,10) : new Date().toISOString().slice(0,10);
+  document.getElementById('n_rep_date').value = localDate(r.delivered_at || new Date());
   setIssueValue(r.issue || '');
 
   /* Paiement */
@@ -1144,7 +1144,7 @@ async function saveRepair() {
     if (d.error) { alert('❌ ' + d.error); return; }
     alert('✅ Réparation #' + d.id + ' créée !');
     loadRepairs();
-    showRepair(d.id);
+    resetForm();
   }
 }
 
@@ -1171,8 +1171,8 @@ function resetForm() {
     issueEl.selectedIndex = 0;
   }
   document.getElementById('n_status').value          = 'LIVRE';
-  document.getElementById('n_entry_date').value       = new Date().toISOString().slice(0,10);
-  document.getElementById('n_rep_date').value        = new Date().toISOString().slice(0,10);
+  document.getElementById('n_entry_date').value       = localDate(new Date());
+  document.getElementById('n_rep_date').value        = localDate(new Date());
   document.getElementById('n_pay_mode').value        = 'cash';
   updateBrandList(); /* reset brand + model lists */
   var paySection = document.querySelector('.pay-frame');
@@ -1478,8 +1478,14 @@ async function printFactureRep(repairId) {
 }
 
 
+function localDate(d){
+  if(!d) return '';
+  var dt=(d instanceof Date)?d:new Date(d);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+
 /* Init date du jour + statut + mode paiement par défaut */
-var _today = new Date().toISOString().slice(0,10);
+var _today = localDate(new Date());
 document.getElementById('n_entry_date').value      = _today;
 document.getElementById('n_rep_date').value        = _today;
 document.getElementById('n_status').value          = 'LIVRE';

@@ -176,6 +176,12 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 var requireAuth = window.requireAuth || function(){ return {role:'gerant',name:'Admin'}; };
 var user = requireAuth();
 
+function localDate(d){
+  if(!d) return '';
+  var dt=(d instanceof Date)?d:new Date(d);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+
 var currentCmd = null;
 
 /* ══ TABS ══ */
@@ -293,15 +299,15 @@ function renderCommandeDetail(data) {
         '</div>' +
         '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;">' +
           '<div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:3px;">Date facture</div>' +
-          '<input id="ei_datefac" type="date" value="' + (cmd.date_facture?cmd.date_facture.slice(0,10):'') + '" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:3px 5px;font-size:12px;color:#0f172a;box-sizing:border-box;" title="Date de la facture">' +
+          '<input id="ei_datefac" type="date" value="' + (cmd.date_facture?localDate(cmd.date_facture):'') + '" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:3px 5px;font-size:12px;color:#0f172a;box-sizing:border-box;" title="Date de la facture">' +
         '</div>' +
         '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;">' +
           '<div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:3px;">Date commande</div>' +
-          '<input id="ei_datecmd" type="date" value="' + (cmd.date_commande?cmd.date_commande.slice(0,10):'') + '" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:3px 5px;font-size:12px;color:#0f172a;box-sizing:border-box;" title="Date de commande">' +
+          '<input id="ei_datecmd" type="date" value="' + (cmd.date_commande?localDate(cmd.date_commande):'') + '" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:3px 5px;font-size:12px;color:#0f172a;box-sizing:border-box;" title="Date de commande">' +
         '</div>' +
         '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;">' +
           '<div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:3px;">Date reception</div>' +
-          '<input id="cmd_date_recep" type="date" value="' + (cmd.date_livraison_prevue?cmd.date_livraison_prevue.slice(0,10):'') + '" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:3px 5px;font-size:12px;color:#0f172a;box-sizing:border-box;" title="Date de reception">' +
+          '<input id="cmd_date_recep" type="date" value="' + (cmd.date_livraison_prevue?localDate(cmd.date_livraison_prevue):'') + '" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:3px 5px;font-size:12px;color:#0f172a;box-sizing:border-box;" title="Date de reception">' +
         '</div>' +
         '<div style="background:white;border-radius:6px;padding:8px;border:1px solid #e2e8f0;">' +
           '<div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:3px;">Paiement</div>' +
@@ -1111,7 +1117,7 @@ function showNewCommande() {
       '<div><label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">N° Facture</label>',
         '<input id="nc_numfac" placeholder="Ex: FA12345" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;color:#0f172a;box-sizing:border-box;"></div>',
       '<div><label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Date commande</label>',
-        '<input id="nc_date" type="date" value="' + new Date().toISOString().slice(0,10) + '" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;color:#0f172a;box-sizing:border-box;"></div>',
+        '<input id="nc_date" type="date" value="' + localDate(new Date()) + '" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;color:#0f172a;box-sizing:border-box;"></div>',
       '<div><label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Transporteur</label>',
         '<input id="nc_trans" placeholder="Ex: DPD, Colissimo" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;color:#0f172a;box-sizing:border-box;"></div>',
       '<div><label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Montant HT</label>',

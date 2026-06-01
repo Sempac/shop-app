@@ -308,6 +308,11 @@ table.sticky thead tr th,
 const fmt = n => Number(n||0).toFixed(2) + ' €';
 const fmtSign = n => (n>=0?'+':'')+Number(n||0).toFixed(2)+' €';
 let lots=[], allProducts=[], currentLot=null, currentItems=[], itemMode='exist', selProdId=null;
+function localDate(d){
+  if(!d) return '';
+  const dt=(d instanceof Date)?d:new Date(d);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
 
 function closeModal(id){document.getElementById(id).classList.remove('show');}
 
@@ -747,7 +752,7 @@ function calcLotPay(){
 
 function openModalLot(id){
   document.getElementById('l_id').value=id||'';
-  document.getElementById('l_date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('l_date').value=localDate(new Date());
   document.getElementById('l_status').value='EN_COURS';
   ['l_name','l_supplier','l_supplier_phone','l_cost','l_notes','l_cb','l_cash'].forEach(x=>document.getElementById(x).value='');
   document.getElementById('l_credit').value='0.00';
@@ -759,7 +764,7 @@ function openModalLot(id){
       document.getElementById('l_name').value          =lot.name||'';
       document.getElementById('l_supplier').value      =lot.supplier_name||'';
       document.getElementById('l_supplier_phone').value=lot.supplier_phone||'';
-      document.getElementById('l_date').value          =(lot.purchase_date||'').slice(0,10);
+      document.getElementById('l_date').value          =localDate(lot.purchase_date);
       document.getElementById('l_cost').value          =lot.total_cost||'';
       document.getElementById('l_status').value        =lot.status||'EN_COURS';
       document.getElementById('l_notes').value         =lot.notes||'';

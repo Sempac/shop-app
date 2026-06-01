@@ -33,6 +33,12 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 .chip{padding:4px 9px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;font-size:11px;font-weight:700;cursor:pointer;color:#475569;font-family:Arial;transition:.15s;white-space:nowrap;}
 .chip:hover{border-color:#3b82f6;color:#3b82f6;}
 .chip.on{background:#3b82f6;border-color:#3b82f6;color:#fff;}
+/* Cartes catégories */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px;}
+.cat-btn{padding:8px 4px;border:1.5px solid #e2e8f0;border-radius:7px;cursor:pointer;font-size:11px;font-weight:bold;background:#f1f5f9;color:#64748b;text-align:center;line-height:1.3;font-family:Arial;}
+.cat-btn .ci{display:block;font-size:24px;margin-bottom:3px;}
+.cat-btn:hover{background:#dbeafe;color:#1e40af;border-color:#93c5fd;}
+.cat-btn.active{background:#1e40af;color:white;border-color:#3b82f6;}
 .chip.on.c-occ{background:#f59e0b;border-color:#f59e0b;}
 .chip.on.c-neuf{background:#22c55e;border-color:#22c55e;}
 .chip.on.c-rec{background:#6366f1;border-color:#6366f1;}
@@ -202,22 +208,7 @@ table.sticky thead tr th,
     <div id="alertBox" class="alert-box" style="display:none"></div>
     <div class="fg"><label>Recherche</label><input id="f_search" placeholder="Nom, couleur..."></div>
     <div class="fg"><label>Catégorie</label>
-      <select id="f_cat" style="display:none"></select>
-      <div class="chip-group" id="chips-cat">
-        <button class="chip on" data-val="" onclick="setChip('cat','',this)">Tous</button>
-        <button class="chip" data-val="Smartphone" onclick="setChip('cat','Smartphone',this)">📱 Smartphones</button>
-        <button class="chip" data-val="Tablette" onclick="setChip('cat','Tablette',this)">📟 Tablettes</button>
-        <button class="chip" data-val="PC Portable" onclick="setChip('cat','PC Portable',this)">💻 PC</button>
-        <button class="chip" data-val="Coque" onclick="setChip('cat','Coque',this)">🛡️ Coques</button>
-        <button class="chip" data-val="Protection écran" onclick="setChip('cat','Protection écran',this)">🔲 Protection</button>
-        <button class="chip" data-val="Câble" onclick="setChip('cat','Câble',this)">🔗 Câbles</button>
-        <button class="chip" data-val="Chargeur" onclick="setChip('cat','Chargeur',this)">🔌 Chargeurs</button>
-        <button class="chip" data-val="Audio" onclick="setChip('cat','Audio',this)">🎧 Audio</button>
-        <button class="chip" data-val="Pièce détachée" onclick="setChip('cat','Pièce détachée',this)">🔧 Pièces</button>
-        <button class="chip" data-val="Accessoire Info" onclick="setChip('cat','Accessoire Info',this)">💾 Info</button>
-        <button class="chip" data-val="Carte SIM" onclick="setChip('cat','Carte SIM',this)">💳 SIM</button>
-        <button class="chip" data-val="Prestation" onclick="setChip('cat','Prestation',this)">🖨️ Prestation</button>
-      </div>
+      <div class="cat-grid" id="catGrid"></div>
     </div>
     <div class="fg"><label>État</label>
       <select id="f_cond" style="display:none"></select>
@@ -438,6 +429,33 @@ table.sticky thead tr th,
 var allProducts = [];
 var allContacts = [];
 var filtered = [];
+var activeCat = '';
+
+var CAT_ICONS_S = {'':'⚡','Coque':'🛡️','Protection écran':'🔲','Chargeur':'🔌','Câble':'🔗','Audio':'🎧','Carte SIM':'📶','Smartphone':'📱','Tablette':'📟','PC Portable':'💻','Accessoire Info':'⌨️','Pièce détachée':'🔧','Prestation':'🛠️'};
+var CAT_LABELS_S = {'Protection écran':'Verre/Prot.','':'Tous'};
+var CAT_ORDER_S = ['','Coque','Protection écran','Chargeur','Câble','Audio','Carte SIM','Smartphone','Tablette'];
+
+function buildCats() {
+  var existing = {};
+  allProducts.forEach(function(p){ if(p.category) existing[p.category]=true; });
+  var ordered = CAT_ORDER_S.filter(function(c){ return c===''||existing[c]; });
+  var rest = Object.keys(existing).filter(function(c){ return CAT_ORDER_S.indexOf(c)<0; }).sort();
+  var cats = ordered.concat(rest);
+  var grid = document.getElementById('catGrid');
+  grid.innerHTML = '';
+  cats.forEach(function(cat) {
+    var el = document.createElement('div');
+    el.className = 'cat-btn' + (cat===activeCat?' active':'');
+    el.innerHTML = '<span class="ci">'+(CAT_ICONS_S[cat]||'📦')+'</span>'+(CAT_LABELS_S[cat]||cat);
+    el.onclick = (function(c){ return function(){
+      activeCat=c;
+      document.querySelectorAll('#catGrid .cat-btn').forEach(function(b){b.classList.remove('active');});
+      el.classList.add('active');
+      applyFilters();
+    };})(cat);
+    grid.appendChild(el);
+  });
+}
 
 var COLORS_MAP = {
   'Noir':'#1f2937','Blanc':'#f9fafb','Gris':'#9ca3af','Argent':'#d1d5db',
@@ -469,6 +487,7 @@ async function loadAll() {
     var rc = await fetch('/api/contacts');
     allContacts = await rc.json();
   } catch(e) { allContacts = []; }
+  buildCats();
   applyFilters();
   showAlerts();
 }
@@ -514,8 +533,7 @@ function applyFilters() {
   _applyFiltersLocal(qRaw, norm);
 }
 
-/* Variables pour les filtres chips (les selects cachés ne fonctionnent pas sans options) */
-var chipCat='', chipCond='', chipStock='';
+var chipCond='', chipStock='';
 
 function setChip(field, val, btn) {
   if(field==='cat')   chipCat=val;
@@ -529,7 +547,7 @@ function setChip(field, val, btn) {
 
 function _applyFiltersLocal(qRaw, norm) {
   var q        = norm(qRaw);
-  var cat      = chipCat;
+  var cat      = activeCat;
   var cond     = chipCond;
   var grade    = document.getElementById('f_grade').value;
   var color    = document.getElementById('f_color').value;
@@ -573,8 +591,9 @@ function resetFilters() {
   document.getElementById('f_supplier').value = '';
   document.getElementById('f_grade').value    = '';
   document.getElementById('f_color').value    = '';
-  chipCat=''; chipCond=''; chipStock='';
-  ['cat','cond','stock'].forEach(function(field){
+  activeCat=''; chipCond=''; chipStock='';
+  buildCats();
+  ['cond','stock'].forEach(function(field){
     var group = document.getElementById('chips-'+field);
     if(!group) return;
     group.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
