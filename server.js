@@ -1,5 +1,13 @@
 const express=require('express');
 require('dotenv').config();
+
+/* Empêcher les crashes sur erreurs non gérées (ex: puppeteer/WhatsApp) */
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]', err.message);
+});
 const initRapportAuto = require('./rapport-auto');
 const waClient = require('./wa-client');
 const cors=require('cors');
@@ -58,6 +66,10 @@ app.put('/api/products/:id',async(req,res)=>{
   try{const{name,category,condition,color,grade,location_zone,location_detail,barcode,supplier_name,purchase_price,sale_price,stock_quantity,stock_alert}=req.body;
     const r=await pool.query(`UPDATE products SET name=$1,category=$2,condition=$3,color=$4,grade=$5,location_zone=$6,location_detail=$7,barcode=$8,supplier_name=$9,purchase_price=$10,sale_price=$11,stock_quantity=$12,stock_alert=$13 WHERE id=$14 RETURNING *`,
       [name,category||'Autre',condition||'NEUF',color||null,grade||null,location_zone||null,location_detail||null,barcode||null,supplier_name||null,Number(purchase_price||0),Number(sale_price||0),Number(stock_quantity||0),Number(stock_alert||3),req.params.id]);
+    res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}
+});
+app.patch('/api/products/:id/stock',async(req,res)=>{
+  try{const r=await pool.query(`UPDATE products SET stock_quantity=$1 WHERE id=$2 RETURNING *`,[Number(req.body.stock_quantity||0),req.params.id]);
     res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}
 });
 app.delete('/api/products/:id',async(req,res)=>{
@@ -2441,8 +2453,10 @@ app.get('/api/catalogue-admin/products', async(req,res) => {
     const {search,category} = req.query;
     let sql = `SELECT id, name, category, condition, grade, color,
                       sale_price, catalogue_price, catalogue_visible,
-                      stock_quantity, catalogue_description
-               FROM products WHERE statut_produit='DISPONIBLE'`;
+                      stock_quantity, catalogue_description,
+                      purchase_price, supplier_name,
+                      (SELECT filename FROM product_photos WHERE product_id=p.id ORDER BY sort_order,id LIMIT 1) AS photo
+               FROM products p WHERE statut_produit='DISPONIBLE'`;
     const p = [];
     if(search){ p.push('%'+search+'%'); sql+=` AND name ILIKE $${p.length}`; }
     if(category){ p.push(category); sql+=` AND category=$${p.length}`; }
@@ -2779,6 +2793,16 @@ app.get('/api/whatsapp/status',(req,res)=>{
     qr:     waClient.getQR(),
     to:     process.env.WA_TO ? '+'+process.env.WA_TO : null
   });
+});
+
+app.get('/api/whatsapp/groups',async(req,res)=>{
+  try{
+    const chats = await waClient.getClient().getChats();
+    const groups = chats
+      .filter(c=>c.isGroup)
+      .map(c=>({id:c.id._serialized, name:c.name, participants:c.participants?.length||0}));
+    res.json(groups);
+  }catch(e){res.status(500).json({error:e.message});}
 });
 
 app.post('/api/whatsapp/test',async(req,res)=>{

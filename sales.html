@@ -69,6 +69,14 @@ body{margin:0;font-family:Arial;display:flex;height:100vh;background:#f1f5f9;}
 .btn-detail:hover{background:#e2e8f0;color:#374151;}
 
 .no-result{text-align:center;color:#94a3b8;padding:20px 10px;font-size:13px;}
+/* Modal stock rapide */
+.stock-modal-overlay{display:none;position:fixed;inset:0;background:#00000060;z-index:300;align-items:center;justify-content:center;}
+.stock-modal-overlay.open{display:flex;}
+.stock-modal{background:white;border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px #0003;}
+.stock-modal h4{margin:0 0 12px;font-size:14px;color:#0f172a;}
+.stock-modal input{width:100%;padding:10px;border:2px solid #3b82f6;border-radius:7px;font-size:18px;font-weight:bold;text-align:center;font-family:Arial;box-sizing:border-box;}
+.stock-modal-btns{display:flex;gap:8px;margin-top:12px;}
+.stock-modal-btns button{flex:1;padding:10px;border:none;border-radius:7px;font-size:13px;font-weight:bold;font-family:Arial;cursor:pointer;}
 .add-quick-btn{width:100%;margin-top:6px;padding:10px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;font-family:Arial;}
 .stock-alert-bar{background:#92400e;color:#fef3c7;padding:7px 12px;font-size:11px;font-weight:bold;margin-bottom:6px;border-radius:7px;display:none;}
 
@@ -548,8 +556,8 @@ function renderProducts(list){
           </div>
         </div>
         <div class="prod-actions">
-          <button class="btn-add-cart" onclick="addToCart(${p.id})" ${qty===0?'disabled':''}>
-            ${qty===0?'❌ Rupture':'🛒 Ajouter au panier'}
+          <button class="btn-add-cart" ${qty===0?`onclick="openStockModal(${p.id},${JSON.stringify(p.name)})" style="background:#ef4444;"`:''} ${qty>0?`onclick="addToCart(${p.id})"`:''}>
+            ${qty===0?'❌ Rupture — cliquer pour réappro':'🛒 Ajouter au panier'}
           </button>
           <button onclick="location.href='stock.html?id=${p.id}'" style="flex:1;padding:6px;background:#f59e0b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📦 Stock</button>
           <button class="btn-detail" onclick="showProductDetail(${p.id})" style="padding:8px 14px;font-size:12px;">🔍 Détail</button>
@@ -1243,6 +1251,56 @@ init();
     initSticky();
   }
 })();
+</script>
+
+<!-- Modal mise à jour stock rapide -->
+<div class="stock-modal-overlay" id="stockQtyOverlay" onclick="if(event.target===this)closeStockModal()">
+  <div class="stock-modal">
+    <h4 id="stockModalTitle">📦 Mettre à jour le stock</h4>
+    <input type="number" id="stockModalQty" min="0" placeholder="Quantité">
+    <div class="stock-modal-btns">
+      <button onclick="closeStockModal()" style="background:#f1f5f9;color:#374151;">Annuler</button>
+      <button onclick="saveStockQty()" style="background:#16a34a;color:white;">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+<script>
+var _stockModalProductId = null;
+
+function openStockModal(id, name) {
+  _stockModalProductId = id;
+  document.getElementById('stockModalTitle').textContent = '📦 ' + name;
+  document.getElementById('stockModalQty').value = '';
+  document.getElementById('stockQtyOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('stockModalQty').focus(); }, 100);
+}
+
+function closeStockModal() {
+  document.getElementById('stockQtyOverlay').classList.remove('open');
+  _stockModalProductId = null;
+}
+
+async function saveStockQty() {
+  var qty = parseInt(document.getElementById('stockModalQty').value);
+  if (isNaN(qty) || qty < 0) { alert('Quantité invalide'); return; }
+  var res = await fetch('/api/products/' + _stockModalProductId + '/stock', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({stock_quantity: qty})
+  });
+  var d = await res.json();
+  if (d.error) { alert('❌ ' + d.error); return; }
+  closeStockModal();
+  /* Met à jour le produit en mémoire et rafraîchit l'affichage */
+  var p = allProducts.find(function(x){ return x.id === _stockModalProductId || x.id === d.id; });
+  if (p) p.stock_quantity = qty;
+  filterProducts();
+}
+
+document.getElementById('stockModalQty').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') saveStockQty();
+  if (e.key === 'Escape') closeStockModal();
+});
 </script>
 </body>
 </html>
