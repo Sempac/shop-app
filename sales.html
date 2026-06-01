@@ -556,7 +556,7 @@ function renderProducts(list){
           </div>
         </div>
         <div class="prod-actions">
-          <button class="btn-add-cart" ${qty===0?`onclick="openStockModal(${p.id},${JSON.stringify(p.name)})" style="background:#ef4444;"`:''} ${qty>0?`onclick="addToCart(${p.id})"`:''}>
+          <button class="btn-add-cart" onclick="${qty===0?`openStockModal(${p.id})`:`addToCart(${p.id})`}" ${qty===0?'style="background:#ef4444;"':''}>
             ${qty===0?'❌ Rupture — cliquer pour réappro':'🛒 Ajouter au panier'}
           </button>
           <button onclick="location.href='stock.html?id=${p.id}'" style="flex:1;padding:6px;background:#f59e0b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">📦 Stock</button>
@@ -1267,9 +1267,10 @@ init();
 <script>
 var _stockModalProductId = null;
 
-function openStockModal(id, name) {
+function openStockModal(id) {
   _stockModalProductId = id;
-  document.getElementById('stockModalTitle').textContent = '📦 ' + name;
+  var p = allProducts.find(function(x){ return x.id === id; });
+  document.getElementById('stockModalTitle').textContent = '📦 ' + (p ? p.name : '');
   document.getElementById('stockModalQty').value = '';
   document.getElementById('stockQtyOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById('stockModalQty').focus(); }, 100);
