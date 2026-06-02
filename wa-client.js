@@ -3,6 +3,11 @@
  * Démarre avec le serveur, session persistée dans .wwebjs_auth/
  */
 
+/* Force Chrome path avant tout chargement puppeteer */
+if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
+  process.env.PUPPETEER_EXECUTABLE_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+}
+
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const path = require('path');
 const fs   = require('fs');
@@ -25,7 +30,10 @@ function initWhatsApp() {
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-gpu'
+          '--disable-gpu',
+          '--user-data-dir=C:\\Temp\\chrome-wa-profile',
+          '--disable-extensions',
+          '--disable-background-networking'
         ]
       }
     });
@@ -87,7 +95,7 @@ function initWhatsApp() {
 async function sendReport(to, text, pdfPath) {
   if (!_ready) throw new Error('WhatsApp non connecté (statut : ' + _status + ')');
 
-  const chatId = to.replace(/\D/g, '') + '@c.us';
+  const chatId = to.includes('@') ? to : to.replace(/\D/g, '') + '@c.us';
 
   /* Texte */
   await client.sendMessage(chatId, text);
@@ -106,4 +114,5 @@ function getQR()     { return _qrData; }
 function getStatus() { return _status; }
 function isReady()   { return _ready;  }
 
-module.exports = { initWhatsApp, sendReport, getQR, getStatus, isReady };
+function getClient() { return client; }
+module.exports = { initWhatsApp, sendReport, getQR, getStatus, isReady, getClient };
