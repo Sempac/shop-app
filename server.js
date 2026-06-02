@@ -103,8 +103,11 @@ app.post('/api/orders',async(req,res)=>{
       if(item.product_id || item.id){
         const pid = item.product_id || item.id;
         await client.query(
-          'UPDATE products SET statut_produit=$1,sale_price=$2,updated_at=NOW() WHERE id=$3 AND statut_produit!=\'VENDU\'',
-          ['VENDU', Number(item.price)-Number(item.discount||0), pid]);
+          'UPDATE products SET sale_price=$1,updated_at=NOW() WHERE id=$2',
+          [Number(item.price)-Number(item.discount||0), pid]);
+        await client.query(
+          'UPDATE products SET statut_produit=$1 WHERE id=$2 AND statut_produit!=\'VENDU\'',
+          ['VENDU', pid]);
       }
     }
     if(credit>0){await client.query(`INSERT INTO customer_credits(customer_name,phone,order_id,total_amount,amount_paid,amount_due,status,notes) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS',$7)`,
