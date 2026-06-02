@@ -2789,7 +2789,7 @@ app.get('/api/analytics/top-stats', async(req,res)=>{
         GROUP BY p.name ORDER BY ca DESC LIMIT 1`, [sinceStr]),
       pool.query(`SELECT TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')) AS phone, COUNT(*) AS nb
         FROM repairs WHERE DATE(created_at)>=$1 AND TRIM(COALESCE(brand,'')||' '||COALESCE(model,''))!=''
-        GROUP BY phone ORDER BY nb DESC LIMIT 1`, [sinceStr]),
+        GROUP BY TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')) ORDER BY nb DESC LIMIT 1`, [sinceStr]),
       pool.query(`SELECT issue, COUNT(*) AS nb FROM repairs
         WHERE DATE(created_at)>=$1 AND issue IS NOT NULL AND issue!=''
         GROUP BY issue ORDER BY nb DESC LIMIT 1`, [sinceStr]),
