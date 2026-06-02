@@ -456,6 +456,8 @@ function renderDetail(data, stockProds, statsData){
               <th>Achat</th>
               <th>Frais répar.</th>
               <th>Prix vendu</th>
+              <th>Date vente</th>
+              <th>Date répar.</th>
               <th>Rentabilité</th>
               <th>Actions</th>
             </tr>
@@ -567,6 +569,7 @@ function renderLotStockProds(prods) {
   if (!prods || !prods.length) return;
 
   var fmt = function(n){ return Number(n||0).toFixed(2)+' €'; };
+  var fmtDate = function(d){ if(!d) return '<span style="color:#94a3b8">—</span>'; var dt=new Date(d); return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); };
   var ST_LABELS = {DISPONIBLE:'📦 Stock',EN_TEST:'🔍 Test',REPARATION:'🔧 Répar.',IRREPARABLE:'❌ Irrépar.',VENDU:'✅ Vendu'};
 
   var rows = prods.map(function(p) {
@@ -611,6 +614,8 @@ function renderLotStockProds(prods) {
       '<td>' + fmt(achat) + '</td>' +
       '<td style="text-align:right;">' + (Number(p.frais_reparation||0) > 0 ? '<span style="color:#ef4444;">−'+Number(p.frais_reparation).toFixed(2)+' €</span>' : '—') + '</td>' +
       '<td>' + (estVendu ? fmt(vendu) : '—') + '</td>' +
+      '<td style="font-size:11px;white-space:nowrap">' + (estVendu ? fmtDate(p.date_vente) : '<span style="color:#94a3b8">—</span>') + '</td>' +
+      '<td style="font-size:11px;white-space:nowrap">' + fmtDate(p.date_reparation) + '</td>' +
       '<td>' + rentHtml + '</td>' +
       '<td style="white-space:nowrap">' +
         (statut === 'DISPONIBLE' ?

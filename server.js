@@ -1841,7 +1841,9 @@ app.get('/api/lots/:id/products', async(req,res)=>{
     const r = await pool.query(`
       SELECT p.*,
         COALESCE(json_agg(DISTINCT pb.*) FILTER (WHERE pb.id IS NOT NULL), '[]') AS barcodes,
-        COALESCE((SELECT SUM(lc.amount) FROM lot_costs lc WHERE lc.product_id=p.id AND lc.lot_id=$1),0) AS frais_reparation
+        COALESCE((SELECT SUM(lc.amount) FROM lot_costs lc WHERE lc.product_id=p.id AND lc.lot_id=$1),0) AS frais_reparation,
+        (SELECT o.created_at FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE oi.product_id=p.id ORDER BY o.created_at DESC LIMIT 1) AS date_vente,
+        (SELECT r.created_at FROM repairs r WHERE r.id=p.repair_id) AS date_reparation
       FROM products p
       LEFT JOIN product_barcodes pb ON pb.product_id = p.id
       WHERE p.lot_id = $1
