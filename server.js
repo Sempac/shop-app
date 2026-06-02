@@ -2771,6 +2771,45 @@ app.get('/api/analytics/repairs-status', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+app.get('/api/analytics/top-stats', async(req,res)=>{
+  try{
+    const days = parseInt(req.query.days)||30;
+    const since = new Date(); since.setDate(since.getDate()-days);
+    const sinceStr = since.toISOString().split('T')[0];
+    const [topQty, topCA, topPhone, topIssue, topList] = await Promise.all([
+      pool.query(`SELECT COALESCE(p.name,'Produit supprimé') AS name, SUM(oi.quantity) AS nb
+        FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id
+        JOIN orders o ON o.id=oi.order_id
+        WHERE DATE(o.created_at)>=$1 AND (o.status IS NULL OR o.status!='cancelled')
+        GROUP BY p.name ORDER BY nb DESC LIMIT 1`, [sinceStr]),
+      pool.query(`SELECT COALESCE(p.name,'Produit supprimé') AS name, SUM(oi.quantity*(oi.price-COALESCE(oi.discount,0))) AS ca
+        FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id
+        JOIN orders o ON o.id=oi.order_id
+        WHERE DATE(o.created_at)>=$1 AND (o.status IS NULL OR o.status!='cancelled')
+        GROUP BY p.name ORDER BY ca DESC LIMIT 1`, [sinceStr]),
+      pool.query(`SELECT TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')) AS phone, COUNT(*) AS nb
+        FROM repairs WHERE DATE(created_at)>=$1 AND TRIM(COALESCE(brand,'')||' '||COALESCE(model,''))!=''
+        GROUP BY phone ORDER BY nb DESC LIMIT 1`, [sinceStr]),
+      pool.query(`SELECT issue, COUNT(*) AS nb FROM repairs
+        WHERE DATE(created_at)>=$1 AND issue IS NOT NULL AND issue!=''
+        GROUP BY issue ORDER BY nb DESC LIMIT 1`, [sinceStr]),
+      pool.query(`SELECT COALESCE(p.name,'Produit supprimé') AS name, SUM(oi.quantity) AS qte,
+        SUM(oi.quantity*(oi.price-COALESCE(oi.discount,0))) AS ca
+        FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id
+        JOIN orders o ON o.id=oi.order_id
+        WHERE DATE(o.created_at)>=$1 AND (o.status IS NULL OR o.status!='cancelled')
+        GROUP BY p.name ORDER BY ca DESC LIMIT 5`, [sinceStr])
+    ]);
+    res.json({
+      top_qty:   topQty.rows[0]||null,
+      top_ca:    topCA.rows[0]||null,
+      top_phone: topPhone.rows[0]||null,
+      top_issue: topIssue.rows[0]||null,
+      top_list:  topList.rows
+    });
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.get('/api/analytics/monthly', async(req,res)=>{
   try{
     const [v,r,d] = await Promise.all([

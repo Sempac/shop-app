@@ -145,6 +145,18 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;mi
   </div>
 </div>
 
+<!-- Palmarès -->
+<div class="section-label">Palmarès de la période</div>
+<div class="grid grid-kpi" id="palmGrid" style="margin-bottom:0">
+  <div class="loading" style="padding:16px"><div class="spinner"></div></div>
+</div>
+<div class="grid" style="grid-template-columns:1fr;margin-top:12px;">
+  <div class="card">
+    <div class="card-title"><span>🏅</span> Top 5 produits les plus rapportants</div>
+    <div id="topListTable"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
 <!-- Mensuel 12 mois -->
 <div class="section-label">Tendance mensuelle (12 mois)</div>
 <div class="grid" style="grid-template-columns:1fr;">
@@ -212,6 +224,41 @@ function setPeriod(d){
   loadAll();
 }
 
+/* ── PALMARÈS ── */
+async function loadTopStats(){
+  var g = document.getElementById('palmGrid');
+  var t = document.getElementById('topListTable');
+  try{
+    var r = await fetch('/api/analytics/top-stats?days='+days);
+    var d = await r.json();
+    var trunc = function(s,n){ return s && s.length>n ? s.slice(0,n)+'…' : (s||'—'); };
+    g.innerHTML = [
+      kpiCard('green', '🛒', 'Produit + vendu (nb)', trunc(d.top_qty?.name,22), d.top_qty ? d.top_qty.nb+' vendu(s)' : '—'),
+      kpiCard('blue',  '💰', 'Produit + rentable (CA)', trunc(d.top_ca?.name,22), d.top_ca ? fmt(d.top_ca.ca) : '—'),
+      kpiCard('teal',  '🔧', 'Téléphone + réparé', trunc(d.top_phone?.phone,22), d.top_phone ? d.top_phone.nb+' répar.' : '—'),
+      kpiCard('orange','🔩', 'Panne la + fréquente', trunc(d.top_issue?.issue,22), d.top_issue ? d.top_issue.nb+' fois' : '—'),
+    ].join('');
+    if(d.top_list && d.top_list.length){
+      t.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+        '<thead><tr>' +
+          '<th style="text-align:left;padding:6px 10px;color:#64748b;border-bottom:1px solid #334155">#</th>' +
+          '<th style="text-align:left;padding:6px 10px;color:#64748b;border-bottom:1px solid #334155">Produit</th>' +
+          '<th style="text-align:right;padding:6px 10px;color:#64748b;border-bottom:1px solid #334155">Qté</th>' +
+          '<th style="text-align:right;padding:6px 10px;color:#64748b;border-bottom:1px solid #334155">CA</th>' +
+        '</tr></thead><tbody>' +
+        d.top_list.map(function(p,i){
+          return '<tr style="border-bottom:1px solid #1e293b">' +
+            '<td style="padding:7px 10px;color:#475569">'+(i+1)+'</td>' +
+            '<td style="padding:7px 10px;color:#f1f5f9">'+p.name+'</td>' +
+            '<td style="padding:7px 10px;text-align:right;color:#94a3b8">'+p.qte+'</td>' +
+            '<td style="padding:7px 10px;text-align:right;color:#22c55e;font-weight:700">'+fmt(p.ca)+'</td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table>';
+    } else { t.innerHTML = '<div style="color:#475569;padding:12px">Aucune donnée sur la période</div>'; }
+  }catch(e){ g.innerHTML='<div style="color:#ef4444;padding:16px">Erreur</div>'; }
+}
+
 /* ── Load all ── */
 async function loadAll(){
   await Promise.all([
@@ -221,7 +268,8 @@ async function loadAll(){
     loadTopProducts(),
     loadExpensesCat(),
     loadRepairsStatus(),
-    loadMonthly()
+    loadMonthly(),
+    loadTopStats()
   ]);
   document.getElementById('lastUpdate').textContent =
     'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
