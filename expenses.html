@@ -138,6 +138,9 @@ table.sticky thead tr th,
       <select id="f_cat" onchange="loadExpenses()">
         <option value="">Toutes catégories</option>
       </select>
+      <input type="text" id="f_desc" placeholder="🔍 Mot dans description..." oninput="loadExpenses()" style="min-width:180px;">
+      <input type="number" id="f_min" placeholder="Prix min (€)" min="0" step="0.01" oninput="loadExpenses()" style="width:120px;">
+      <input type="number" id="f_max" placeholder="Prix max (€)" min="0" step="0.01" oninput="loadExpenses()" style="width:120px;">
     </div>
     <table>
       <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th style="text-align:center;">Qté</th><th style="text-align:right;">HT unit.</th><th style="text-align:center;">TVA</th><th style="text-align:right;">TTC total</th><th class="no-print"></th></tr></thead>
@@ -250,6 +253,7 @@ async function loadExpenses() {
   var from = document.getElementById('f_from').value;
   var to   = document.getElementById('f_to').value;
   var cat  = document.getElementById('f_cat').value;
+  var desc = (document.getElementById('f_desc').value || '').trim().toLowerCase();
 
   /* Le vendeur ne voit que ses catégories autorisées */
   var url = '/api/expenses?from=' + from + '&to=' + to;
@@ -264,6 +268,19 @@ async function loadExpenses() {
       return allowedCategories.indexOf(e.category) >= 0;
     });
   }
+
+  /* Filtrer par mot dans la description */
+  if (desc) {
+    data = data.filter(function(e) {
+      return (e.description || '').toLowerCase().includes(desc);
+    });
+  }
+
+  /* Filtrer par fourchette de prix (TTC total) */
+  var minVal = parseFloat(document.getElementById('f_min').value);
+  var maxVal = parseFloat(document.getElementById('f_max').value);
+  if (!isNaN(minVal)) data = data.filter(function(e){ return Number(e.amount_ttc||e.amount) >= minVal; });
+  if (!isNaN(maxVal)) data = data.filter(function(e){ return Number(e.amount_ttc||e.amount) <= maxVal; });
 
   window._allExpenses = data; /* stocker pour editExpense */
   var tbody = document.getElementById('expBody');
