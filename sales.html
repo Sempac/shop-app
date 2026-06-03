@@ -510,7 +510,8 @@ async function filterProducts(){
                ||norm(p.color).includes(q)
                ||norm(p.grade).includes(q)
                ||norm(p.location_zone).includes(q);
-    return mc&&md&&mt;
+    const ms=p.category==='Prestation'||!p.statut_produit||p.statut_produit==='DISPONIBLE';
+    return mc&&md&&mt&&ms;
   }).sort((a,b)=>{
     const aok=(a.stock_quantity||0)>0,bok=(b.stock_quantity||0)>0;
     if(bok!==aok)return bok?1:-1;
