@@ -1,4 +1,4 @@
-/* sort-table.js — tri universel sur les colonnes de tableaux */
+/* sort-table.js — tri colonnes ascendant/descendant */
 (function () {
   'use strict';
 
@@ -14,14 +14,11 @@
   function parseVal(text) {
     if (!text) return '';
     const t = text.trim();
-    // Montant : retire symboles monétaires/espaces, garde chiffres/virgule/point/signe
     const raw = t.replace(/[€$\s%]/g, '').replace(',', '.');
     const n = parseFloat(raw);
     if (!isNaN(n) && raw !== '') return n;
-    // Date jj/mm/aaaa
     const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (m) return new Date(+m[3], +m[2] - 1, +m[1]).getTime();
-    // Date ISO yyyy-mm-dd
     if (/^\d{4}-\d{2}-\d{2}/.test(t)) return new Date(t).getTime();
     return t.toLowerCase();
   }
@@ -30,6 +27,7 @@
     const tbody = table.querySelector('tbody');
     if (!tbody) return;
     const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length < 2) return;
     rows.sort((a, b) => {
       const va = parseVal(a.cells[colIndex] ? a.cells[colIndex].innerText : '');
       const vb = parseVal(b.cells[colIndex] ? b.cells[colIndex].innerText : '');
@@ -42,60 +40,80 @@
   }
 
   function initTable(table) {
-    const headerRow = table.querySelector('thead tr');
-    if (!headerRow) return;
-    const ths = Array.from(headerRow.querySelectorAll('th'));
+    if (table._sortInited) return;
+    const thead = table.querySelector('thead');
+    if (!thead) return;
+    table._sortInited = true;
 
-    ths.forEach((th, colIndex) => {
-      if (!th.textContent.trim() || th.classList.contains('no-sort') || th.dataset.sortBound) return;
-      th.dataset.sortBound = '1';
-      th.classList.add('sortable');
-      let asc = true;
-      th.addEventListener('click', () => {
-        ths.forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
-        th.classList.add(asc ? 'sort-asc' : 'sort-desc');
-        doSort(table, colIndex, asc);
-        asc = !asc;
+    // Marquer les th triables
+    function markThs() {
+      Array.from(thead.querySelectorAll('th')).forEach(th => {
+        if (th.textContent.trim() && !th.classList.contains('no-sort')) {
+          th.classList.add('sortable');
+        }
       });
-    });
-  }
+    }
+    markThs();
 
-  function resetAndInit(table) {
-    table.querySelectorAll('thead th').forEach(th => {
-      th.classList.remove('sortable', 'sort-asc', 'sort-desc');
-      delete th.dataset.sortBound;
-    });
-    initTable(table);
-  }
+    // État du tri (un seul par table)
+    const state = { col: -1, asc: true };
 
-  function watchTbody(table) {
+    // UN seul listener sur le thead — délégation, jamais dupliqué
+    thead.addEventListener('click', function (e) {
+      const th = e.target.closest('th.sortable');
+      if (!th) return;
+      const ths = Array.from(thead.querySelectorAll('th'));
+      const colIndex = ths.indexOf(th);
+      if (colIndex === -1) return;
+
+      state.asc = state.col === colIndex ? !state.asc : true;
+      state.col = colIndex;
+
+      ths.forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(state.asc ? 'sort-asc' : 'sort-desc');
+      doSort(table, colIndex, state.asc);
+    });
+
+    // Quand le tbody est rechargé, reset visuel seulement (pas de re-bind)
+    function watchTbody(tbody) {
+      if (tbody._sortWatched) return;
+      tbody._sortWatched = true;
+      new MutationObserver(() => {
+        thead.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+        state.col = -1;
+        state.asc = true;
+      }).observe(tbody, { childList: true });
+    }
+
     const tbody = table.querySelector('tbody');
-    if (!tbody || tbody._sortWatched) return;
-    tbody._sortWatched = true;
-    new MutationObserver(() => resetAndInit(table)).observe(tbody, { childList: true });
-  }
+    if (tbody) watchTbody(tbody);
 
-  function processTable(table) {
-    if (!table.querySelector('thead')) return;
-    initTable(table);
-    watchTbody(table);
-  }
-
-  // Observer pour les tables ajoutées dynamiquement
-  function observeDOM() {
+    // Cas lots.html : un nouveau tbody peut être appendé après coup
     new MutationObserver(mutations => {
       mutations.forEach(m => {
         m.addedNodes.forEach(node => {
-          if (node.nodeType !== 1) return;
-          const tables = node.tagName === 'TABLE' ? [node] : Array.from(node.querySelectorAll ? node.querySelectorAll('table') : []);
-          tables.forEach(processTable);
+          if (node.tagName === 'TBODY') watchTbody(node);
         });
       });
-    }).observe(document.body, { childList: true, subtree: true });
+    }).observe(table, { childList: true });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('table').forEach(processTable);
-    observeDOM();
-  });
+  function processAll() {
+    document.querySelectorAll('table').forEach(t => {
+      if (t.querySelector('thead')) initTable(t);
+    });
+  }
+
+  // Observer pour les tables ajoutées dynamiquement (ex: modals, lots détail)
+  new MutationObserver(mutations => {
+    mutations.forEach(m => {
+      m.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        const tables = node.tagName === 'TABLE' ? [node] : Array.from(node.querySelectorAll ? node.querySelectorAll('table') : []);
+        tables.forEach(t => { if (t.querySelector('thead')) initTable(t); });
+      });
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  document.addEventListener('DOMContentLoaded', processAll);
 })();
