@@ -4,12 +4,12 @@
 
   const css = document.createElement('style');
   css.textContent = `
-    thead th.sortable { cursor:pointer; user-select:none; white-space:nowrap; padding-right:22px !important; position:relative; }
-    thead th.sortable::after { content:'⇅'; position:absolute; right:4px; top:50%; transform:translateY(-50%); font-size:13px; opacity:.25; }
-    thead th.sort-asc::after  { content:'▲'; font-size:11px; opacity:1; color:#2563eb; }
-    thead th.sort-desc::after { content:'▼'; font-size:11px; opacity:1; color:#2563eb; }
-    thead th.sort-asc  { background:rgba(37,99,235,.08); }
-    thead th.sort-desc { background:rgba(37,99,235,.08); }
+    thead th.sortable { cursor:pointer !important; user-select:none; white-space:nowrap; padding-right:24px !important; position:relative !important; }
+    thead th.sortable::after { content:'⇅'; position:absolute !important; right:5px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.3; color:inherit; }
+    thead th.sort-asc::after  { content:'▲' !important; font-size:12px !important; opacity:1 !important; color:#2563eb !important; text-shadow:0 0 4px #2563eb88; }
+    thead th.sort-desc::after { content:'▼' !important; font-size:12px !important; opacity:1 !important; color:#dc2626 !important; text-shadow:0 0 4px #dc262688; }
+    thead th.sort-asc  { background:rgba(37,99,235,.12) !important; color:#1d4ed8 !important; }
+    thead th.sort-desc { background:rgba(220,38,38,.10) !important; color:#b91c1c !important; }
   `;
   document.head.appendChild(css);
 
