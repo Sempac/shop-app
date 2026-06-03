@@ -47,20 +47,13 @@
     if (!thead) return;
     table._sortInited = true;
 
-    // Marquer les th triables
-    function markThs() {
-      Array.from(thead.querySelectorAll('th')).forEach(th => {
-        if (th.textContent.trim() && !th.classList.contains('no-sort')) {
-          th.classList.add('sortable');
-        }
-      });
-    }
-    markThs();
+    Array.from(thead.querySelectorAll('th')).forEach(th => {
+      if (th.textContent.trim() && !th.classList.contains('no-sort'))
+        th.classList.add('sortable');
+    });
 
-    // État du tri (un seul par table)
     const state = { col: -1, asc: true, sorting: false };
 
-    // UN seul listener sur le thead — délégation, jamais dupliqué
     thead.addEventListener('click', function (e) {
       const th = e.target.closest('th.sortable');
       if (!th) return;
@@ -74,18 +67,19 @@
       ths.forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
       th.classList.add(state.asc ? 'sort-asc' : 'sort-desc');
 
-      // Flag pour ignorer les mutations causées par le tri lui-même
+      // Le flag doit rester vrai jusqu'APRES que les microtasks MutationObserver
+      // aient fini — on le remet à false via setTimeout (macro-task suivante)
       state.sorting = true;
       doSort(table, colIndex, state.asc);
-      state.sorting = false;
+      setTimeout(() => { state.sorting = false; }, 0);
     });
 
-    // Quand le tbody est rechargé (vrai rechargement de données), reset visuel
+    // Reset visuel quand les données sont rechargées (pas lors d'un tri)
     function watchTbody(tbody) {
       if (tbody._sortWatched) return;
       tbody._sortWatched = true;
       new MutationObserver(() => {
-        if (state.sorting) return; // ignorer les mutations du tri lui-même
+        if (state.sorting) return;
         thead.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
         state.col = -1;
         state.asc = true;
@@ -95,28 +89,32 @@
     const tbody = table.querySelector('tbody');
     if (tbody) watchTbody(tbody);
 
-    // Cas lots.html : un nouveau tbody peut être appendé après coup
+    // Nouveau tbody ajouté dynamiquement (ex: renderLotStockProds dans lots.html)
     new MutationObserver(mutations => {
-      mutations.forEach(m => {
-        m.addedNodes.forEach(node => {
-          if (node.tagName === 'TBODY') watchTbody(node);
-        });
-      });
+      mutations.forEach(m => m.addedNodes.forEach(node => {
+        if (node.tagName === 'TBODY') watchTbody(node);
+      }));
     }).observe(table, { childList: true });
   }
 
+  // Scan toutes les tables avec thead dans le document
   function processAll() {
     document.querySelectorAll('table').forEach(t => {
       if (t.querySelector('thead')) initTable(t);
     });
   }
 
-  // Observer pour les tables ajoutées dynamiquement (ex: modals, lots détail)
+  // API publique : à appeler après un rendu dynamique si besoin
+  window.initSortable = processAll;
+
+  // Observer pour les tables ajoutées dynamiquement
   new MutationObserver(mutations => {
     mutations.forEach(m => {
       m.addedNodes.forEach(node => {
         if (node.nodeType !== 1) return;
-        const tables = node.tagName === 'TABLE' ? [node] : Array.from(node.querySelectorAll ? node.querySelectorAll('table') : []);
+        const tables = node.tagName === 'TABLE'
+          ? [node]
+          : Array.from(node.querySelectorAll ? node.querySelectorAll('table') : []);
         tables.forEach(t => { if (t.querySelector('thead')) initTable(t); });
       });
     });

@@ -556,6 +556,7 @@ function renderDetail(data, stockProds, statsData){
   window._currentStockProds = stockProds || [];
   /* Attendre que le DOM soit rendu puis injecter dans le tableau */
   setTimeout(function() {
+    if (window.initSortable) window.initSortable();
     renderLotStockProds(stockProds || []);
   }, 150);
 }
@@ -631,6 +632,7 @@ function renderLotStockProds(prods) {
   tbody.id = 'stockTbody';
   tbody.innerHTML = rows;
   table.appendChild(tbody);
+  if (window.initSortable) window.initSortable();
 }
 
 
