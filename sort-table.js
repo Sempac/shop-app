@@ -4,10 +4,12 @@
 
   const css = document.createElement('style');
   css.textContent = `
-    thead th.sortable { cursor:pointer; user-select:none; white-space:nowrap; padding-right:20px !important; position:relative; }
-    thead th.sortable::after { content:'⇅'; position:absolute; right:5px; top:50%; transform:translateY(-50%); font-size:10px; opacity:.3; }
-    thead th.sort-asc::after  { content:'↑'; opacity:1; color:#3b82f6; }
-    thead th.sort-desc::after { content:'↓'; opacity:1; color:#3b82f6; }
+    thead th.sortable { cursor:pointer; user-select:none; white-space:nowrap; padding-right:22px !important; position:relative; }
+    thead th.sortable::after { content:'⇅'; position:absolute; right:4px; top:50%; transform:translateY(-50%); font-size:13px; opacity:.25; }
+    thead th.sort-asc::after  { content:'▲'; font-size:11px; opacity:1; color:#2563eb; }
+    thead th.sort-desc::after { content:'▼'; font-size:11px; opacity:1; color:#2563eb; }
+    thead th.sort-asc  { background:rgba(37,99,235,.08); }
+    thead th.sort-desc { background:rgba(37,99,235,.08); }
   `;
   document.head.appendChild(css);
 
@@ -56,7 +58,7 @@
     markThs();
 
     // État du tri (un seul par table)
-    const state = { col: -1, asc: true };
+    const state = { col: -1, asc: true, sorting: false };
 
     // UN seul listener sur le thead — délégation, jamais dupliqué
     thead.addEventListener('click', function (e) {
@@ -71,14 +73,19 @@
 
       ths.forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
       th.classList.add(state.asc ? 'sort-asc' : 'sort-desc');
+
+      // Flag pour ignorer les mutations causées par le tri lui-même
+      state.sorting = true;
       doSort(table, colIndex, state.asc);
+      state.sorting = false;
     });
 
-    // Quand le tbody est rechargé, reset visuel seulement (pas de re-bind)
+    // Quand le tbody est rechargé (vrai rechargement de données), reset visuel
     function watchTbody(tbody) {
       if (tbody._sortWatched) return;
       tbody._sortWatched = true;
       new MutationObserver(() => {
+        if (state.sorting) return; // ignorer les mutations du tri lui-même
         thead.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
         state.col = -1;
         state.asc = true;
