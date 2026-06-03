@@ -2,6 +2,7 @@
 <html>
 <head>
 <script src="/theme.js"></script>
+<script src="/sort-table.js"></script>
 <link rel="stylesheet" href="/theme.css">
 <meta charset="UTF-8">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
@@ -92,6 +93,7 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
   <div style="display:flex;gap:8px;">
     <button class="btn-green" onclick="showNewCommande()">➕ Nouvelle commande</button>
     <button onclick="document.getElementById('pdfImportInput').click()" style="padding:9px 14px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;" title="Importer une facture PDF fournisseur (LCD Phone...)">📄 Importer facture PDF</button>
+    <button onclick="openGmailPicker()" style="padding:9px 14px;background:#ea4335;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;" title="Importer une facture depuis le Gmail du magasin">📧 Gmail</button>
     <button onclick="toggleHistorique()" id="btnHisto" style="padding:9px 14px;background:#0e7490;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:Arial;" title="Voir l'historique de toutes les lignes de commandes">📊 Historique</button>
     <input type="file" id="pdfImportInput" accept=".pdf" style="display:none" onchange="importFacturePDF(this)">
     <button class="btn-home" onclick="location.href='index.html'">🏠 Accueil</button>
@@ -1162,6 +1164,89 @@ function showNewCommande() {
 
 
 loadCommandes();
+
+/* ══ GMAIL PICKER ══ */
+var _gmailPickerOpen = false;
+
+async function openGmailPicker() {
+  if (_gmailPickerOpen) return;
+  _gmailPickerOpen = true;
+
+  var overlay = document.createElement('div');
+  overlay.id = 'gmailPickerOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000c;z-index:9998;display:flex;align-items:center;justify-content:center;font-family:Arial;';
+  overlay.innerHTML =
+    '<div style="background:white;border-radius:14px;padding:22px;width:640px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+        '<div style="font-size:16px;font-weight:bold;color:#0f172a;">📧 Factures dans Gmail</div>' +
+        '<button onclick="closeGmailPicker()" style="background:#ef4444;color:white;border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:13px;font-family:Arial;">✕</button>' +
+      '</div>' +
+      '<div id="gmailPickerBody" style="flex:1;overflow-y:auto;">' +
+        '<div style="text-align:center;padding:30px;color:#64748b;font-size:13px;">Chargement des mails...</div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  try {
+    var r = await fetch('/api/gmail/factures');
+    var emails = await r.json();
+    var body = document.getElementById('gmailPickerBody');
+    if (!body) return;
+    if (emails.error) throw new Error(emails.error);
+    if (!emails.length) {
+      body.innerHTML = '<div style="text-align:center;padding:30px;color:#64748b;font-size:13px;">Aucun mail avec pièce jointe PDF trouvé (90 derniers jours).</div>';
+      return;
+    }
+    body.innerHTML = emails.map(function(m) {
+      var att = m.attachments[0];
+      var dateStr = new Date(m.date).toLocaleDateString('fr-FR');
+      return '<div onclick="pickGmailEmail(\'' + m.uid + '\',\'' + att.part + '\')" ' +
+        'style="padding:11px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background 0.1s;" ' +
+        'onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
+          '<span style="font-weight:bold;font-size:13px;color:#0f172a;">' + (m.subject || '(sans objet)') + '</span>' +
+          '<span style="font-size:11px;color:#94a3b8;white-space:nowrap;margin-left:10px;">' + dateStr + '</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:#64748b;">' + m.from + '</div>' +
+        '<div style="font-size:11px;color:#7c3aed;margin-top:2px;">📎 ' + m.attachments.map(function(a){ return a.filename; }).join(', ') + '</div>' +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    var body2 = document.getElementById('gmailPickerBody');
+    if (body2) body2.innerHTML =
+      '<div style="color:#ef4444;padding:20px;font-size:13px;">❌ ' + e.message +
+      '<br><small style="color:#64748b;">Vérifiez que EMAIL_PASS est configuré dans .env (mot de passe d\'application Google)</small></div>';
+  }
+}
+
+async function pickGmailEmail(uid, part) {
+  closeGmailPicker();
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000a;z-index:9999;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-family:Arial;';
+  overlay.innerHTML = 'Téléchargement et analyse de la facture...';
+  document.body.appendChild(overlay);
+  try {
+    var r = await fetch('/api/gmail/import-facture/' + uid, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ part: part })
+    });
+    var data = await r.json();
+    overlay.remove();
+    if (data.error) { alert('Erreur: ' + data.error); return; }
+    if (!data.items || !data.items.length) { alert('Aucun produit détecté dans ce PDF'); return; }
+    showFacturePreview(data);
+  } catch(e) {
+    overlay.remove();
+    alert('Erreur: ' + e.message);
+  }
+}
+
+function closeGmailPicker() {
+  var el = document.getElementById('gmailPickerOverlay');
+  if (el) el.remove();
+  _gmailPickerOpen = false;
+}
 </script>
 </body>
 </html>
