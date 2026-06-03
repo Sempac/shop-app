@@ -6,10 +6,10 @@
   css.textContent = `
     thead th.sortable { cursor:pointer !important; user-select:none; white-space:nowrap; padding-right:24px !important; position:relative !important; }
     thead th.sortable::after { content:'⇅'; position:absolute !important; right:5px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.3; color:inherit; }
-    thead th.sort-asc::after  { content:'▲' !important; font-size:12px !important; opacity:1 !important; color:#2563eb !important; text-shadow:0 0 4px #2563eb88; }
-    thead th.sort-desc::after { content:'▼' !important; font-size:12px !important; opacity:1 !important; color:#dc2626 !important; text-shadow:0 0 4px #dc262688; }
-    thead th.sort-asc  { background:rgba(37,99,235,.12) !important; color:#1d4ed8 !important; }
-    thead th.sort-desc { background:rgba(220,38,38,.10) !important; color:#b91c1c !important; }
+    thead th.sort-asc::after  { content:'▲' !important; font-size:12px !important; opacity:1 !important; color:#38bdf8 !important; text-shadow:0 0 5px #38bdf8; }
+    thead th.sort-desc::after { content:'▼' !important; font-size:12px !important; opacity:1 !important; color:#f87171 !important; text-shadow:0 0 5px #f87171; }
+    thead th.sort-asc  { box-shadow:inset 0 -3px 0 #38bdf8 !important; }
+    thead th.sort-desc { box-shadow:inset 0 -3px 0 #f87171 !important; }
   `;
   document.head.appendChild(css);
 
