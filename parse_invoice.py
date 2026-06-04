@@ -1,4 +1,5 @@
 import pdfplumber, re, json, sys
+sys.stdout.reconfigure(encoding='utf-8')
 
 def detect_fournisseur(text):
     if 'UTOPYA' in text: return 'Utopya'
