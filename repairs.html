@@ -95,6 +95,11 @@ hr{border:1px solid #e2e8f0;margin:12px 0;}
 .badge-zone{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold;background:#dbeafe;color:#1e40af;}
 .badge-local{background:#dcfce7;color:#166534;}
 
+/* Multi-pannes */
+.fault-row{display:grid;grid-template-columns:2fr 1.8fr 90px 28px;gap:5px;align-items:center;margin-bottom:5px;}
+.fault-row select,.fault-row input{padding:7px 8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;font-family:Arial;background:#fff;color:#0f172a;width:100%;}
+.fault-del{padding:3px 7px;background:#fee2e2;color:#ef4444;border:none;border-radius:5px;cursor:pointer;font-size:14px;line-height:1;font-weight:bold;}
+
 .table-wrap table thead tr th,
 table.sticky thead tr th,
 .items-table thead tr th {
@@ -224,73 +229,18 @@ table.sticky thead tr th,
 
       <div class="fg"><label>N° de série</label><input id="n_serial" placeholder="IMEI / S/N"></div>
 
-      <!-- Panne — liste déroulante -->
-      <div class="fg full">
-        <label>Panne / Problème</label>
-        <select id="n_issue">
-          <option value="">— Sélectionner la panne —</option>
-          <optgroup label="🖥 Écran">
-            <option>Écran cassé (dalle + vitre)</option>
-            <option>Vitre avant cassée (sans dalle)</option>
-            <option>Écran noir / ne s'affiche pas</option>
-            <option>Écran tactile ne répond plus</option>
-            <option>Écran avec lignes / taches</option>
-          </optgroup>
-          <optgroup label="🔋 Batterie">
-            <option>Batterie HS / gonflement</option>
-            <option>Batterie décharge vite</option>
-            <option>Ne charge plus</option>
-          </optgroup>
-          <optgroup label="🔌 Connectique">
-            <option>Connecteur de charge</option>
-            <option>Prise jack</option>
-            <option>NFC</option>
-          </optgroup>
-          <optgroup label="📷 Caméra">
-            <option>Caméra avant</option>
-            <option>Caméra arrière</option>
-            <option>Lentille appareil photo</option>
-          </optgroup>
-          <optgroup label="🔊 Audio">
-            <option>Micro</option>
-            <option>Haut-parleur</option>
-            <option>Oreillette</option>
-          </optgroup>
-          <optgroup label="🔘 Boutons / Mécanique">
-            <option>Bouton Power</option>
-            <option>Bouton Volume</option>
-            <option>Bouton Home</option>
-            <option>Vibreur</option>
-            <option>Tiroir carte SIM</option>
-            <option>Façade arrière cassée</option>
-            <option>Coque arrière abîmée</option>
-          </optgroup>
-          <optgroup label="📶 Réseau / Système">
-            <option>Antenne WiFi</option>
-            <option>Antenne 4G / 5G</option>
-            <option>Bluetooth</option>
-            <option>GPS</option>
-            <option>Ne s'allume pas</option>
-            <option>Blocage / freeze</option>
-            <option>Surchauffe</option>
-          </optgroup>
-          <optgroup label="🛠 Services">
-            <option>Diagnostic</option>
-            <option>Réinitialisation / déverrouillage</option>
-            <option>Déblocage compte store</option>
-            <option>Dégeolocalisation</option>
-            <option>Transfert de données</option>
-            <option>Sauvegarde de données</option>
-            <option>Accompagnement sauvegarde iCloud</option>
-            <option>Paramétrage de l'appareil</option>
-            <option>Accompagnement mise à jour</option>
-            <option>Restauration / effacement données</option>
-            <option>Nettoyage complet</option>
-          </optgroup>
-          <optgroup label="❓ Autre">
-            <option>Autre panne</option>
-          </optgroup>
-        </select>
+      <!-- PANNES MULTIPLES -->
+      <div class="fg full" id="faultSection">
+        <label>🔧 Pannes / Interventions</label>
+        <div style="display:grid;grid-template-columns:2fr 1.8fr 90px 28px;gap:5px;margin-bottom:3px;padding:0 2px;">
+          <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:bold;">Panne</span>
+          <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:bold;">Pièce détachée</span>
+          <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:bold;text-align:right;">Prix €</span>
+          <span></span>
+        </div>
+        <div id="faultList"></div>
+        <div id="faultTotalLine" style="text-align:right;font-size:12px;font-weight:bold;color:#0f172a;padding:3px 0 6px;">Total : 0.00 €</div>
+        <button type="button" onclick="addFaultRow()" style="width:100%;padding:7px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">➕ Ajouter une panne</button>
       </div>
 
       <!-- Statut + 2 dates sur une seule ligne -->
@@ -356,16 +306,6 @@ table.sticky thead tr th,
         </select>
       </div>
       <div class="fg full"><label>Commentaire interne</label><textarea id="n_comment" placeholder="Notes..."></textarea></div>
-    </div>
-
-    <!-- PIÈCES (visible quand réparation chargée) -->
-    <div id="repPartsSection" style="display:none;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-size:13px;font-weight:bold;color:#0f172a;">🔩 Pièces utilisées</div>
-        <button onclick="showAddPart(currentId)" style="padding:5px 12px;background:#7c3aed;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">➕ Ajouter</button>
-      </div>
-      <div id="partsList"></div>
-      <div id="partsTotal" style="text-align:right;font-size:13px;font-weight:bold;color:#22c55e;margin-top:8px;"></div>
     </div>
 
     <!-- BOUTONS D'ACTION -->
@@ -898,20 +838,139 @@ function setActionBtns(enabled) {
   });
 }
 
-function setIssueValue(val) {
-  var sel = document.getElementById('n_issue');
-  if (!sel || !val) return;
-  /* supprimer option custom précédente */
-  var old = sel.querySelector('option[data-custom]');
-  if (old) old.remove();
-  sel.value = val;
-  if (sel.value !== val) {
-    var opt = document.createElement('option');
-    opt.value = val; opt.textContent = val;
-    opt.setAttribute('data-custom','1');
-    sel.insertBefore(opt, sel.firstChild);
-    sel.value = val;
+/* ══ MULTI-PANNES ══ */
+var FAULT_OPTIONS_HTML = [
+  '<option value="">— Sélectionner —</option>',
+  '<optgroup label="🖥 Écran">',
+    '<option>Écran cassé (dalle + vitre)</option>',
+    '<option>Vitre avant cassée (sans dalle)</option>',
+    '<option>Écran noir / ne s\'affiche pas</option>',
+    '<option>Écran tactile ne répond plus</option>',
+    '<option>Écran avec lignes / taches</option>',
+  '</optgroup>',
+  '<optgroup label="🔋 Batterie">',
+    '<option>Batterie HS / gonflement</option>',
+    '<option>Batterie décharge vite</option>',
+    '<option>Ne charge plus</option>',
+  '</optgroup>',
+  '<optgroup label="🔌 Connectique">',
+    '<option>Connecteur de charge</option>',
+    '<option>Prise jack</option>',
+    '<option>NFC</option>',
+  '</optgroup>',
+  '<optgroup label="📷 Caméra">',
+    '<option>Caméra avant</option>',
+    '<option>Caméra arrière</option>',
+    '<option>Lentille appareil photo</option>',
+  '</optgroup>',
+  '<optgroup label="🔊 Audio">',
+    '<option>Micro</option>',
+    '<option>Haut-parleur</option>',
+    '<option>Oreillette</option>',
+  '</optgroup>',
+  '<optgroup label="🔘 Boutons / Mécanique">',
+    '<option>Bouton Power</option>',
+    '<option>Bouton Volume</option>',
+    '<option>Bouton Home</option>',
+    '<option>Vibreur</option>',
+    '<option>Tiroir carte SIM</option>',
+    '<option>Façade arrière cassée</option>',
+    '<option>Coque arrière abîmée</option>',
+  '</optgroup>',
+  '<optgroup label="📶 Réseau / Système">',
+    '<option>Antenne WiFi</option>',
+    '<option>Antenne 4G / 5G</option>',
+    '<option>Bluetooth</option>',
+    '<option>GPS</option>',
+    '<option>Ne s\'allume pas</option>',
+    '<option>Blocage / freeze</option>',
+    '<option>Surchauffe</option>',
+  '</optgroup>',
+  '<optgroup label="🛠 Services">',
+    '<option>Diagnostic</option>',
+    '<option>Réinitialisation / déverrouillage</option>',
+    '<option>Déblocage compte store</option>',
+    '<option>Dégeolocalisation</option>',
+    '<option>Transfert de données</option>',
+    '<option>Sauvegarde de données</option>',
+    '<option>Accompagnement sauvegarde iCloud</option>',
+    '<option>Paramétrage de l\'appareil</option>',
+    '<option>Accompagnement mise à jour</option>',
+    '<option>Restauration / effacement données</option>',
+    '<option>Nettoyage complet</option>',
+  '</optgroup>',
+  '<optgroup label="❓ Autre">',
+    '<option>Autre panne</option>',
+  '</optgroup>'
+].join('');
+
+function addFaultRow(panne, piece, prix) {
+  var list = document.getElementById('faultList');
+  var row = document.createElement('div');
+  row.className = 'fault-row';
+  row.innerHTML =
+    '<select class="fault-panne" onchange="calcFaultTotal()">' + FAULT_OPTIONS_HTML + '</select>' +
+    '<input class="fault-piece" placeholder="Pièce (optionnel)">' +
+    '<input type="number" class="fault-prix" placeholder="0" min="0" step="0.01" oninput="calcFaultTotal()">' +
+    '<button type="button" class="fault-del" onclick="removeFaultRow(this)" title="Supprimer">✕</button>';
+  list.appendChild(row);
+  if (panne) {
+    var sel = row.querySelector('.fault-panne');
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].text === panne) { sel.selectedIndex = i; found = true; break; }
+    }
+    if (!found) {
+      var opt = document.createElement('option');
+      opt.value = panne; opt.text = panne; opt.selected = true;
+      sel.insertBefore(opt, sel.options[1]);
+      sel.value = panne;
+    }
   }
+  if (piece !== undefined && piece !== null) row.querySelector('.fault-piece').value = piece;
+  if (prix !== undefined && prix !== null && prix !== 0) row.querySelector('.fault-prix').value = Number(prix).toFixed(2);
+  calcFaultTotal();
+}
+
+function removeFaultRow(btn) {
+  btn.closest('.fault-row').remove();
+  calcFaultTotal();
+}
+
+function calcFaultTotal() {
+  var sum = 0;
+  document.querySelectorAll('#faultList .fault-prix').forEach(function(inp) {
+    sum += Number(inp.value || 0);
+  });
+  var el = document.getElementById('faultTotalLine');
+  if (el) el.textContent = 'Total interventions : ' + sum.toFixed(2) + ' €';
+  return sum;
+}
+
+function getFaultItems() {
+  var items = [];
+  document.querySelectorAll('#faultList .fault-row').forEach(function(row) {
+    var panne = row.querySelector('.fault-panne').value;
+    var piece = row.querySelector('.fault-piece').value.trim();
+    var prix  = Number(row.querySelector('.fault-prix').value || 0);
+    if (panne) items.push({ panne: panne, nom: piece || panne, prix_reparation: prix });
+  });
+  return items;
+}
+
+function clearFaults() {
+  document.getElementById('faultList').innerHTML = '';
+  addFaultRow();
+}
+
+function setFaultFromParts(parts) {
+  document.getElementById('faultList').innerHTML = '';
+  if (!parts || !parts.length) { addFaultRow(); return; }
+  parts.forEach(function(p) {
+    var panne = p.panne || p.nom || '';
+    var piece = (p.panne && p.nom && p.nom !== p.panne) ? p.nom : '';
+    addFaultRow(panne, piece, Number(p.prix_reparation || 0));
+  });
 }
 
 /* ── FILTRES AVANCÉS ── */
@@ -1033,7 +1092,16 @@ async function showRepair(id) {
   document.getElementById('n_entry_date').value = localDate(r.created_at || new Date());
   /* Date de livraison = delivered_at si dispo (statut LIVRE), sinon aujourd'hui */
   document.getElementById('n_rep_date').value = localDate(r.delivered_at || new Date());
-  setIssueValue(r.issue || '');
+  /* Charge les pannes depuis repair_parts (fallback sur issue si aucune) */
+  fetch('/api/repairs/' + id + '/parts').then(function(x){ return x.json(); }).then(function(parts) {
+    if (parts && parts.length) {
+      setFaultFromParts(parts);
+    } else {
+      document.getElementById('faultList').innerHTML = '';
+      if (r.issue) addFaultRow(r.issue, '', 0);
+      else addFaultRow();
+    }
+  });
 
   /* Paiement */
   document.getElementById('n_cb').value     = Number(r.amount_cb||0).toFixed(2);
@@ -1050,9 +1118,7 @@ async function showRepair(id) {
   var paySection = document.querySelector('.pay-frame');
   if (paySection) paySection.style.display = (r.source === 'INTERNE') ? 'none' : 'block';
 
-  /* Pièces */
-  document.getElementById('repPartsSection').style.display = 'block';
-  loadRepairParts(id);
+  /* (pannes chargées ci-dessus via repair_parts) */
 
   /* Activer les boutons */
   setActionBtns(true);
@@ -1086,6 +1152,9 @@ async function deleteRepair(id) {
 async function saveRepair() {
   var customer = document.getElementById('n_customer').value.trim();
   if (!customer) { alert('⚠️ Nom du client obligatoire'); return; }
+  var items      = getFaultItems();
+  var faultTotal = calcFaultTotal();
+  var issueText  = items.map(function(i){ return i.panne; }).filter(Boolean).join(' + ') || '';
   var cb     = Number(document.getElementById('n_cb')?.value||0);
   var cash   = Number(document.getElementById('n_cash')?.value||0);
   var credit = Number(document.getElementById('n_credit')?.value||0);
@@ -1101,16 +1170,17 @@ async function saveRepair() {
     brand:           document.getElementById('n_brand').value,
     model:           document.getElementById('n_model').value,
     serial_number:   document.getElementById('n_serial').value,
-    issue:           document.getElementById('n_issue').value,
+    issue:           issueText,
     comment:         document.getElementById('n_comment').value,
     garantie:        document.getElementById('n_garantie')?.value ? Number(document.getElementById('n_garantie').value) : null,
-    estimated_price: total,
+    estimated_price: faultTotal > 0 ? faultTotal : total,
     final_price:     total,
     amount_cb:       cb,
     amount_cash:     cash,
     amount_credit:   credit,
     payment_method:  method,
-    status:          status
+    status:          status,
+    items:           items
   };
 
   if (currentId) {
@@ -1165,12 +1235,7 @@ function resetForm() {
   ['n_device','n_brand','n_garantie'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.selectedIndex = 0;
   });
-  /* Remettre n_issue au premier choix et retirer option custom */
-  var issueEl = document.getElementById('n_issue');
-  if (issueEl) {
-    var old = issueEl.querySelector('option[data-custom]'); if (old) old.remove();
-    issueEl.selectedIndex = 0;
-  }
+  clearFaults();
   document.getElementById('n_status').value          = 'LIVRE';
   document.getElementById('n_entry_date').value       = localDate(new Date());
   document.getElementById('n_rep_date').value        = localDate(new Date());
@@ -1366,10 +1431,13 @@ async function printFactureRep(repairId) {
           '<th style="padding:6px;text-align:right;border:1px solid #e2e8f0;font-size:12px;">Montant</th>' +
         '</tr></thead><tbody>';
       parts.forEach(function(p) {
-        totalPieces += Number(p.cout||0);
+        var desc = p.panne || p.nom || '—';
+        var montant = Number(p.prix_reparation > 0 ? p.prix_reparation : (p.cout||0));
+        if (p.panne && p.nom && p.nom !== p.panne) desc += ' — ' + p.nom;
+        totalPieces += montant;
         partsList += '<tr>' +
-          '<td style="padding:6px;border:1px solid #e2e8f0;font-size:12px;">' + p.nom + '</td>' +
-          '<td style="padding:6px;text-align:right;border:1px solid #e2e8f0;font-size:12px;">' + fmt(p.cout) + '</td>' +
+          '<td style="padding:6px;border:1px solid #e2e8f0;font-size:12px;">' + desc + '</td>' +
+          '<td style="padding:6px;text-align:right;border:1px solid #e2e8f0;font-size:12px;">' + fmt(montant) + '</td>' +
         '</tr>';
       });
       partsList += '</tbody></table>';
@@ -1492,6 +1560,7 @@ document.getElementById('n_rep_date').value        = _today;
 document.getElementById('n_status').value          = 'LIVRE';
 document.getElementById('n_pay_mode').value = 'cash';
 onRepPaymentChange();
+clearFaults();
 
 loadRepairs();
 </script>
@@ -1525,7 +1594,7 @@ async function openCompetitor() {
     if (fModel) compModel.value = fModel;
   }
   if (!compType.value) {
-    var fIssue = (document.getElementById('n_issue')||{}).value || '';
+    var fIssue = (getFaultItems()[0] || {}).panne || '';
     var issueMap = {
       'Ecran casse (dalle + vitre)':'Ecran casse','Vitre avant cassee (sans dalle)':'Ecran casse',
       'Batterie HS / gonflement':'Batterie','Batterie decharge vite':'Batterie',

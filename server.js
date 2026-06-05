@@ -457,17 +457,19 @@ app.get('/api/repairs/search',async(req,res)=>{
 });
 app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs WHERE id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/repairs',async(req,res)=>{
+  const client=await pool.connect();
   try{
+    await client.query('BEGIN');
     const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
-    const numRes=await pool.query("SELECT next_numero('REP',$1,'repairs','numero_rep') AS num",[dateStr]);
+    const numRes=await client.query("SELECT next_numero('REP',$1,'repairs','numero_rep') AS num",[dateStr]);
     const numero=numRes.rows[0].num;
     const status=req.body.status||'EN_ATTENTE';
     const cb=Number(req.body.amount_cb||0),cash=Number(req.body.amount_cash||0),credit=Number(req.body.amount_credit||0);
     let pm=req.body.payment_method||'cash';
     if(cb>0&&cash>0)pm='mixed';else if(cb>0)pm='card';else if(cash>0)pm='cash';else if(credit>0)pm='credit';
     const fp=Number(req.body.final_price||req.body.estimated_price||0);
-    const deliveredAt=(status==='TERMINE'||status==='LIVRE')?'NOW()':null;
-    const r=await pool.query(
+    const ep=Number(req.body.estimated_price||fp);
+    const r=await client.query(
       `INSERT INTO repairs(numero_rep,customer_name,phone,device_type,brand,model,
         serial_number,issue,estimated_price,final_price,comment,garantie,
         status,payment_method,amount_cb,amount_cash,amount_credit,
@@ -476,16 +478,28 @@ app.post('/api/repairs',async(req,res)=>{
         CASE WHEN $18 THEN NOW() ELSE NULL END) RETURNING *`,
       [numero,req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',
        req.body.brand||'',req.body.model||'',req.body.serial_number||'',
-       req.body.issue||'',fp,fp,
+       req.body.issue||'',ep,fp,
        req.body.comment||'',req.body.garantie||null,
        status,pm,cb,cash,credit,
        !!(status==='LIVRE')]);
+    const repairId=r.rows[0].id;
+    const items=Array.isArray(req.body.items)?req.body.items:[];
+    for(const item of items){
+      if(!item.panne&&!item.nom)continue;
+      await client.query(
+        `INSERT INTO repair_parts(repair_id,nom,cout,source,panne,prix_reparation)
+         VALUES($1,$2,$3,'ACHAT',$4,$5)`,
+        [repairId,item.nom||item.panne||'',0,item.panne||null,Number(item.prix_reparation||0)]);
+    }
+    await client.query('COMMIT');
     res.json(r.rows[0]);
-  }catch(e){res.status(500).json({error:e.message});}
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
 });
 app.put('/api/repairs/:id',async(req,res)=>{
   const client=await pool.connect();
   try{
+    await client.query('BEGIN');
     const status=String(req.body.status||'EN_ATTENTE');
     const repair_date=req.body.repair_date||null;
     const delivery_date=req.body.delivery_date||null;
@@ -515,6 +529,17 @@ app.put('/api/repairs/:id',async(req,res)=>{
         [rep.customer_name||'Anonyme',rep.phone||'',req.params.id,fp,(cb+cash).toFixed(2),credit.toFixed(2)]);}
       else{await client.query(`UPDATE customer_credits SET amount_paid=$1,amount_due=$2,status=CASE WHEN $2<=0 THEN 'SOLDE' ELSE 'EN_COURS' END WHERE repair_id=$3`,
         [(cb+cash).toFixed(2),credit.toFixed(2),req.params.id]);}
+    }
+    /* Sync pannes/pièces si items fournis */
+    if(Array.isArray(req.body.items)){
+      await client.query('DELETE FROM repair_parts WHERE repair_id=$1',[req.params.id]);
+      for(const item of req.body.items){
+        if(!item.panne&&!item.nom)continue;
+        await client.query(
+          `INSERT INTO repair_parts(repair_id,nom,cout,source,panne,prix_reparation)
+           VALUES($1,$2,$3,'ACHAT',$4,$5)`,
+          [req.params.id,item.nom||item.panne||'',0,item.panne||null,Number(item.prix_reparation||0)]);
+      }
     }
     await client.query('COMMIT');res.json(r.rows[0]);
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
@@ -2235,6 +2260,114 @@ app.post('/api/import-facture-pdf/upload', (req,res)=>{
       }
     });
   });
+});
+
+
+/* ── GMAIL API (OAuth2) — IMPORT FACTURES PDF ── */
+const GMAIL_TOKEN_FILE = require('path').join(__dirname, 'gmail_tokens.json');
+
+function _gmailOAuth2() {
+  const { google } = require('googleapis');
+  return new google.auth.OAuth2(
+    process.env.GMAIL_CLIENT_ID,
+    process.env.GMAIL_CLIENT_SECRET,
+    process.env.GMAIL_REDIRECT_URI || 'http://localhost:3000/api/gmail/auth/callback'
+  );
+}
+
+async function _gmailClient() {
+  const fs = require('fs');
+  const { google } = require('googleapis');
+  if (!fs.existsSync(GMAIL_TOKEN_FILE))
+    throw new Error('Gmail non autorise. Visitez http://localhost:3000/api/gmail/auth');
+  const tokens = JSON.parse(fs.readFileSync(GMAIL_TOKEN_FILE, 'utf8'));
+  const oauth2 = _gmailOAuth2();
+  oauth2.setCredentials(tokens);
+  oauth2.on('tokens', t => {
+    Object.assign(tokens, t);
+    fs.writeFileSync(GMAIL_TOKEN_FILE, JSON.stringify(tokens));
+  });
+  return google.gmail({ version: 'v1', auth: oauth2 });
+}
+
+function _gmailFindPdfParts(part, acc) {
+  if (!part) return;
+  if (part.filename && /\.pdf$/i.test(part.filename) && part.body?.attachmentId)
+    acc.push({ filename: part.filename, attachmentId: part.body.attachmentId, size: part.body.size || 0 });
+  (part.parts || []).forEach(p => _gmailFindPdfParts(p, acc));
+}
+
+/* Autorisation OAuth2 — à visiter une seule fois dans le navigateur */
+app.get('/api/gmail/auth', (req, res) => {
+  const url = _gmailOAuth2().generateAuthUrl({
+    access_type: 'offline', scope: ['https://www.googleapis.com/auth/gmail.readonly'], prompt: 'consent'
+  });
+  res.redirect(url);
+});
+
+app.get('/api/gmail/auth/callback', async (req, res) => {
+  const fs = require('fs');
+  try {
+    const oauth2 = _gmailOAuth2();
+    const { tokens } = await oauth2.getToken(req.query.code);
+    fs.writeFileSync(GMAIL_TOKEN_FILE, JSON.stringify(tokens));
+    res.send('<h2 style="font-family:Arial;color:green;padding:40px">✅ Gmail autorisé ! Vous pouvez fermer cette page et retourner dans l\'application.</h2>');
+  } catch(e) { res.status(500).send('Erreur: ' + e.message); }
+});
+
+app.get('/api/gmail/factures', async (req, res) => {
+  try {
+    const gmail = await _gmailClient();
+    const list = await gmail.users.messages.list({
+      userId: 'me', q: 'has:attachment filename:pdf newer_than:90d', maxResults: 60
+    });
+    const msgIds = list.data.messages || [];
+    const messages = [];
+    await Promise.all(msgIds.map(async ({ id }) => {
+      const msg = await gmail.users.messages.get({
+        userId: 'me', id, format: 'metadata',
+        metadataHeaders: ['From', 'Subject', 'Date']
+      });
+      const get = n => msg.data.payload.headers.find(h => h.name === n)?.value || '';
+      const pdfs = [];
+      _gmailFindPdfParts(msg.data.payload, pdfs);
+      if (!pdfs.length) return;
+      messages.push({ id, date: get('Date'), from: get('From'), subject: get('Subject'), attachments: pdfs });
+    }));
+    messages.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(messages);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/gmail/import-facture/:msgId', (req, res) => {
+  const path = require('path');
+  const fs   = require('fs');
+  const os   = require('os');
+  const { exec } = require('child_process');
+  const { attachmentId } = req.body;
+  const msgId = req.params.msgId;
+
+  (async () => {
+    const gmail = await _gmailClient();
+    const att = await gmail.users.messages.attachments.get({
+      userId: 'me', messageId: msgId, id: attachmentId
+    });
+    const buffer = Buffer.from(att.data.data, 'base64');
+    const tmpPath = path.join(os.tmpdir(), `facture_gmail_${msgId}_${Date.now()}.pdf`);
+    fs.writeFileSync(tmpPath, buffer);
+
+    const pyScript  = path.join(__dirname, 'parse_invoice.py');
+    const WIN_PYTHON = 'C:\\Users\\PC\\AppData\\Local\\Python\\bin\\python.exe';
+    const pyCmd = process.platform === 'win32'
+      ? (fs.existsSync(WIN_PYTHON) ? '"' + WIN_PYTHON + '"' : 'python')
+      : 'python3';
+    exec(`${pyCmd} "${pyScript}" "${tmpPath}"`, { encoding: 'utf-8', timeout: 60000 }, (err, stdout, stderr) => {
+      try { fs.unlinkSync(tmpPath); } catch {}
+      if (err) return res.status(500).json({ error: (stderr || err.message).slice(0, 300) });
+      try { res.json(JSON.parse(stdout)); }
+      catch { res.status(500).json({ error: 'Reponse Python invalide: ' + stdout.slice(0, 200) }); }
+    });
+  })().catch(e => res.status(500).json({ error: e.message }));
 });
 
 
