@@ -5,28 +5,33 @@
 
 module.exports = function initRapportAuto(pool) {
 
-  /* ── Planifier l'envoi à 21h00 chaque soir ── */
+  /* ── Planifier l'envoi à 19h20 chaque soir ── */
   function scheduleDaily() {
-    function msUntil21h() {
+    function msUntil19h20() {
       const now  = new Date();
       const next = new Date();
-      next.setHours(21, 0, 0, 0);
+      next.setHours(19, 20, 0, 0);
       if (next <= now) next.setDate(next.getDate() + 1);
       return next - now;
     }
     setTimeout(async function tick() {
       const date = new Date().toISOString().split('T')[0];
-      try {
-        await envoyerRapport(pool, date);
-        console.log('[Rapport Auto] Envoyé pour', date);
-      } catch(e) {
-        console.error('[Rapport Auto] Erreur:', e.message);
+      const jour = new Date().getDay(); /* 0=dimanche */
+      if (jour !== 0) {
+        try {
+          await envoyerRapport(pool, date);
+          console.log('[Rapport Auto] Envoyé pour', date);
+        } catch(e) {
+          console.error('[Rapport Auto] Erreur:', e.message);
+        }
+      } else {
+        console.log('[Rapport Auto] Dimanche — pas d\'envoi');
       }
       /* Replanifier pour le lendemain */
-      setTimeout(tick, msUntil21h());
-    }, msUntil21h());
+      setTimeout(tick, msUntil19h20());
+    }, msUntil19h20());
 
-    const h = Math.round(msUntil21h() / 3600000 * 10) / 10;
+    const h = Math.round(msUntil19h20() / 3600000 * 10) / 10;
     console.log('[Rapport Auto] Prochain envoi dans', h, 'h');
   }
 
@@ -93,7 +98,11 @@ async function envoyerRapport(pool, date) {
   const saveDir  = process.env.RAPPORT_DIR || fallbackDir;
   let   finalPath = path.join(saveDir, filename);
 
-  const doc    = new PDFDocument({margin:40, size:'A4'});
+  const doc    = new PDFDocument({margin:40, size:'A4', info:{
+    Title:   `Rapport Comptable - The SMARTPHONE - ${dateStr}`,
+    Author:  'The SMARTPHONE',
+    Subject: `Rapport du ${dateLabel}`
+  }});
   const chunks = [];
   doc.on('data', chunk => chunks.push(chunk));
   const pdfDone = new Promise((resolve, reject) => {
