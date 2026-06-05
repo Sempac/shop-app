@@ -275,7 +275,7 @@ table.sticky thead tr th,
       <div class="pay-frame-title">💰 Règlement</div>
       <div class="pay-row">
         <label>Mode</label>
-        <select id="n_pay_mode" onchange="onRepPaymentChange()">
+        <select id="n_pay_mode" onchange="onRepPaymentChange(true)">
           <option value="card">💳 Carte bancaire</option>
           <option value="cash">💵 Espèces</option>
           <option value="mixed">🔀 Mixte (CB, Espèces, Crédit)</option>
@@ -1129,12 +1129,18 @@ async function showRepair(id) {
   setActionBtns(true);
 }
 
-function onRepPaymentChange() {
+function onRepPaymentChange(clearAmounts) {
   var mode = document.getElementById('n_pay_mode').value;
   var show = function(id, vis) { var el = document.getElementById(id); if (el) el.style.display = vis ? 'flex' : 'none'; };
   show('nf_cb',     mode === 'card'  || mode === 'mixed');
   show('nf_cash',   mode === 'cash'  || mode === 'mixed');
   show('nf_credit', mode === 'mixed');
+  if (clearAmounts) {
+    var toClear = mode === 'card'  ? ['n_cash','n_credit']
+                : mode === 'cash'  ? ['n_cb','n_credit']
+                :                    ['n_cb','n_cash'];
+    toClear.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = '0'; });
+  }
   calcRepTotal();
 }
 
@@ -1208,7 +1214,7 @@ async function saveRepair() {
     if (d.error) { alert('❌ ' + d.error); return; }
     alert('✅ Réparation #' + currentId + ' mise à jour !');
     loadRepairs();
-    showRepair(currentId);
+    resetForm();
   } else {
     /* CRÉATION */
     var res = await fetch('/api/repairs', {
