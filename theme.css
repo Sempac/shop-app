@@ -232,6 +232,11 @@ html[data-theme="light"] .user-bar {
   border-color: #e2e8f0 !important;
   color: #374151 !important;
 }
+html[data-theme="light"] #userName   { color: #0f172a !important; }
+html[data-theme="light"] #loginTime  { color: #64748b !important; }
+html[data-theme="light"] .rb-vendeur { background: #334155 !important; color: #f1f5f9 !important; }
+html[data-theme="light"] .rb-gerant  { background: #1e40af !important; color: #dbeafe !important; }
+html[data-theme="light"] .rb-admin   { background: #7c3aed !important; color: #ede9fe !important; }
 
 /* Index — calendrier */
 html[data-theme="light"] .cal-wrap  { background: #fff !important; border:1px solid #e2e8f0; border-radius:10px; }
