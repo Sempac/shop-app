@@ -136,6 +136,11 @@ table.sticky thead tr th,
 
 <!-- LEFT -->
 <div class="left">
+  <div id="repUserBar" style="background:#1e293b;padding:5px 12px;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+    <span id="repUserIcon" style="font-size:14px;">👤</span>
+    <span id="repUserName" style="color:white;font-weight:bold;font-size:12px;">—</span>
+    <span id="repUserRole" style="font-size:10px;font-weight:bold;padding:2px 8px;border-radius:10px;background:#334155;color:#94a3b8;">Vendeur</span>
+  </div>
   <div style="display:flex;gap:6px;margin-bottom:8px;">
     <button class="home-btn" style="flex:1;margin-bottom:0;" onclick="location.href='index.html'">🏠 Accueil</button>
     <button onclick="location.href='rapport-comptable.html'" style="padding:10px 14px;background:#1e40af;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;font-family:Arial;">📊 Rapport Comptable</button>
@@ -1854,6 +1859,24 @@ document.getElementById('notre_prix').addEventListener('input', loadCompPrices);
   } else {
     setTimeout(initSticky, 500);
   }
+})();
+
+/* Badge utilisateur haut gauche */
+(function(){
+  var u = getUser();
+  if (!u) return;
+  var icon = document.getElementById('repUserIcon');
+  var name = document.getElementById('repUserName');
+  var role = document.getElementById('repUserRole');
+  if (!name) return;
+  icon.textContent = u.role === 'gerant' ? '👑' : (u.role === 'stagiaire' ? '🎓' : '👤');
+  name.textContent = u.name;
+  var lbl = u.role === 'gerant' ? 'Gérant' : (u.role === 'stagiaire' ? 'Stagiaire' : 'Vendeur');
+  var bg  = u.role === 'gerant' ? '#1e40af' : (u.role === 'stagiaire' ? '#7c3aed' : '#334155');
+  var fg  = u.role === 'gerant' ? '#93c5fd' : (u.role === 'stagiaire' ? '#ddd6fe' : '#94a3b8');
+  role.textContent = lbl;
+  role.style.background = bg;
+  role.style.color = fg;
 })();
 </script>
 </body>
