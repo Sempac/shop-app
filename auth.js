@@ -14,6 +14,10 @@ var AUTH_MODULES = {
     'sales', 'repairs', 'stock', 'history', 'lots',
     'contacts', 'printshop', 'credits', 'returns',
     'rapport-comptable', 'expenses-limited'
+  ],
+  stagiaire: [
+    'sales', 'repairs', 'stock', 'lots',
+    'printshop', 'rapport-comptable', 'expenses-limited'
   ]
 };
 
@@ -42,7 +46,7 @@ function canAccess(module) {
   var user = getUser();
   if (!user) return false;
   if (user.role === 'gerant') return true;
-  var allowed = AUTH_MODULES.vendeur;
+  var allowed = AUTH_MODULES[user.role] || AUTH_MODULES.vendeur;
   return allowed.indexOf(module) >= 0 || allowed.indexOf('*') >= 0;
 }
 
@@ -81,8 +85,8 @@ function showUserBadge(containerId) {
   var container = document.getElementById(containerId);
   if (!container) return;
 
-  var roleLabel = user.role === 'gerant' ? '👑 Gérant' : '👤 Vendeur';
-  var roleColor = user.role === 'gerant' ? '#3b82f6' : '#475569';
+  var roleLabel = user.role === 'gerant' ? '👑 Gérant' : (user.role === 'stagiaire' ? '🎓 Stagiaire' : '👤 Vendeur');
+  var roleColor = user.role === 'gerant' ? '#3b82f6' : (user.role === 'stagiaire' ? '#7c3aed' : '#475569');
 
   var badge = document.createElement('div');
   badge.style.cssText = 'display:flex;align-items:center;gap:8px;';
