@@ -565,10 +565,11 @@ function renderLotStockProds(prods) {
   /* Trouver le tbody du tableau items-table dans #detail */
   var table = document.querySelector('#detail .items-table');
   if (!table) { console.warn('items-table non trouvé'); return; }
-  /* Supprimer ancien tbody stock */
-  var oldTbody = document.getElementById('stockTbody');
-  if (oldTbody) oldTbody.remove();
-  if (!prods || !prods.length) return;
+  /* Réutiliser le tbody existant (évite un 2e tbody qui casse le tri) */
+  var tbody = table.querySelector('tbody');
+  if (!tbody) { tbody = document.createElement('tbody'); table.appendChild(tbody); }
+  tbody.id = 'stockTbody';
+  if (!prods || !prods.length) { tbody.innerHTML = ''; return; }
 
   var fmt = function(n){ return Number(n||0).toFixed(2)+' €'; };
   var fmtDate = function(d){ if(!d) return '<span style="color:#94a3b8">—</span>'; var dt=new Date(d); return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); };
@@ -628,10 +629,7 @@ function renderLotStockProds(prods) {
     '</tr>';
   }).join('');
 
-  var tbody = document.createElement('tbody');
-  tbody.id = 'stockTbody';
   tbody.innerHTML = rows;
-  table.appendChild(tbody);
   if (window.initSortable) window.initSortable();
 }
 
