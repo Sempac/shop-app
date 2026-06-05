@@ -98,17 +98,12 @@ app.post('/api/orders',async(req,res)=>{
     const orderId=or.rows[0].id;
     for(const item of cart){
       await client.query(`INSERT INTO order_items(order_id,product_id,quantity,price,discount) VALUES($1,$2,$3,$4,$5)`,[orderId,item.id,item.qty,Number(item.price),Number(item.discount||0)]);
-      await client.query(`UPDATE products SET stock_quantity=stock_quantity-$1 WHERE id=$2`,[item.qty,item.id]);
-      /* Mettre à jour statut produit si vendu depuis stock */
-      if(item.product_id || item.id){
-        const pid = item.product_id || item.id;
-        await client.query(
-          'UPDATE products SET sale_price=$1,updated_at=NOW() WHERE id=$2',
-          [Number(item.price)-Number(item.discount||0), pid]);
-        await client.query(
-          'UPDATE products SET statut_produit=$1 WHERE id=$2 AND statut_produit!=\'VENDU\'',
-          ['VENDU', pid]);
-      }
+      await client.query(`UPDATE products SET stock_quantity=stock_quantity-$1,updated_at=NOW() WHERE id=$2`,[item.qty,item.id]);
+      /* Mettre statut VENDU uniquement pour les produits LOT (articles unitaires).
+         Les produits COMMANDE/DIRECT ont des quantités et restent DISPONIBLE. */
+      await client.query(
+        "UPDATE products SET statut_produit='VENDU' WHERE id=$1 AND type_entree='LOT' AND statut_produit!='VENDU'",
+        [item.id]);
     }
     if(credit>0){await client.query(`INSERT INTO customer_credits(customer_name,phone,order_id,total_amount,amount_paid,amount_due,status,notes) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS',$7)`,
       [customer||'Anonyme','',orderId,total.toFixed(2),(cb+cash).toFixed(2),credit.toFixed(2),comment||'']);}
@@ -141,7 +136,10 @@ app.get('/api/orders/:id',async(req,res)=>{
 app.delete('/api/orders/:id',async(req,res)=>{
   const client=await pool.connect();
   try{await client.query('BEGIN');
-    await client.query(`UPDATE products p SET stock_quantity=stock_quantity+oi.quantity FROM order_items oi WHERE oi.order_id=$1 AND p.id=oi.product_id`,[req.params.id]);
+    /* Remettre le stock */
+    await client.query(`UPDATE products p SET stock_quantity=stock_quantity+oi.quantity,updated_at=NOW() FROM order_items oi WHERE oi.order_id=$1 AND p.id=oi.product_id`,[req.params.id]);
+    /* Remettre les produits LOT à DISPONIBLE */
+    await client.query(`UPDATE products p SET statut_produit='DISPONIBLE' FROM order_items oi WHERE oi.order_id=$1 AND p.id=oi.product_id AND p.type_entree='LOT' AND p.statut_produit='VENDU'`,[req.params.id]);
     await client.query(`DELETE FROM customer_credits WHERE order_id=$1`,[req.params.id]);
     await client.query(`DELETE FROM order_items WHERE order_id=$1`,[req.params.id]);
     await client.query(`DELETE FROM orders WHERE id=$1`,[req.params.id]);
