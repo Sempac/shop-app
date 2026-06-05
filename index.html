@@ -74,8 +74,9 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .cat-admin {background:linear-gradient(135deg,#9d174d,#db2777);}
 
 /* DRAG & DROP */
-.card[draggable]{cursor:grab;}
-.card[draggable]:active{cursor:grabbing;}
+.card[draggable="true"]{cursor:grab;}
+.card[draggable="true"]:active{cursor:grabbing;}
+.card{touch-action:manipulation;}
 .card.dragging{opacity:0.35;transform:scale(0.97);}
 .card-zone{position:relative;transition:background .15s;}
 .card-zone.zone-over{background:rgba(255,255,255,0.04);border-radius:10px;outline:2px dashed #334155;}
@@ -319,7 +320,7 @@ var CARDS = {
   stock:    {href:'stock.html',              icon:'📦', title:'STOCK',             desc:'Grade · Couleur<br>Fournisseur<br>Vendre direct',          cls:'stock'},
   caisse:   {href:'dailyreport.html',        icon:'📊', title:'CAISSE DU JOUR',    desc:'Rapport journalier<br>CB / Espèces<br>Net caisse',         cls:'caisse'},
   compta:   {href:'rapport-comptable.html',  icon:'📋', title:'RAPPORT COMPTABLE', desc:'Détails CA<br>CB / Espèces / DP<br>Pour le comptable',     cls:'compta'},
-  dashboard:{href:'dashboard.html',          icon:'📈', title:'DASHBOARD',         desc:'Rentabilité<br>CA &amp; Marges<br>Statistiques',           cls:'dashboard'},
+  dashboard:{href:'analytics.html',          icon:'📈', title:'DASHBOARD',         desc:'Rentabilité<br>CA &amp; Marges<br>Statistiques',           cls:'dashboard'},
   expenses: {href:'expenses.html',           icon:'📉', title:'DÉPENSES',          desc:'Sorties caisse<br>Fournisseurs<br>Suivi des coûts',        cls:'expenses'},
   devis:    {href:'devis.html',              icon:'📋', title:'DEVIS',             desc:'Créer un devis<br>Convertir en vente<br>Imprimer',         cls:'devis'},
   credits:  {href:'credits.html',            icon:'💳', title:'CRÉDITS',           desc:'Dettes clients<br>Paiements partiels<br>Suivi des restes', cls:'credits'},
@@ -331,6 +332,16 @@ var CARDS = {
   catalogue:{href:'/catalogue',             icon:'🛍️', title:'CATALOGUE',          desc:'Vitrine publique<br>Vue client<br>S\'ouvre dans un onglet',cls:'catalogue', blank:true},
   catadmin: {href:'/catalogue-admin',       icon:'🏷️', title:'ADMIN CATALOGUE',    desc:'Prix · Stock · Photos<br>Services · Réparations<br>Paramètres', cls:'cat-admin', blank:true},
   users:    {href:'users-admin.html',        icon:'👥', title:'UTILISATEURS',       desc:'Gérer les comptes<br>PINs · Rôles<br>Paramètres appli',   cls:'users', adminOnly:true},
+};
+
+/* Mapping carte → module pour le filtre d'accès */
+var CARD_MODULE = {
+  sales: 'sales', repairs: 'repairs', stock: 'stock',
+  history: 'history', lots: 'lots', contacts: 'contacts',
+  print: 'printshop', credits: 'credits', returns: 'returns',
+  compta: 'rapport-comptable', expenses: 'expenses-limited',
+  caisse: 'rapport-comptable', dashboard: 'rapport-comptable',
+  devis: 'sales', commandes: 'commandes', catalogue: null, catadmin: null,
 };
 
 var DEFAULT_LAYOUT = {
@@ -383,11 +394,18 @@ function buildCard(id, isTop) {
   if (!c) return null;
   /* Masquer les cartes admin-only si pas admin */
   if (c.adminOnly && user && user.role !== 'admin') return null;
+  /* Masquer les cartes inaccessibles pour vendeurs/stagiaires */
+  var isGerant = !user || user.role === 'gerant' || user.role === 'admin';
+  if (!isGerant) {
+    var mod = CARD_MODULE[id];
+    if (mod && !canAccess(mod)) return null;
+  }
   var el = document.createElement('a');
   el.className = 'card ' + c.cls + (isTop ? ' card-main' : '');
   el.href = c.href;
   el.title = c.title;
-  el.draggable = true;
+  /* Drag-and-drop uniquement pour le gérant */
+  el.draggable = isGerant;
   el.dataset.cardId = id;
   if (c.blank) el.target = '_blank';
   el.innerHTML = '<div class="icon">' + c.icon + '</div><div class="title">' + c.title + '</div><div class="desc">' + c.desc + '</div>';
@@ -416,7 +434,7 @@ function renderCards() {
 var draggedEl = null;
 
 function initDragDrop() {
-  document.querySelectorAll('.card[draggable]').forEach(function(card) {
+  document.querySelectorAll('.card[draggable="true"]').forEach(function(card) {
     card.addEventListener('dragstart', onDragStart);
     card.addEventListener('dragend',   onDragEnd);
   });
