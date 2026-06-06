@@ -17,7 +17,16 @@ let _qrData = null;
 let _ready  = false;
 let _status = 'disconnected'; /* disconnected | qr | connecting | ready */
 
+function cleanChromeLocks() {
+  /* Supprimer les fichiers verrou Chrome laissés par un arrêt brutal du service */
+  const sessionDir = path.join(__dirname, '.wwebjs_auth', 'session');
+  ['SingletonLock', 'SingletonCookie', 'SingletonSocket', 'DevToolsActivePort'].forEach(f => {
+    try { fs.unlinkSync(path.join(sessionDir, f)); } catch(e) {}
+  });
+}
+
 function initWhatsApp() {
+  cleanChromeLocks();
   try {
     client = new Client({
       authStrategy: new LocalAuth({
@@ -31,7 +40,6 @@ function initWhatsApp() {
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-gpu',
-          '--user-data-dir=C:\\Temp\\chrome-wa-profile',
           '--disable-extensions',
           '--disable-background-networking'
         ]
@@ -68,6 +76,7 @@ function initWhatsApp() {
       console.log('[WhatsApp] Déconnecté :', reason);
       /* Tentative de reconnexion après 10s */
       setTimeout(() => {
+        cleanChromeLocks();
         try { client.initialize(); } catch(e) { console.error('[WhatsApp] Erreur reinit:', e.message); }
       }, 10000);
     });
