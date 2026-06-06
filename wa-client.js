@@ -11,6 +11,7 @@ if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const path = require('path');
 const fs   = require('fs');
+const { execSync } = require('child_process');
 
 let client  = null;
 let _qrData = null;
@@ -18,7 +19,13 @@ let _ready  = false;
 let _status = 'disconnected'; /* disconnected | qr | connecting | ready */
 
 function cleanChromeLocks() {
-  /* Supprimer les fichiers verrou Chrome laissés par un arrêt brutal du service */
+  /* Tuer les processus Chrome orphelins qui utilisent notre session WA */
+  try {
+    execSync('wmic process where "name=\'chrome.exe\' and commandline like \'%wwebjs_auth%\'" delete',
+      { stdio: 'ignore', timeout: 5000 });
+  } catch(e) {} /* Pas de processus = normal */
+
+  /* Supprimer les fichiers verrou résiduels */
   const sessionDir = path.join(__dirname, '.wwebjs_auth', 'session');
   ['SingletonLock', 'SingletonCookie', 'SingletonSocket', 'DevToolsActivePort'].forEach(f => {
     try { fs.unlinkSync(path.join(sessionDir, f)); } catch(e) {}
@@ -27,6 +34,11 @@ function cleanChromeLocks() {
 
 function initWhatsApp() {
   cleanChromeLocks();
+  /* Petite pause pour laisser le temps au Chrome tué de libérer ses ressources */
+  setTimeout(_doInit, 2000);
+}
+
+function _doInit() {
   try {
     client = new Client({
       authStrategy: new LocalAuth({
@@ -75,10 +87,7 @@ function initWhatsApp() {
       _status = 'disconnected';
       console.log('[WhatsApp] Déconnecté :', reason);
       /* Tentative de reconnexion après 10s */
-      setTimeout(() => {
-        cleanChromeLocks();
-        try { client.initialize(); } catch(e) { console.error('[WhatsApp] Erreur reinit:', e.message); }
-      }, 10000);
+      setTimeout(() => initWhatsApp(), 10000);
     });
 
     client.on('auth_failure', (msg) => {
