@@ -19,11 +19,13 @@ let _ready  = false;
 let _status = 'disconnected'; /* disconnected | qr | connecting | ready */
 
 function cleanChromeLocks() {
-  /* Tuer les processus Chrome orphelins qui utilisent notre session WA */
+  /* Tuer les Chrome de la session Services (session 0) — ce sont les nôtres */
   try {
-    execSync('wmic process where "name=\'chrome.exe\' and commandline like \'%wwebjs_auth%\'" delete',
-      { stdio: 'ignore', timeout: 5000 });
-  } catch(e) {} /* Pas de processus = normal */
+    execSync(
+      'powershell -Command "Get-Process -Name chrome -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq 0 } | Stop-Process -Force -ErrorAction SilentlyContinue"',
+      { stdio: 'ignore', timeout: 8000 }
+    );
+  } catch(e) {}
 
   /* Supprimer les fichiers verrou résiduels */
   const sessionDir = path.join(__dirname, '.wwebjs_auth', 'session');
