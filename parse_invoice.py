@@ -36,7 +36,7 @@ def parse_lcdphone(text, page):
                     if prix is None: prix = val
                 elif re.match(r'^\d+$', cc) and qty is None:
                     qty = int(cc)
-                elif len(cc) > 5 and not re.match(r'^\d', cc) and '%' not in cc and not nom:
+                elif len(cc) > 5 and not re.match(r'^\d', cc) and not re.match(r'^\d{1,2}\s*%', cc) and not nom:
                     nom = cc.replace('\n', ' ')
             if ref and prix:
                 r['items'].append({'reference': ref, 'nom': nom, 'prix_ht': prix, 'quantite': qty or 1})
