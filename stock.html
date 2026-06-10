@@ -342,6 +342,10 @@ table.sticky thead tr th,
             <option value="RECONDITIONNE">Reconditionné</option>
           </select>
         </div>
+        <div class="mfg"><label>Prix achat (€)</label><input type="number" id="p_buy" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg"><label>Prix vente (€) *</label><input type="number" id="p_sell" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="mfg"><label>Quantité</label><input type="number" id="p_qty" value="1" min="0"></div>
+        <div class="mfg"><label>Seuil alerte</label><input type="number" id="p_alert" value="3" min="0"></div>
         <div class="mfg"><label>Grade</label>
           <select id="p_grade">
             <option value="">— Sans grade —</option>
@@ -399,27 +403,6 @@ table.sticky thead tr th,
             <option>Milieu GAUCHE</option><option>Milieu DROITE</option>
             <option>Bas GAUCHE</option><option>Bas DROITE</option>
           </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Prix & Stock -->
-    <div class="msec">
-      <div class="msec-title">💰 Prix &amp; Stock</div>
-      <div class="mgrid">
-        <div class="mfg"><label>Prix achat (€)</label><input type="number" id="p_buy" placeholder="0.00" min="0" step="0.01"></div>
-        <div class="mfg"><label>Prix vente (€) *</label><input type="number" id="p_sell" placeholder="0.00" min="0" step="0.01"></div>
-        <div class="mfg"><label>Quantité</label><input type="number" id="p_qty" value="1" min="0"></div>
-        <div class="mfg"><label>Seuil alerte</label><input type="number" id="p_alert" value="3" min="0"></div>
-        <div class="mfg" id="f_frais_rep" style="display:none">
-          <label>💸 Frais répar. (€)</label>
-          <input id="p_frais_rep" type="number" min="0" step="0.01" value="0" placeholder="0.00"
-            title="Coût réparation — ajouté aux frais du lot">
-        </div>
-        <div class="mfg" id="f_frais_desc" style="display:none">
-          <label>📝 Description frais</label>
-          <input id="p_frais_desc" type="text" placeholder="Ex: écran, batterie..."
-            title="Description du frais">
         </div>
       </div>
     </div>
