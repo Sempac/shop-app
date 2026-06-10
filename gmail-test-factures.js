@@ -74,10 +74,11 @@ async function main() {
      - LCD Phone / Smart Gadget Home : from:notification@lcd-phone.com
      - Utopya : subject:"Confirmation de votre commande UTOPYA" (contient Facture-FA*.pdf)
        NB : "Votre commande est prête" = BON-LIVRAISON → ignoré */
+  var yearStart = new Date().getFullYear() + '/01/01';
   var listRes = await gmail.users.messages.list({
     userId: 'me',
-    q: 'has:attachment filename:pdf (from:notification@lcd-phone.com OR subject:"Confirmation de votre commande UTOPYA") after:2026/04/01',
-    maxResults: 200
+    q: 'has:attachment filename:pdf (from:notification@lcd-phone.com OR subject:"Confirmation de votre commande UTOPYA") after:' + yearStart,
+    maxResults: 500
   });
 
   var msgIds = (listRes.data.messages || []);
