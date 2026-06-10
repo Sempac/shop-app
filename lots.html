@@ -65,6 +65,8 @@ button{border:none;cursor:pointer;font-weight:bold;border-radius:6px;padding:9px
 /* TABLEAU APPAREILS avec rentabilité */
 .items-table{width:100%;border-collapse:collapse;font-size:12px;}
 .items-table th{background:#f1f5f9;color:#0f172a;padding:8px 10px;text-align:left;font-size:11px;border-bottom:2px solid #e2e8f0;white-space:nowrap;}
+.items-table .filter-row th{background:#fff;padding:3px 4px;border-bottom:2px solid #e2e8f0;}
+.items-table .filter-row input,.items-table .filter-row select{width:100%;padding:4px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;font-family:Arial;box-sizing:border-box;color:#0f172a;}
 .items-table td{padding:8px 10px;border-bottom:1px solid #f8fafc;vertical-align:middle;}
 .items-table tr:hover td{background:#f8fafc;}
 
@@ -462,6 +464,17 @@ function renderDetail(data, stockProds, statsData){
               <th>Rentabilité</th>
               <th>Actions</th>
             </tr>
+            <tr class="filter-row">
+              <th><input type="text" id="fi-name" oninput="filterItemsTable()" placeholder="🔍 Nom…"></th>
+              <th><select id="fi-status" onchange="filterItemsTable()"><option value="">Tous</option><option value="EN_TEST">Test</option><option value="EN_REPARATION">Répar.</option><option value="EN_STOCK">Stock</option><option value="VENDU">Vendu</option><option value="IRREPARABLE">Irrépar.</option></select></th>
+              <th><input type="number" id="fi-achat" oninput="filterItemsTable()" placeholder="Min €" min="0"></th>
+              <th><input type="number" id="fi-frais" oninput="filterItemsTable()" placeholder="Min €" min="0"></th>
+              <th><input type="number" id="fi-vendu" oninput="filterItemsTable()" placeholder="Min €" min="0"></th>
+              <th></th>
+              <th></th>
+              <th><select id="fi-rent" onchange="filterItemsTable()"><option value="">Tous</option><option value="pos">✅ Positif</option><option value="neg">❌ Négatif</option></select></th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             ${items.map(it=>{
@@ -496,7 +509,13 @@ function renderDetail(data, stockProds, statsData){
                 rentHtml=`<div class="rent-pending">En cours…<br>Coûts actuels : −${fmt(achatEffectif+frais)}</div>`;
               }
 
-              return `<tr>
+              return `<tr
+                data-name="${(it.name||'').toLowerCase().replace(/"/g,'')}"
+                data-status="${it.status||''}"
+                data-achat="${achatEffectif}"
+                data-frais="${frais}"
+                data-vendu="${estVendu?venduPrix:''}"
+                data-rent="${estVendu||estIrrep?rentabilite:''}">
                 <td>
                   <div style="font-weight:bold;font-size:13px">${it.name}</div>
                   ${it.notes?`<div style="font-size:11px;color:#64748b">💬 ${it.notes}</div>`:''}
@@ -710,6 +729,29 @@ async function changeStatutStock(prodId, newStatut) {
     }
     loadLot(currentLot.id);
   } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+/* ══ FILTRE TABLEAU APPAREILS ══ */
+function filterItemsTable(){
+  var name=(document.getElementById('fi-name')?.value||'').toLowerCase().trim();
+  var status=document.getElementById('fi-status')?.value||'';
+  var achat=document.getElementById('fi-achat')?.value;
+  var frais=document.getElementById('fi-frais')?.value;
+  var vendu=document.getElementById('fi-vendu')?.value;
+  var rent=document.getElementById('fi-rent')?.value||'';
+  var table=document.querySelector('.items-table');
+  if(!table)return;
+  table.querySelectorAll('tbody tr').forEach(function(row){
+    var show=true;
+    if(name&&!(row.dataset.name||'').includes(name))show=false;
+    if(status&&row.dataset.status!==status)show=false;
+    if(achat&&Number(row.dataset.achat||0)<Number(achat))show=false;
+    if(frais&&Number(row.dataset.frais||0)<Number(frais))show=false;
+    if(vendu&&(row.dataset.vendu===''||Number(row.dataset.vendu)<Number(vendu)))show=false;
+    if(rent==='pos'&&(row.dataset.rent===''||Number(row.dataset.rent)<0))show=false;
+    if(rent==='neg'&&(row.dataset.rent===''||Number(row.dataset.rent)>=0))show=false;
+    row.style.display=show?'':'none';
+  });
 }
 
 /* ══ STATUT (appareils dans products) ══ */
