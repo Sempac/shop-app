@@ -48,8 +48,10 @@ def parse_utopya(text):
     # Numéro facture
     m = re.search(r'Facture\s*#\s*(FA\d+)', text)
     if m: r['numero'] = m.group(1)
-    # Date
-    m = re.search(r'Date facture\s+(\d{2}/\d{2}/\d{4})', text)
+    # Date — dans la facture Utopya, la date est sur la ligne "Carte Bancaire DD/MM/YYYY ..."
+    # car les en-têtes et valeurs sont sur des lignes séparées
+    m = re.search(r'(?:Date facture\s+|Carte Bancaire\s+)(\d{2}/\d{2}/\d{4})', text)
+    if not m: m = re.search(r'(\d{2}/\d{2}/\d{4})', text)
     if m: r['date'] = m.group(1)
     # Transporteur
     # Transporteur UTOPYA — après "DPD", "Colissimo" etc.

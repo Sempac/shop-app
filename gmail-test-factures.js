@@ -70,10 +70,13 @@ async function main() {
 
   console.log('🔍 Recherche des factures PDF LCDPhone / Utopya dans Gmail...\n');
 
-  /* Requête large — on filtre sur le contenu du PDF ensuite */
+  /* Requête ciblant les FACTURES fournisseurs (pas les bons de livraison)
+     - LCD Phone / Smart Gadget Home : from:notification@lcd-phone.com
+     - Utopya : subject:"Confirmation de votre commande UTOPYA" (contient Facture-FA*.pdf)
+       NB : "Votre commande est prête" = BON-LIVRAISON → ignoré */
   var listRes = await gmail.users.messages.list({
     userId: 'me',
-    q: 'has:attachment filename:pdf (subject:facture OR subject:invoice OR subject:commande OR from:utopya OR from:utopia OR from:lcd OR from:smartgadget)',
+    q: 'has:attachment filename:pdf (from:notification@lcd-phone.com OR subject:"Confirmation de votre commande UTOPYA")',
     maxResults: 30
   });
 
@@ -108,6 +111,11 @@ async function main() {
 
     for (var j = 0; j < pdfs.length; j++) {
       var pdf = pdfs[j];
+      /* Ignorer les bons de livraison Utopya (pas de prix) */
+      if (/^BON-LIVRAISON/i.test(pdf.filename)) {
+        console.log('   ⏩ Ignoré (bon de livraison) : ' + pdf.filename);
+        continue;
+      }
       var tmpPath = path.join(os.tmpdir(), 'facture_test_' + id + '_' + Date.now() + '.pdf');
       try {
         /* Télécharger la pièce jointe */
