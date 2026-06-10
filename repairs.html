@@ -1213,8 +1213,8 @@ async function saveRepair() {
     var d = await res.json();
     if (d.error) { alert('❌ ' + d.error); return; }
     alert('✅ Réparation #' + currentId + ' mise à jour !');
-    loadRepairs();
     resetForm();
+    loadRepairs();
   } else {
     /* CRÉATION */
     var res = await fetch('/api/repairs', {
@@ -1225,8 +1225,8 @@ async function saveRepair() {
     var d = await res.json();
     if (d.error) { alert('❌ ' + d.error); return; }
     alert('✅ Réparation #' + d.id + ' créée !');
-    loadRepairs();
     resetForm();
+    loadRepairs();
   }
 }
 
