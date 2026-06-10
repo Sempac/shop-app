@@ -16,8 +16,9 @@ var AUTH_MODULES = {
     'rapport-comptable', 'expenses-limited'
   ],
   stagiaire: [
-    'sales', 'repairs', 'stock', 'lots',
-    'printshop', 'rapport-comptable', 'expenses-limited'
+    'sales', 'repairs', 'stock', 'history', 'lots',
+    'contacts', 'printshop', 'credits', 'returns',
+    'rapport-comptable', 'expenses-limited'
   ]
 };
 

@@ -1046,7 +1046,7 @@ app.delete('/api/users/:id', async(req,res)=>{
 /* Catégories dépenses autorisées */
 app.get('/api/expense-categories', async(req,res)=>{
   try{
-    const role=req.query.role||'gerant';
+    const role=req.query.role==='stagiaire'?'vendeur':(req.query.role||'gerant');
     const r=await pool.query(
       `SELECT category FROM expense_categories_config WHERE allowed_roles LIKE $1 ORDER BY category`,
       ['%'+role+'%']);
