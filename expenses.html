@@ -87,32 +87,39 @@ table.sticky thead tr th,
       </div>
       <div class="fg"><label>Date</label><input type="date" id="dep_date"></div>
       <div class="fg"><label>Description</label><input id="dep_desc" placeholder="Ex: Pièces pour réparation, accessoires..."></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-        <div class="fg" style="flex:0 0 70px;">
-          <label>Qté</label>
+      <div class="fg">
+        <label>Taux de TVA</label>
+        <select id="dep_tva" onchange="calcDepTTC()">
+          <option value="">—</option>
+          <option value="20">20 %</option>
+          <option value="10">10 %</option>
+          <option value="5.5">5.5 %</option>
+          <option value="0">0 %</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Prix unitaire HT (€)</label>
+        <input type="number" id="dep_amount_ht" placeholder="0.00" min="0" step="0.01" oninput="calcDepTTC()" title="Prix HT par unité">
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div class="fg" style="flex:1;">
+          <label>Quantité</label>
           <input type="number" id="dep_qty" value="1" min="1" step="1" oninput="calcDepTTC()" title="Quantité">
         </div>
-        <div class="fg" style="flex:1;min-width:80px;">
-          <label>HT unit. (€)</label>
-          <input type="number" id="dep_amount_ht" placeholder="optionnel" min="0" step="0.01" oninput="calcDepTTC()" title="Prix HT par unité">
-        </div>
-        <div class="fg" style="flex:0 0 80px;">
-          <label>TVA (%)</label>
-          <select id="dep_tva" onchange="calcDepTTC()">
-            <option value="">—</option>
-            <option value="20">20 %</option>
-            <option value="10">10 %</option>
-            <option value="5.5">5.5 %</option>
-            <option value="0">0 %</option>
-          </select>
-        </div>
-        <div class="fg" style="flex:1;min-width:80px;">
-          <label>TTC unit. (€) *</label>
-          <input type="number" id="dep_amount" placeholder="0.00" min="0" step="0.01" oninput="calcDepHT()" title="Prix TTC par unité">
+        <div class="fg" style="flex:1;">
+          <label>Total HT (€)</label>
+          <input type="number" id="dep_total_ht" readonly tabindex="-1" placeholder="—" style="background:#f8fafc;color:#374151;cursor:default;">
         </div>
       </div>
-      <div id="dep_total_line" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:bold;color:#1e40af;text-align:right;margin-bottom:12px;">
-        Total : <span id="dep_total_val">0.00 €</span>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:4px;">
+        <div class="fg" style="flex:1;">
+          <label>TTC unitaire (€) *</label>
+          <input type="number" id="dep_amount" placeholder="0.00" min="0" step="0.01" oninput="calcDepHT()" title="Prix TTC par unité">
+        </div>
+        <div class="fg" style="flex:1;">
+          <label>TTC total (€)</label>
+          <input type="number" id="dep_total_ttc" readonly tabindex="-1" placeholder="—" style="background:#eff6ff;color:#1e40af;font-weight:bold;cursor:default;">
+        </div>
       </div>
       <div class="fg"><label>Catégorie</label>
         <select id="dep_cat"></select>
@@ -242,11 +249,12 @@ async function addExpense() {
   window._editingExpenseId = null;
   var btn = document.querySelector('.btn-save-dep');
   if (btn) { btn.textContent = '➕ Ajouter'; btn.style.background = '#22c55e'; }
-  document.getElementById('dep_desc').value   = '';
-  document.getElementById('dep_amount').value = '';
-  document.getElementById('dep_qty').value    = '1';
+  document.getElementById('dep_desc').value      = '';
   document.getElementById('dep_amount_ht').value = '';
-  document.getElementById('dep_total_line').style.display = 'none';
+  document.getElementById('dep_qty').value       = '1';
+  document.getElementById('dep_total_ht').value  = '';
+  document.getElementById('dep_amount').value    = '';
+  document.getElementById('dep_total_ttc').value = '';
   loadExpenses();
 }
 
@@ -418,26 +426,28 @@ loadCategories().then(function(){ loadExpenses(); });
 <script>
 /* ── Calculs HT/TTC ── */
 function calcDepTTC() {
-  var qtyEl = document.getElementById('dep_qty');
-  var htEl  = document.getElementById('dep_amount_ht');
-  var tvaEl = document.getElementById('dep_tva');
-  var ttcEl = document.getElementById('dep_amount');
-  var qty   = Math.max(1, parseInt(qtyEl?.value||1));
-  var ht    = parseFloat(htEl?.value||0);
-  var tva   = parseFloat(tvaEl?.value||'');
+  var qtyEl      = document.getElementById('dep_qty');
+  var htEl       = document.getElementById('dep_amount_ht');
+  var tvaEl      = document.getElementById('dep_tva');
+  var ttcEl      = document.getElementById('dep_amount');
+  var totalHtEl  = document.getElementById('dep_total_ht');
+  var totalTtcEl = document.getElementById('dep_total_ttc');
+  var qty = Math.max(1, parseInt(qtyEl?.value||1));
+  var ht  = parseFloat(htEl?.value||0);
+  var tva = parseFloat(tvaEl?.value||'');
+
+  /* Total HT = prix unitaire HT × quantité */
+  if (totalHtEl) totalHtEl.value = ht > 0 ? (ht * qty).toFixed(2) : '';
+
+  /* TTC unitaire = HT × (1 + TVA/100) */
   if (ht > 0 && tva !== '' && !isNaN(tva)) {
     if (ttcEl && document.activeElement !== ttcEl)
       ttcEl.value = (ht * (1 + tva/100)).toFixed(2);
   }
+
+  /* TTC total = TTC unitaire × quantité */
   var unitTTC = parseFloat(ttcEl?.value||0);
-  var totalLine = document.getElementById('dep_total_line');
-  var totalVal  = document.getElementById('dep_total_val');
-  if (qty > 1 && unitTTC > 0 && totalLine && totalVal) {
-    totalVal.textContent = (qty * unitTTC).toFixed(2) + ' €';
-    totalLine.style.display = 'block';
-  } else if (totalLine) {
-    totalLine.style.display = 'none';
-  }
+  if (totalTtcEl) totalTtcEl.value = unitTTC > 0 ? (unitTTC * qty).toFixed(2) : '';
 }
 function calcDepHT() {
   var ttcEl = document.getElementById('dep_amount');
