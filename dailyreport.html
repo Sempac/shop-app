@@ -207,12 +207,16 @@ tfoot td.right { text-align: right; font-size: 15px; }
 
 <!-- TOOLBAR -->
 <div class="header">
-  <div>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button onclick="location.href='index.html'" style="padding:7px 10px;background:#f1f5f9;color:#111827;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🏠 Accueil</button>
+    <button onclick="location.href='sales.html'" style="padding:7px 10px;background:#b45309;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🛒 Vente</button>
+    <button onclick="location.href='repairs.html'" style="padding:7px 10px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🔧 Réparation</button>
+    <button onclick="location.href='stock.html'" style="padding:7px 10px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📦 Stock</button>
+    <button onclick="location.href='rapport-comptable.html'" style="padding:7px 10px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📊 Rapport comptable</button>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center;">
     <input type="date" id="date">
     <button class="load-btn" onclick="loadReport()">🔎 Charger</button>
-  </div>
-  <div>
-    <button class="back-btn" onclick="location.href='history.html'">← Retour</button>
     <button class="print-btn" onclick="window.print()">🖨 Imprimer</button>
   </div>
 </div>
