@@ -841,8 +841,10 @@ function toggleFraisFields(forceLotId) {
   var statut  = document.getElementById('p_statut') ? document.getElementById('p_statut').value : '';
   /* Afficher frais si produit associé à un lot (peu importe le statut) */
   var showFrais = !!lotVal;
-  document.getElementById('f_frais_rep').style.display  = showFrais ? 'block' : 'none';
-  document.getElementById('f_frais_desc').style.display = showFrais ? 'block' : 'none';
+  var fr = document.getElementById('f_frais_rep');
+  var fd = document.getElementById('f_frais_desc');
+  if (fr) fr.style.display = showFrais ? 'block' : 'none';
+  if (fd) fd.style.display = showFrais ? 'block' : 'none';
 }
 
 function toggleIMEIField() {
