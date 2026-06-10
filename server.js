@@ -107,6 +107,18 @@ app.post('/api/orders',async(req,res)=>{
     }
     if(credit>0){await client.query(`INSERT INTO customer_credits(customer_name,phone,order_id,total_amount,amount_paid,amount_due,status,notes) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS',$7)`,
       [customer||'Anonyme','',orderId,total.toFixed(2),(cb+cash).toFixed(2),credit.toFixed(2),comment||'']);}
+    /* Auto-clôture des lots dont tous les produits sont vendus ou irréparables */
+    const productIds=cart.map(i=>i.id);
+    await client.query(`
+      UPDATE lots SET status='VENDU'
+      WHERE id IN (SELECT DISTINCT lot_id FROM products WHERE id=ANY($1) AND lot_id IS NOT NULL)
+        AND status='EN_COURS'
+        AND NOT EXISTS (
+          SELECT 1 FROM products p2
+          WHERE p2.lot_id=lots.id
+            AND p2.statut_produit NOT IN ('VENDU','IRREPARABLE')
+        )`,
+      [productIds]);
     await client.query('COMMIT');res.json({success:true,orderId});
   }catch(e){await client.query('ROLLBACK');res.status(500).json({success:false,error:e.message});}
   finally{client.release();}
@@ -2164,10 +2176,12 @@ app.get('/api/lots/:id/search-all', async(req,res)=>{
     const [prods,reps,sales]=await Promise.all([
       pool.query('SELECT id,name,statut_produit,sale_price,purchase_price FROM products WHERE lot_id=$1',[id]),
       pool.query('SELECT id,numero_rep,status,customer_name,brand,model FROM repairs WHERE lot_id=$1',[id]),
-      pool.query(`SELECT o.id,o.total,o.created_at,oi.name FROM orders o
+      pool.query(`SELECT o.id,o.numero,o.total,o.created_at,p.name AS product_name
+        FROM orders o
         JOIN order_items oi ON oi.order_id=o.id
-        JOIN products p ON p.name=oi.name AND p.lot_id=$1
-        WHERE o.status='completed' GROUP BY o.id,oi.name`,[id])
+        JOIN products p ON p.id=oi.product_id AND p.lot_id=$1
+        WHERE o.status='completed'
+        ORDER BY o.created_at DESC`,[id])
     ]);
     res.json({
       produits:prods.rows,
