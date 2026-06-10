@@ -75,17 +75,21 @@ table.sticky thead tr th,
 <body>
 
 <div class="toolbar">
-  <div>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button onclick="location.href='index.html'" style="padding:7px 10px;background:#f1f5f9;color:#111827;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🏠 Accueil</button>
+    <button onclick="location.href='sales.html'" style="padding:7px 10px;background:#b45309;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🛒 Vente</button>
+    <button onclick="location.href='repairs.html'" style="padding:7px 10px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🔧 Réparation</button>
+    <button onclick="location.href='stock.html'" style="padding:7px 10px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📦 Stock</button>
+    <button onclick="location.href='dailyreport.html'" style="padding:7px 10px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📅 Caisse du jour</button>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
     <input type="date" id="datePicker">
     <button onclick="loadRapport()">🔎 Générer</button>
-  </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;">
     <button onclick="window.print()" style="background:#475569;">🖨️ Imprimer</button>
     <button onclick="savePDF(this)" style="background:#7c3aed;">💾 Enregistrer PDF</button>
     <button onclick="exportExcelRapport()" style="background:#16a34a;">📊 Export Excel</button>
     <button onclick="sendEmailRapport(this)" style="background:#0891b2;">✉️ Email</button>
     <button onclick="sendWhatsAppRapport()" style="background:#25d366;">💬 WhatsApp</button>
-    <button onclick="location.href='index.html'" style="background:#1e40af;">🏠 Accueil</button>
   </div>
 </div>
 
