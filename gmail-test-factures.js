@@ -76,8 +76,8 @@ async function main() {
        NB : "Votre commande est prête" = BON-LIVRAISON → ignoré */
   var listRes = await gmail.users.messages.list({
     userId: 'me',
-    q: 'has:attachment filename:pdf (from:notification@lcd-phone.com OR subject:"Confirmation de votre commande UTOPYA")',
-    maxResults: 30
+    q: 'has:attachment filename:pdf (from:notification@lcd-phone.com OR subject:"Confirmation de votre commande UTOPYA") after:2026/04/01',
+    maxResults: 200
   });
 
   var msgIds = (listRes.data.messages || []);
@@ -88,7 +88,8 @@ async function main() {
 
   var rows = [];
   var processed = 0;
-  var MAX = 10;
+  var MAX = 999; /* pas de limite — on prend tout depuis début avril */
+  var seenFactures = {}; /* dédoublonnage par numéro de facture */
 
   for (var i = 0; i < msgIds.length && processed < MAX; i++) {
     var id = msgIds[i].id;
@@ -130,6 +131,12 @@ async function main() {
 
         var fournisseur = data.fournisseur || '⚠️ Non reconnu';
         var nbItems     = (data.items || []).length;
+        /* Dédoublonnage : même numéro de facture déjà traité → ignorer */
+        if (data.numero && seenFactures[data.numero]) {
+          console.log('   ⏩ Doublon ignoré : Facture ' + data.numero);
+          continue;
+        }
+        if (data.numero) seenFactures[data.numero] = true;
         console.log('   ✓ ' + fournisseur + ' | Facture ' + (data.numero||'?') + ' | ' + nbItems + ' article(s)');
 
         if (nbItems > 0) {
