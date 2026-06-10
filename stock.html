@@ -328,6 +328,7 @@ table.sticky thead tr th,
         <div class="mfg full"><label>Nom *</label><input id="p_name" placeholder="Ex: iPhone 12 64Go Noir"></div>
         <div class="mfg"><label>Catégorie</label>
           <select id="p_cat" onchange="toggleIMEIField()">
+            <option value="">— Sélectionner —</option>
             <option>Smartphone</option><option>Tablette</option><option>PC Portable</option>
             <option>Carte SIM</option><option>Coque</option><option>Protection écran</option>
             <option>Chargeur</option><option>Câble</option><option>Audio</option>
@@ -899,7 +900,7 @@ function openModal(id) {
   fields.forEach(function(f){ var el=document.getElementById(f); if(el) el.value=''; });
   document.getElementById('p_qty').value          = '1';
   document.getElementById('p_alert').value        = '3';
-  document.getElementById('p_cat').value          = 'Smartphone';
+  document.getElementById('p_cat').value          = '';
   document.getElementById('p_cond').value         = 'NEUF';
   document.getElementById('p_color').value        = '';
   document.getElementById('p_grade').value        = '';
@@ -927,7 +928,7 @@ function openModal(id) {
     if (!p) return;
     document.getElementById('p_id').value      = p.id;
     document.getElementById('p_name').value    = p.name || '';
-    document.getElementById('p_cat').value     = p.category || 'Smartphone';
+    document.getElementById('p_cat').value     = p.category || '';
     document.getElementById('p_cond').value    = p.condition || 'NEUF';
     document.getElementById('p_color').value   = p.color || '';
     document.getElementById('p_grade').value   = p.grade || '';
@@ -984,6 +985,7 @@ async function saveProduct() {
   var name = document.getElementById('p_name').value.trim();
   var sell = Number(document.getElementById('p_sell').value);
   if (!name) { alert('Nom obligatoire'); return; }
+  if (!document.getElementById('p_cat').value) { alert('⚠️ Catégorie obligatoire'); return; }
   if (!sell) { alert('Prix de vente obligatoire'); return; }
 
   var body = {
