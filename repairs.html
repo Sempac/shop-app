@@ -248,7 +248,10 @@ table.sticky thead tr th,
         </div>
         <div id="faultList"></div>
         <div id="faultTotalLine" style="text-align:right;font-size:12px;font-weight:bold;color:#0f172a;padding:3px 0 6px;">Total : 0.00 €</div>
-        <button type="button" onclick="addFaultRow()" style="width:100%;padding:7px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">➕ Ajouter une panne</button>
+        <div style="display:flex;gap:6px;margin-top:4px;">
+          <button type="button" onclick="addFaultRow()" style="flex:1;padding:7px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">➕ Ajouter une panne</button>
+          <button type="button" onclick="openPartsPanel()" style="padding:7px 12px;background:#0f766e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;" title="Rechercher une pièce dans le stock">🔍 Pièce</button>
+        </div>
       </div>
 
       <!-- Statut + 2 dates sur une seule ligne -->
@@ -316,6 +319,25 @@ table.sticky thead tr th,
       <div class="fg full"><label>Commentaire interne</label><textarea id="n_comment" placeholder="Notes..."></textarea></div>
     </div>
 
+    <!-- 🎁 ARTICLE OFFERT -->
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:bold;color:#374151;display:block;margin-bottom:5px;">🎁 Article offert au client</label>
+      <div style="position:relative;">
+        <input type="text" id="n_cadeau_search" placeholder="Rechercher un article du stock..." oninput="searchCadeau(this.value)" autocomplete="off"
+               style="width:100%;padding:8px 10px;border-radius:6px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:13px;font-family:Arial;">
+        <div id="n_cadeau_results" style="display:none;position:absolute;z-index:200;background:#fff;border:1px solid #e2e8f0;border-radius:6px;width:100%;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);top:calc(100% + 2px);left:0;"></div>
+      </div>
+      <div id="n_cadeau_tag" style="display:none;margin-top:6px;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="background:#14532d;color:#86efac;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold;">🎁 OFFERT : <span id="n_cadeau_nom_tag"></span></span>
+        <input type="number" id="n_cadeau_qty" value="1" min="1"
+               style="width:52px;padding:4px 6px;border-radius:5px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:12px;text-align:center;font-family:Arial;">
+        <span style="font-size:11px;color:#6b7280;">unité(s)</span>
+        <button type="button" onclick="clearCadeau()"
+                style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:Arial;">✕ Retirer</button>
+      </div>
+      <input type="hidden" id="n_cadeau_product_id">
+    </div>
+
     <!-- BOUTONS D'ACTION -->
     <div class="btn-row">
       <button class="btn-green" onclick="saveRepair()">✅ Enregistrer</button>
@@ -329,6 +351,31 @@ table.sticky thead tr th,
   </div>
 </div>
 
+</div>
+
+<!-- PANNEAU PIÈCES DÉTACHÉES -->
+<div class="comp-panel" id="partsPanel">
+  <div class="comp-header">
+    <h3>🔧 Rechercher une pièce détachée</h3>
+    <button class="comp-close" onclick="closePartsPanel()">✕ Fermer</button>
+  </div>
+  <div class="comp-body">
+    <div id="partsDeviceInfo" style="background:#f1f5f9;border-radius:8px;padding:8px 12px;font-size:12px;color:#374151;margin-bottom:12px;"></div>
+    <input type="text" id="parts_search" placeholder="Filtrer par nom de pièce..." oninput="loadPartsList()"
+           style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:13px;font-family:Arial;margin-bottom:10px;">
+    <div id="parts_results" style="margin-bottom:16px;"></div>
+    <div style="border-top:1px solid #e2e8f0;padding-top:12px;">
+      <div style="font-size:11px;font-weight:bold;color:#6b7280;text-transform:uppercase;margin-bottom:8px;">Rechercher chez les fournisseurs</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a id="linkLcdPhone" href="#" target="_blank"
+           style="padding:7px 14px;background:#1e40af;color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;font-family:Arial;">📦 LCD Phone</a>
+        <a id="linkUtopya" href="#" target="_blank"
+           style="padding:7px 14px;background:#065f46;color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;font-family:Arial;">📦 Utopya</a>
+        <a id="linkGoogle" href="#" target="_blank"
+           style="padding:7px 14px;background:#475569;color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:bold;font-family:Arial;">🔍 Google</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- PANNEAU COMPARATEUR PRIX RÉPARATIONS -->
@@ -964,6 +1011,138 @@ function clearFaults() {
   addFaultRow();
 }
 
+/* ══ ARTICLE OFFERT ══ */
+var _cadeauProducts = null;
+
+async function loadCadeauProducts() {
+  if (_cadeauProducts) return;
+  var res = await fetch('/api/products');
+  _cadeauProducts = (await res.json()).filter(function(p){ return p.category !== 'Prestation'; });
+}
+
+async function searchCadeau(q) {
+  await loadCadeauProducts();
+  var box = document.getElementById('n_cadeau_results');
+  q = (q || '').toLowerCase().trim();
+  if (!q) { box.style.display = 'none'; return; }
+  var matches = _cadeauProducts.filter(function(p) {
+    return (p.name || '').toLowerCase().indexOf(q) !== -1;
+  }).slice(0, 8);
+  if (!matches.length) { box.style.display = 'none'; return; }
+  box.innerHTML = matches.map(function(p) {
+    var stock = Number(p.stock_quantity || 0);
+    var stockColor = stock > 0 ? '#166534' : '#dc2626';
+    return '<div onclick="selectCadeau(' + p.id + ',\'' + (p.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')" ' +
+      'style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:13px;" ' +
+      'onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
+      '<b>' + (p.name || '—') + '</b>' +
+      '<span style="font-size:11px;color:#6b7280;margin-left:8px;">' + (p.category||'') + '</span>' +
+      '<span style="font-size:11px;font-weight:bold;color:' + stockColor + ';float:right;">Stock : ' + stock + '</span>' +
+    '</div>';
+  }).join('');
+  box.style.display = 'block';
+}
+
+function selectCadeau(id, name) {
+  document.getElementById('n_cadeau_product_id').value = id;
+  document.getElementById('n_cadeau_search').value = name;
+  document.getElementById('n_cadeau_nom_tag').textContent = name;
+  document.getElementById('n_cadeau_tag').style.display = 'flex';
+  document.getElementById('n_cadeau_results').style.display = 'none';
+}
+
+function clearCadeau() {
+  document.getElementById('n_cadeau_product_id').value = '';
+  document.getElementById('n_cadeau_search').value = '';
+  document.getElementById('n_cadeau_nom_tag').textContent = '';
+  document.getElementById('n_cadeau_tag').style.display = 'none';
+}
+
+/* ══ RECHERCHE PIÈCE DÉTACHÉE ══ */
+var _partsProducts = null;
+
+async function openPartsPanel() {
+  document.getElementById('partsPanel').classList.add('show');
+  var brand = document.getElementById('n_brand').value || '';
+  var model = document.getElementById('n_model').value || '';
+  var info  = document.getElementById('partsDeviceInfo');
+  info.innerHTML = brand || model
+    ? '<b>Appareil :</b> ' + [brand, model].filter(Boolean).join(' — ')
+    : '⚠️ Aucun appareil sélectionné dans le formulaire';
+  /* Liens fournisseurs */
+  var q = encodeURIComponent([brand, model, 'pièce détachée'].filter(Boolean).join(' '));
+  document.getElementById('linkGoogle').href = 'https://www.google.com/search?q=' + q;
+  document.getElementById('linkLcdPhone').href = 'https://www.lcd-phone.com/recherche?s=' + encodeURIComponent([brand, model].filter(Boolean).join(' '));
+  document.getElementById('linkUtopya').href = 'https://utopya.fr/recherche?s=' + encodeURIComponent([brand, model].filter(Boolean).join(' '));
+  await loadPartsList();
+}
+
+function closePartsPanel() {
+  document.getElementById('partsPanel').classList.remove('show');
+}
+
+async function loadPartsList() {
+  var box = document.getElementById('parts_results');
+  box.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:8px 0;">Chargement...</div>';
+  if (!_partsProducts) {
+    var res = await fetch('/api/products');
+    _partsProducts = await res.json();
+  }
+  var brand = (document.getElementById('n_brand').value || '').toLowerCase();
+  var model = (document.getElementById('n_model').value || '').toLowerCase();
+  var q     = (document.getElementById('parts_search').value || '').toLowerCase().trim();
+  var results = _partsProducts.filter(function(p) {
+    var name = (p.name || '').toLowerCase();
+    var matchQ = !q || name.indexOf(q) !== -1;
+    var matchDevice = !brand && !model ? true :
+      name.indexOf(brand) !== -1 || name.indexOf(model) !== -1 ||
+      (p.category || '').toLowerCase() === 'pièce détachée';
+    return matchQ && matchDevice;
+  });
+  /* Priorité : Pièce détachée en tête */
+  results.sort(function(a, b) {
+    var aP = (a.category||'').toLowerCase() === 'pièce détachée' ? 0 : 1;
+    var bP = (b.category||'').toLowerCase() === 'pièce détachée' ? 0 : 1;
+    return aP - bP;
+  });
+  if (!results.length) {
+    box.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:8px 0;">Aucune pièce trouvée en stock.</div>';
+    return;
+  }
+  box.innerHTML = results.slice(0, 20).map(function(p) {
+    var stock = Number(p.stock_quantity || 0);
+    var stockBadge = stock > 0
+      ? '<span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:bold;">✓ ' + stock + ' en stock</span>'
+      : '<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:bold;">Rupture</span>';
+    var prix = Number(p.purchase_price || p.selling_price || 0);
+    return '<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+      '<div>' +
+        '<div style="font-size:13px;font-weight:bold;color:#0f172a;">' + (p.name||'—') + '</div>' +
+        '<div style="font-size:11px;color:#64748b;">' + (p.category||'') + (prix > 0 ? ' — ' + prix.toFixed(2) + ' €' : '') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+        stockBadge +
+        '<button onclick="usePiece(\'' + (p.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\',' + prix + ')" ' +
+        'style="padding:4px 10px;background:#0f766e;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold;font-family:Arial;">' +
+        'Utiliser</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function usePiece(name, prix) {
+  /* Remplit la dernière ligne de panne, ou ajoute une nouvelle */
+  var rows = document.querySelectorAll('#faultList .fault-row');
+  var lastRow = rows.length ? rows[rows.length - 1] : null;
+  if (!lastRow) { addFaultRow(); lastRow = document.querySelector('#faultList .fault-row'); }
+  lastRow.querySelector('.fault-piece').value = name;
+  if (prix > 0 && !Number(lastRow.querySelector('.fault-prix').value)) {
+    lastRow.querySelector('.fault-prix').value = prix.toFixed(2);
+    calcFaultTotal();
+  }
+  closePartsPanel();
+}
+
 function setFaultFromParts(parts) {
   document.getElementById('faultList').innerHTML = '';
   if (!parts || !parts.length) { addFaultRow(); return; }
@@ -1121,6 +1300,14 @@ async function showRepair(id) {
 
   /* (pannes chargées ci-dessus via repair_parts) */
 
+  /* Article offert */
+  if (r.cadeau_product_id) {
+    selectCadeau(r.cadeau_product_id, r.cadeau_nom || ('Article #' + r.cadeau_product_id));
+    document.getElementById('n_cadeau_qty').value = r.cadeau_qty || 1;
+  } else {
+    clearCadeau();
+  }
+
   /* Activer les boutons */
   setActionBtns(true);
 }
@@ -1185,9 +1372,11 @@ async function saveRepair() {
     amount_cb:       cb,
     amount_cash:     cash,
     amount_credit:   credit,
-    payment_method:  method,
-    status:          status,
-    items:           items
+    payment_method:        method,
+    status:                status,
+    items:                 items,
+    cadeau_product_id:     Number(document.getElementById('n_cadeau_product_id').value) || null,
+    cadeau_qty:            Number(document.getElementById('n_cadeau_qty')?.value) || 1
   };
 
   if (currentId) {
@@ -1243,6 +1432,7 @@ function resetForm() {
     var el = document.getElementById(id); if (el) el.selectedIndex = 0;
   });
   clearFaults();
+  clearCadeau();
   document.getElementById('n_status').value          = 'LIVRE';
   document.getElementById('n_entry_date').value       = localDate(new Date());
   document.getElementById('n_rep_date').value        = localDate(new Date());

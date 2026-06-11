@@ -465,7 +465,7 @@ app.get('/api/repairs/search',async(req,res)=>{
     res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}
 });
-app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM repairs WHERE id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT r.*,p.name AS cadeau_nom FROM repairs r LEFT JOIN products p ON p.id=r.cadeau_product_id WHERE r.id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/repairs',async(req,res)=>{
   const client=await pool.connect();
   try{
@@ -479,20 +479,25 @@ app.post('/api/repairs',async(req,res)=>{
     if(cb>0&&cash>0)pm='mixed';else if(cb>0)pm='card';else if(cash>0)pm='cash';else if(credit>0)pm='credit';
     const fp=Number(req.body.final_price||req.body.estimated_price||0);
     const ep=Number(req.body.estimated_price||fp);
+    const cadeauId=Number(req.body.cadeau_product_id)||null;
+    const cadeauQty=Number(req.body.cadeau_qty)||1;
     const r=await client.query(
       `INSERT INTO repairs(numero_rep,customer_name,phone,device_type,brand,model,
         serial_number,issue,estimated_price,final_price,comment,garantie,
         status,payment_method,amount_cb,amount_cash,amount_credit,
+        cadeau_product_id,cadeau_qty,
         created_at,delivered_at)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NOW(),
-        CASE WHEN $18 THEN NOW() ELSE NULL END) RETURNING *`,
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW(),
+        CASE WHEN $20 THEN NOW() ELSE NULL END) RETURNING *`,
       [numero,req.body.customer_name||'',req.body.phone||'',req.body.device_type||'',
        req.body.brand||'',req.body.model||'',req.body.serial_number||'',
        req.body.issue||'',ep,fp,
        req.body.comment||'',req.body.garantie||null,
        status,pm,cb,cash,credit,
+       cadeauId,cadeauQty,
        !!(status==='LIVRE')]);
     const repairId=r.rows[0].id;
+    if(cadeauId){await client.query(`UPDATE products SET stock_quantity=GREATEST(0,COALESCE(stock_quantity,0)-$1) WHERE id=$2`,[cadeauQty,cadeauId]);}
     const items=Array.isArray(req.body.items)?req.body.items:[];
     for(const item of items){
       if(!item.panne&&!item.nom)continue;
@@ -518,6 +523,12 @@ app.put('/api/repairs/:id',async(req,res)=>{
     const cb=Number(req.body.amount_cb||0),cash=Number(req.body.amount_cash||0),credit=Number(req.body.amount_credit||0);
     const{customer_name,phone,device_type,brand,model,serial_number,issue,comment}=req.body;
     let pm='cash';if(cb>0&&cash>0)pm='mixed';else if(cb>0)pm='card';else if(cash>0)pm='cash';else if(credit>0)pm='credit';
+    const newCadeauId=Number(req.body.cadeau_product_id)||null;
+    const newCadeauQty=Number(req.body.cadeau_qty)||1;
+    /* Lire l'ancien cadeau pour gérer le stock */
+    const oldRow=await client.query('SELECT cadeau_product_id,cadeau_qty FROM repairs WHERE id=$1',[req.params.id]);
+    const oldCadeauId=oldRow.rows[0]?.cadeau_product_id||null;
+    const oldCadeauQty=oldRow.rows[0]?.cadeau_qty||1;
     const r=await client.query(`UPDATE repairs SET
       status=CAST($1 AS varchar),final_price=$2,
       estimated_price=CASE WHEN $3>0 THEN $3 ELSE estimated_price END,
@@ -529,11 +540,17 @@ app.put('/api/repairs/:id',async(req,res)=>{
       serial_number=CASE WHEN $9!='' THEN $9 ELSE serial_number END,
       issue=CASE WHEN $10!='' THEN $10 ELSE issue END,
       comment=$11,payment_method=$12,amount_cb=$13,amount_cash=$14,amount_credit=$15,
+      cadeau_product_id=$19,cadeau_qty=$20,
       updated_at=NOW(),
       created_at=COALESCE(CASE WHEN $17::text IS NOT NULL THEN $17::timestamp ELSE NULL END,created_at),
       delivered_at=CASE WHEN $18::text IS NOT NULL AND $18::text!='' THEN $18::timestamp WHEN CAST($1 AS varchar)='LIVRE' THEN COALESCE(delivered_at,NOW()) ELSE delivered_at END
       WHERE id=$16 RETURNING *`,
-      [status,fp,ep,customer_name||'',phone||'',device_type||'',brand||'',model||'',serial_number||'',issue||'',comment||'',pm,cb,cash,credit,req.params.id,repair_date||null,delivery_date||null]);
+      [status,fp,ep,customer_name||'',phone||'',device_type||'',brand||'',model||'',serial_number||'',issue||'',comment||'',pm,cb,cash,credit,req.params.id,repair_date||null,delivery_date||null,newCadeauId,newCadeauQty]);
+    /* Ajustement stock cadeau si changement */
+    if(oldCadeauId!==newCadeauId){
+      if(oldCadeauId)await client.query(`UPDATE products SET stock_quantity=COALESCE(stock_quantity,0)+$1 WHERE id=$2`,[oldCadeauQty,oldCadeauId]);
+      if(newCadeauId)await client.query(`UPDATE products SET stock_quantity=GREATEST(0,COALESCE(stock_quantity,0)-$1) WHERE id=$2`,[newCadeauQty,newCadeauId]);
+    }
     if(credit>0){const rep=r.rows[0];const ex=await client.query(`SELECT id FROM customer_credits WHERE repair_id=$1`,[req.params.id]);
       if(ex.rows.length===0){await client.query(`INSERT INTO customer_credits(customer_name,phone,repair_id,total_amount,amount_paid,amount_due,status) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS')`,
         [rep.customer_name||'Anonyme',rep.phone||'',req.params.id,fp,(cb+cash).toFixed(2),credit.toFixed(2)]);}
