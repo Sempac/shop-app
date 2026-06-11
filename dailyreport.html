@@ -378,12 +378,36 @@ function renderReport(date, data) {
   /* Summary */
   document.getElementById('summaryBox').innerHTML = `
     <h3>📊 Résumé caisse — ${dateLabel(date)}</h3>
-    <div class="summary-grid">
-      <div class="card">🛒 Ventes<br><b>${fmtEur(totalVentes)}</b><span style="font-size:11px;color:#888">${nbV} transaction(s)</span></div>
-      <div class="card">🔧 Réparations<br><b>${fmtEur(totalRep)}</b><span style="font-size:11px;color:#888">${nbR} réparation(s)</span></div>
-      <div class="card">💳 Total CB<br><b>${fmtEur(totalCB)}</b></div>
-      <div class="card">💵 Total Espèces<br><b>${fmtEur(totalEsp)}</b></div>
-    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
+      <thead>
+        <tr style="background:#f1f5f9;color:#475569">
+          <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e2e8f0"></th>
+          <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e2e8f0">💳 CB</th>
+          <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e2e8f0">💵 Espèces</th>
+          <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e2e8f0">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9">🛒 Ventes <span style="font-size:11px;color:#888">(${nbV})</span></td>
+          <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #f1f5f9">${fmtEur(vCB)}</td>
+          <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #f1f5f9">${fmtEur(vEsp)}</td>
+          <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #f1f5f9;font-weight:bold">${fmtEur(totalVentes)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;border-bottom:2px solid #e2e8f0">🔧 Réparations <span style="font-size:11px;color:#888">(${nbR})</span></td>
+          <td style="padding:8px 12px;text-align:right;border-bottom:2px solid #e2e8f0">${fmtEur(rCB)}</td>
+          <td style="padding:8px 12px;text-align:right;border-bottom:2px solid #e2e8f0">${fmtEur(rEsp)}</td>
+          <td style="padding:8px 12px;text-align:right;border-bottom:2px solid #e2e8f0;font-weight:bold">${fmtEur(totalRep)}</td>
+        </tr>
+        <tr style="background:#f8fafc;font-weight:bold">
+          <td style="padding:8px 12px;color:#374151">TOTAL</td>
+          <td style="padding:8px 12px;text-align:right">${fmtEur(totalCB)}</td>
+          <td style="padding:8px 12px;text-align:right">${fmtEur(totalEsp)}</td>
+          <td style="padding:8px 12px;text-align:right;font-size:15px;color:#1e40af">${fmtEur(grandTotal)}</td>
+        </tr>
+      </tbody>
+    </table>
     <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:12px;align-items:center;flex-wrap:wrap">
       <div style="background:#f9fafb;border:1px solid #ddd;border-radius:6px;padding:10px 18px;font-size:13px">
         📉 Dépenses du jour&nbsp;&nbsp;<b style="font-size:16px;color:#dc2626">− ${fmtEur(totalDep)}</b>
