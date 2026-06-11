@@ -252,6 +252,25 @@ table.sticky thead tr th,
           <button type="button" onclick="addFaultRow()" style="flex:1;padding:7px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">➕ Ajouter une panne</button>
           <button type="button" onclick="openPartsPanel()" style="padding:7px 12px;background:#0f766e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;" title="Rechercher une pièce dans le stock">🔍 Pièce</button>
         </div>
+
+        <!-- 🎁 ARTICLE OFFERT -->
+        <div style="margin-top:10px;">
+          <label style="font-size:11px;font-weight:bold;color:#374151;display:block;margin-bottom:5px;">🎁 Article offert au client</label>
+          <div style="position:relative;">
+            <input type="text" id="n_cadeau_search" placeholder="Rechercher un article du stock..." oninput="searchCadeau(this.value)" autocomplete="off"
+                   style="width:100%;padding:8px 10px;border-radius:6px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:13px;font-family:Arial;">
+            <div id="n_cadeau_results" style="display:none;position:fixed;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:6px;max-height:280px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.18);"></div>
+          </div>
+          <div id="n_cadeau_tag" style="display:none;margin-top:6px;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="background:#14532d;color:#86efac;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold;">🎁 OFFERT : <span id="n_cadeau_nom_tag"></span></span>
+            <input type="number" id="n_cadeau_qty" value="1" min="1"
+                   style="width:52px;padding:4px 6px;border-radius:5px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:12px;text-align:center;font-family:Arial;">
+            <span style="font-size:11px;color:#6b7280;">unité(s)</span>
+            <button type="button" onclick="clearCadeau()"
+                    style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:Arial;">✕ Retirer</button>
+          </div>
+          <input type="hidden" id="n_cadeau_product_id">
+        </div>
       </div>
 
       <!-- Statut + 2 dates sur une seule ligne -->
@@ -317,25 +336,6 @@ table.sticky thead tr th,
         </select>
       </div>
       <div class="fg full"><label>Commentaire interne</label><textarea id="n_comment" placeholder="Notes..."></textarea></div>
-    </div>
-
-    <!-- 🎁 ARTICLE OFFERT -->
-    <div style="margin-bottom:12px;">
-      <label style="font-size:11px;font-weight:bold;color:#374151;display:block;margin-bottom:5px;">🎁 Article offert au client</label>
-      <div style="position:relative;">
-        <input type="text" id="n_cadeau_search" placeholder="Rechercher un article du stock..." oninput="searchCadeau(this.value)" autocomplete="off"
-               style="width:100%;padding:8px 10px;border-radius:6px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:13px;font-family:Arial;">
-        <div id="n_cadeau_results" style="display:none;position:fixed;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:6px;max-height:280px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.18);"></div>
-      </div>
-      <div id="n_cadeau_tag" style="display:none;margin-top:6px;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span style="background:#14532d;color:#86efac;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold;">🎁 OFFERT : <span id="n_cadeau_nom_tag"></span></span>
-        <input type="number" id="n_cadeau_qty" value="1" min="1"
-               style="width:52px;padding:4px 6px;border-radius:5px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:12px;text-align:center;font-family:Arial;">
-        <span style="font-size:11px;color:#6b7280;">unité(s)</span>
-        <button type="button" onclick="clearCadeau()"
-                style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-family:Arial;">✕ Retirer</button>
-      </div>
-      <input type="hidden" id="n_cadeau_product_id">
     </div>
 
     <!-- BOUTONS D'ACTION -->
