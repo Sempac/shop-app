@@ -1168,6 +1168,15 @@ async function cancelOrder(id) {
 })();
 
 init();
+
+/* Deep-link depuis la caisse du jour : sales.html?order_id=X */
+(function() {
+  var params   = new URLSearchParams(window.location.search);
+  var orderId  = Number(params.get('order_id'));
+  if (!orderId) return;
+  switchMainTab('histo');
+  showOrderDetail(orderId);
+})();
 </script>
 <script src="input-tools.js"></script>
 <script>

@@ -1569,7 +1569,19 @@ document.getElementById('n_pay_mode').value = 'cash';
 onRepPaymentChange();
 clearFaults();
 
-loadRepairs();
+/* Deep-link depuis la caisse du jour : repairs.html?repair_id=X */
+loadRepairs().then(function() {
+  var repId = Number(new URLSearchParams(window.location.search).get('repair_id'));
+  if (!repId) return;
+  var tr = document.querySelector('#repairList tr[data-id="' + repId + '"]');
+  if (tr) {
+    if (selRow) selRow.classList.remove('selected');
+    tr.classList.add('selected');
+    selRow = tr;
+    tr.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  showRepair(repId);
+});
 </script>
 
 <!-- ═══════════════════════════════

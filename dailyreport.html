@@ -348,8 +348,13 @@ function renderReport(date, data) {
   if (lignes.length === 0) {
     body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">Aucune opération ce jour</td></tr>`;
   } else {
-    body.innerHTML = lignes.map(l => `
-      <tr>
+    body.innerHTML = lignes.map(l => {
+      const rawId = l.id.slice(2);
+      const dest  = l.id.startsWith('V-')
+        ? `sales.html?order_id=${rawId}`
+        : `repairs.html?repair_id=${rawId}`;
+      return `
+      <tr onclick="location.href='${dest}'" style="cursor:pointer" title="Voir le détail">
         <td style="font-size:11px;color:#888">${l.id}</td>
         <td><b>${l.designation}</b></td>
         <td style="color:#555">${l.fournisseur}</td>
@@ -358,7 +363,8 @@ function renderReport(date, data) {
         </td>
         <td class="center">${paiementHtml(l.method)}</td>
         <td class="right">${fmtEur(l.total)}${l.credit > 0 ? '<br><span style="font-size:10px;color:#f59e0b;font-weight:normal">⏳ Crédit : '+fmtEur(l.credit)+'</span>' : ''}</td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
 
   /* Tfoot */
