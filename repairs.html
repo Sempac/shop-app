@@ -1036,9 +1036,7 @@ async function searchCadeau(q) {
   if (!matches.length) { box.style.display = 'none'; return; }
   /* Position fixed sous l'input (évite le clipping overflow:auto du panneau) */
   var rect = inp.getBoundingClientRect();
-  box.style.top   = (rect.bottom + 2) + 'px';
-  box.style.left  = rect.left + 'px';
-  box.style.width = rect.width + 'px';
+  posDropdown(box, rect);
   box.innerHTML = matches.map(function(p) {
     var stock = Number(p.stock_quantity || 0);
     var stockColor = stock > 0 ? '#166534' : '#dc2626';
@@ -1051,6 +1049,24 @@ async function searchCadeau(q) {
     '</div>';
   }).join('');
   box.style.display = 'block';
+}
+
+/* Positionnement intelligent : sous l'input ou au-dessus si place insuffisante */
+function posDropdown(box, rect) {
+  var maxH    = 280;
+  var below   = window.innerHeight - rect.bottom - 4;
+  var above   = rect.top - 4;
+  box.style.left  = rect.left + 'px';
+  box.style.width = rect.width + 'px';
+  if (below >= 120 || below >= above) {
+    box.style.top       = (rect.bottom + 2) + 'px';
+    box.style.bottom    = 'auto';
+    box.style.maxHeight = Math.min(maxH, below) + 'px';
+  } else {
+    box.style.top       = 'auto';
+    box.style.bottom    = (window.innerHeight - rect.top + 2) + 'px';
+    box.style.maxHeight = Math.min(maxH, above) + 'px';
+  }
 }
 
 /* Fermer les dropdowns au clic en dehors */
@@ -1092,9 +1108,7 @@ async function searchPiece(inp) {
   });
   if (!matches.length) { dd.style.display = 'none'; return; }
   var rect = inp.getBoundingClientRect();
-  dd.style.top   = (rect.bottom + 2) + 'px';
-  dd.style.left  = rect.left + 'px';
-  dd.style.width = rect.width + 'px';
+  posDropdown(dd, rect);
   dd.innerHTML = matches.map(function(p) {
     var stock = Number(p.stock_quantity || 0);
     var stockColor = stock > 0 ? '#166534' : '#dc2626';
