@@ -353,6 +353,9 @@ table.sticky thead tr th,
 
 </div>
 
+<!-- Dropdown partagé pour la recherche pièce dans chaque ligne de panne -->
+<div id="piece_dd" style="display:none;position:fixed;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:6px;max-height:280px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.18);"></div>
+
 <!-- PANNEAU PIÈCES DÉTACHÉES -->
 <div class="comp-panel" id="partsPanel">
   <div class="comp-header">
@@ -958,7 +961,7 @@ function addFaultRow(panne, piece, prix) {
   row.className = 'fault-row';
   row.innerHTML =
     '<select class="fault-panne" onchange="calcFaultTotal()">' + FAULT_OPTIONS_HTML + '</select>' +
-    '<input class="fault-piece" placeholder="Pièce (optionnel)">' +
+    '<input class="fault-piece" placeholder="Pièce (optionnel)" oninput="searchPiece(this)" autocomplete="off">' +
     '<input type="number" class="fault-prix" placeholder="0" min="0" step="0.01" oninput="calcFaultTotal()">' +
     '<button type="button" class="fault-del" onclick="removeFaultRow(this)" title="Supprimer">✕</button>';
   list.appendChild(row);
@@ -1050,13 +1053,78 @@ async function searchCadeau(q) {
   box.style.display = 'block';
 }
 
-/* Fermer le dropdown cadeau au clic en dehors */
+/* Fermer les dropdowns au clic en dehors */
 document.addEventListener('click', function(e) {
   if (!e.target.closest('#n_cadeau_search') && !e.target.closest('#n_cadeau_results')) {
     var box = document.getElementById('n_cadeau_results');
     if (box) box.style.display = 'none';
   }
+  if (!e.target.classList.contains('fault-piece') && !e.target.closest('#piece_dd')) {
+    var dd = document.getElementById('piece_dd');
+    if (dd) dd.style.display = 'none';
+  }
 });
+
+/* ══ AUTOCOMPLETE PIÈCE DÉTACHÉE (chaque ligne de panne) ══ */
+var _activePieceInput = null;
+
+function normStr(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+async function searchPiece(inp) {
+  _activePieceInput = inp;
+  if (!_partsProducts) {
+    var res = await fetch('/api/products');
+    _partsProducts = await res.json();
+  }
+  var dd = document.getElementById('piece_dd');
+  var q  = normStr(inp.value);
+  if (!q) { dd.style.display = 'none'; return; }
+  var matches = _partsProducts.filter(function(p) {
+    return normStr(p.name).indexOf(q) !== -1;
+  });
+  /* Pièces détachées en tête */
+  matches.sort(function(a, b) {
+    var aP = (a.category||'').toLowerCase() === 'pièce détachée' ? 0 : 1;
+    var bP = (b.category||'').toLowerCase() === 'pièce détachée' ? 0 : 1;
+    return aP - bP;
+  });
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  var rect = inp.getBoundingClientRect();
+  dd.style.top   = (rect.bottom + 2) + 'px';
+  dd.style.left  = rect.left + 'px';
+  dd.style.width = rect.width + 'px';
+  dd.innerHTML = matches.map(function(p) {
+    var stock = Number(p.stock_quantity || 0);
+    var stockColor = stock > 0 ? '#166534' : '#dc2626';
+    var prix = Number(p.purchase_price || p.selling_price || 0);
+    return '<div onclick="selectPiece(\'' + (p.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\',' + prix + ')" ' +
+      'style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:13px;" ' +
+      'onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
+      '<b>' + (p.name||'—') + '</b>' +
+      '<span style="font-size:11px;color:#6b7280;margin-left:6px;">' + (p.category||'') + (prix > 0 ? ' — ' + prix.toFixed(2) + ' €' : '') + '</span>' +
+      '<span style="font-size:11px;font-weight:bold;color:' + stockColor + ';float:right;">Stock : ' + stock + '</span>' +
+    '</div>';
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function selectPiece(name, prix) {
+  if (!_activePieceInput) return;
+  _activePieceInput.value = name;
+  /* Remplir le prix si vide */
+  var row = _activePieceInput.closest('.fault-row');
+  if (row && prix > 0) {
+    var prixInp = row.querySelector('.fault-prix');
+    if (prixInp && !Number(prixInp.value)) {
+      prixInp.value = prix.toFixed(2);
+      calcFaultTotal();
+    }
+  }
+  document.getElementById('piece_dd').style.display = 'none';
+  _activePieceInput = null;
+}
 
 function selectCadeau(id, name) {
   document.getElementById('n_cadeau_product_id').value = id;
@@ -1103,15 +1171,15 @@ async function loadPartsList() {
     var res = await fetch('/api/products');
     _partsProducts = await res.json();
   }
-  var brand = (document.getElementById('n_brand').value || '').toLowerCase();
-  var model = (document.getElementById('n_model').value || '').toLowerCase();
-  var q     = (document.getElementById('parts_search').value || '').toLowerCase().trim();
+  var brand = normStr(document.getElementById('n_brand').value || '');
+  var model = normStr(document.getElementById('n_model').value || '');
+  var q     = normStr(document.getElementById('parts_search').value || '');
   var results = _partsProducts.filter(function(p) {
-    var name = (p.name || '').toLowerCase();
+    var name = normStr(p.name);
     var matchQ = !q || name.indexOf(q) !== -1;
     var matchDevice = !brand && !model ? true :
       name.indexOf(brand) !== -1 || name.indexOf(model) !== -1 ||
-      (p.category || '').toLowerCase() === 'pièce détachée';
+      normStr(p.category) === 'piece detachee';
     return matchQ && matchDevice;
   });
   /* Priorité : Pièce détachée en tête */
@@ -1124,7 +1192,7 @@ async function loadPartsList() {
     box.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:8px 0;">Aucune pièce trouvée en stock.</div>';
     return;
   }
-  box.innerHTML = results.slice(0, 20).map(function(p) {
+  box.innerHTML = results.map(function(p) {
     var stock = Number(p.stock_quantity || 0);
     var stockBadge = stock > 0
       ? '<span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:bold;">✓ ' + stock + ' en stock</span>'
