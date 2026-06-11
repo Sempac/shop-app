@@ -52,7 +52,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;mi
 .card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;}
 .card-title{font-size:13px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
 .card-title span{font-size:16px;}
-.chart-wrap{position:relative;}
+.chart-wrap{position:relative;height:260px;}
+.chart-wrap.sm{height:220px;}
 
 /* ── Interpretation box ── */
 .insight{margin-top:14px;padding:10px 14px;background:#0f172a;border-radius:8px;border-left:3px solid #3b82f6;font-size:12px;color:#94a3b8;line-height:1.6;}
@@ -111,7 +112,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;mi
 <div class="grid" style="grid-template-columns:1fr;">
   <div class="card">
     <div class="card-title"><span>📈</span> CA journalier — Ventes vs Réparations vs Dépenses</div>
-    <div class="chart-wrap"><canvas id="chartTrend" height="100"></canvas></div>
+    <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
     <div class="insight" id="insightTrend"><div class="loading"><div class="spinner"></div></div></div>
   </div>
 </div>
@@ -121,12 +122,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;mi
 <div class="grid grid-2">
   <div class="card">
     <div class="card-title"><span>💳</span> Répartition des paiements</div>
-    <div class="chart-wrap" style="max-width:280px;margin:0 auto;"><canvas id="chartPay" height="200"></canvas></div>
+    <div class="chart-wrap sm" style="max-width:280px;margin:0 auto;"><canvas id="chartPay"></canvas></div>
     <div class="insight" id="insightPay"><div class="loading"><div class="spinner"></div></div></div>
   </div>
   <div class="card">
     <div class="card-title"><span>🏆</span> Top 10 produits (CA)</div>
-    <div class="chart-wrap"><canvas id="chartTop" height="200"></canvas></div>
+    <div class="chart-wrap"><canvas id="chartTop"></canvas></div>
     <div class="insight" id="insightTop"><div class="loading"><div class="spinner"></div></div></div>
   </div>
 </div>
@@ -136,12 +137,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;mi
 <div class="grid grid-2">
   <div class="card">
     <div class="card-title"><span>💸</span> Dépenses par catégorie</div>
-    <div class="chart-wrap" style="max-width:280px;margin:0 auto;"><canvas id="chartDep" height="200"></canvas></div>
+    <div class="chart-wrap sm" style="max-width:280px;margin:0 auto;"><canvas id="chartDep"></canvas></div>
     <div class="insight" id="insightDep"><div class="loading"><div class="spinner"></div></div></div>
   </div>
   <div class="card">
     <div class="card-title"><span>🔧</span> Réparations par statut</div>
-    <div class="chart-wrap"><canvas id="chartRep" height="200"></canvas></div>
+    <div class="chart-wrap"><canvas id="chartRep"></canvas></div>
     <div class="insight" id="insightRep"><div class="loading"><div class="spinner"></div></div></div>
   </div>
 </div>
@@ -163,7 +164,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;mi
 <div class="grid" style="grid-template-columns:1fr;">
   <div class="card">
     <div class="card-title"><span>📅</span> CA mensuel — Ventes + Réparations + Dépenses</div>
-    <div class="chart-wrap"><canvas id="chartMonthly" height="90"></canvas></div>
+    <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
     <div class="insight" id="insightMonthly"><div class="loading"><div class="spinner"></div></div></div>
   </div>
 </div>
@@ -187,6 +188,7 @@ var PALETTE = {
 Chart.defaults.color = '#64748b';
 Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
 Chart.defaults.font.size = 11;
+Chart.defaults.maintainAspectRatio = false;
 
 /* ── Utilities ── */
 function fmt(n){ return Number(n||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
