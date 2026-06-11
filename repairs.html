@@ -325,7 +325,7 @@ table.sticky thead tr th,
       <div style="position:relative;">
         <input type="text" id="n_cadeau_search" placeholder="Rechercher un article du stock..." oninput="searchCadeau(this.value)" autocomplete="off"
                style="width:100%;padding:8px 10px;border-radius:6px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;font-size:13px;font-family:Arial;">
-        <div id="n_cadeau_results" style="display:none;position:absolute;z-index:200;background:#fff;border:1px solid #e2e8f0;border-radius:6px;width:100%;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);top:calc(100% + 2px);left:0;"></div>
+        <div id="n_cadeau_results" style="display:none;position:fixed;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:6px;max-height:280px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.18);"></div>
       </div>
       <div id="n_cadeau_tag" style="display:none;margin-top:6px;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="background:#14532d;color:#86efac;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold;">🎁 OFFERT : <span id="n_cadeau_nom_tag"></span></span>
@@ -1022,13 +1022,20 @@ async function loadCadeauProducts() {
 
 async function searchCadeau(q) {
   await loadCadeauProducts();
+  var inp = document.getElementById('n_cadeau_search');
   var box = document.getElementById('n_cadeau_results');
-  q = (q || '').toLowerCase().trim();
+  q = (q || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
   if (!q) { box.style.display = 'none'; return; }
   var matches = _cadeauProducts.filter(function(p) {
-    return (p.name || '').toLowerCase().indexOf(q) !== -1;
-  }).slice(0, 8);
+    var name = (p.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    return name.indexOf(q) !== -1;
+  });
   if (!matches.length) { box.style.display = 'none'; return; }
+  /* Position fixed sous l'input (évite le clipping overflow:auto du panneau) */
+  var rect = inp.getBoundingClientRect();
+  box.style.top   = (rect.bottom + 2) + 'px';
+  box.style.left  = rect.left + 'px';
+  box.style.width = rect.width + 'px';
   box.innerHTML = matches.map(function(p) {
     var stock = Number(p.stock_quantity || 0);
     var stockColor = stock > 0 ? '#166534' : '#dc2626';
@@ -1042,6 +1049,14 @@ async function searchCadeau(q) {
   }).join('');
   box.style.display = 'block';
 }
+
+/* Fermer le dropdown cadeau au clic en dehors */
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#n_cadeau_search') && !e.target.closest('#n_cadeau_results')) {
+    var box = document.getElementById('n_cadeau_results');
+    if (box) box.style.display = 'none';
+  }
+});
 
 function selectCadeau(id, name) {
   document.getElementById('n_cadeau_product_id').value = id;
