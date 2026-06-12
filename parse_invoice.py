@@ -43,15 +43,7 @@ def parse_lcdphone(text, page):
     return r
 
 def parse_utopya(text):
-    """Format UTOPYA — chaque champ sur sa propre ligne:
-       SKU
-       Nom produit
-       (ligne vide)
-       20,00%
-       6,70        ← prix HT unitaire
-       2           ← quantité
-       13.40       ← total HT
-    """
+    """Format UTOPYA — supporte inline (tout sur une ligne) et multi-ligne (un champ par ligne)"""
     r = {'items': [], 'total_ht': 0, 'total_ttc': 0, 'total_rcp': 0}
 
     # Numéro facture
@@ -80,11 +72,10 @@ def parse_utopya(text):
     m = re.search(r'Total RCP\s*:\s*([\d\s,\.]+?)\s*€', text)
     if m: r['total_rcp'] = _mont(m.group(1))
 
-    # Codes/mots à exclure (transport, résumé, taxes séparées)
     SKIP_REFS = {
         'UPS', 'DPD', 'TNT', 'GLS', 'CHRONOPOST', 'COLISSIMO',
         'RCP', 'SHIP', 'SHIPPING', 'LIVRA', 'EXPEDIT',
-        'TOTAL', 'REMISE', 'EAN', 'SKU', 'TVA', 'TAUX', 'MONTANT',
+        'TOTAL', 'REMISE', 'MONTANT', 'EAN', 'SKU', 'TVA', 'TAUX', 'REF',
     }
     SKIP_NOM = [
         'shipping', 'frais de port', "frais d'exp", 'frais exp',
@@ -93,115 +84,78 @@ def parse_utopya(text):
 
     lines = text.split('\n')
 
-    # Identifier les indices de lignes qui contiennent uniquement un SKU valide
-    sku_indices = []
+    # Trouver toutes les lignes qui COMMENCENT par un SKU valide
+    # (couvre les formats: "SKU seul" ET "SKU nom prix...")
+    sku_starts = []  # liste de (line_idx, ref, reste_de_la_ligne)
     for idx, line in enumerate(lines):
-        s = line.strip()
-        if (re.match(r'^[A-Z0-9][A-Z0-9\-@_]+$', s)
-                and len(s) >= 3
-                and s not in SKIP_REFS
-                and s.upper() not in SKIP_REFS):
-            sku_indices.append(idx)
+        stripped = line.strip()
+        if not stripped: continue
+        parts = stripped.split(' ', 1)
+        ref  = parts[0]
+        rest = parts[1].strip() if len(parts) > 1 else ''
+        if (re.match(r'^[A-Z0-9][A-Z0-9\-@_]+$', ref)
+                and len(ref) >= 3
+                and ref.upper() not in SKIP_REFS):
+            sku_starts.append((idx, ref, rest))
 
-    if not sku_indices:
+    if not sku_starts:
         return r
 
-    # Détecter le format: multi-ligne (SKU seul) vs inline (SKU + données sur même ligne)
-    first_parts = lines[sku_indices[0]].strip().split(' ', 1)
-    first_rest  = first_parts[1].strip() if len(first_parts) > 1 else ''
-    is_multiline = (len(first_rest) == 0)
+    sku_starts.append((len(lines), None, None))  # sentinelle
 
-    if is_multiline:
-        # Format multi-ligne: regrouper les lignes par bloc SKU→SKU suivant
-        sku_indices.append(len(lines))  # sentinelle de fin
-        for k in range(len(sku_indices) - 1):
-            ref     = lines[sku_indices[k]].strip()
-            end_idx = sku_indices[k + 1]
-            # Lignes non vides du bloc (après le SKU, avant le prochain SKU)
-            block   = [lines[j].strip() for j in range(sku_indices[k] + 1, end_idx)
-                       if lines[j].strip()]
+    for k in range(len(sku_starts) - 1):
+        idx, ref, rest = sku_starts[k]
+        next_idx = sku_starts[k + 1][0]
 
-            nom_parts = []
+        # ── Format inline: le prix (avec €) est sur la même ligne que le SKU ──
+        inline_prix = re.findall(r'(\d+[,\.]\d+)\s*€', rest)
+        if inline_prix:
+            nom_match = re.match(r'^(.*?)\s+\d+\s+\d+[,\.]', rest)
+            nom = nom_match.group(1).strip() if nom_match else rest.split('  ')[0].strip()
+            # Ligne suivante éventuellement continuation du nom
+            if idx + 1 < next_idx:
+                nxt = lines[idx + 1].strip()
+                if nxt and not re.search(r'[\d,\.]+[€%]', nxt) and not re.match(r'^[A-Z0-9][A-Z0-9\-@_]', nxt):
+                    nom = (nom + ' ' + nxt).strip()
+            prix_ht = float(inline_prix[0].replace(',', '.'))
+            qty = 1
+            q_match = re.search(r'\s(\d+)\s+\d+[,\.]', rest)
+            if q_match: qty = int(q_match.group(1))
+
+        else:
+            # ── Format multi-ligne: données numériques sur les lignes suivantes ──
+            nom_parts = [rest] if rest else []
             nums      = []
             in_nums   = False
 
-            for bl in block:
+            for j in range(idx + 1, next_idx):
+                bl = lines[j].strip()
+                if not bl: continue
                 if bl.endswith('%'):
-                    # Ligne TVA% — bascule en section numérique
                     in_nums = True
-                elif re.match(r'^\d+[,\.]\d+€?$', bl):
-                    # Nombre décimal (avec ou sans €) : prix ou total
+                elif re.match(r'^\d+[,\.]\d+\s*€?$', bl):
                     in_nums = True
-                    nums.append(float(bl.rstrip('€').replace(',', '.')))
+                    nums.append(float(bl.rstrip('€').strip().replace(',', '.')))
                 elif re.match(r'^\d+$', bl) and in_nums:
-                    # Entier en section numérique : quantité
                     nums.append(int(bl))
                 elif not in_nums:
-                    # Texte avant les données numériques : partie du nom
                     nom_parts.append(bl)
-                # Les autres lignes (TOTAL, HT TAUX…, texte hors-produit) sont ignorées
 
             nom = ' '.join(nom_parts).strip()
-            if any(kw in nom.lower() for kw in SKIP_NOM):
-                continue
             if not nums:
                 continue
-
             prix_ht = nums[0]
-            qty = 1
+            qty     = 1
             if len(nums) >= 2:
                 n1 = nums[1]
                 if isinstance(n1, int) or (isinstance(n1, float) and n1 == int(n1)):
                     qty = int(n1)
 
-            r['items'].append({
-                'reference': ref,
-                'nom':       nom,
-                'prix_ht':   prix_ht,
-                'quantite':  qty,
-            })
-
-    else:
-        # Format inline (ancien format Utopya): tout sur une seule ligne
-        i = 0
-        while i < len(lines):
-            line  = lines[i]
-            parts = line.strip().split(' ')
-            if not parts: i += 1; continue
-            ref = parts[0]
-            if (re.match(r'^[A-Z0-9][A-Z0-9\-@_]+$', ref)
-                    and len(ref) >= 3
-                    and ref not in SKIP_REFS
-                    and ref.upper() not in SKIP_REFS):
-                rest        = line[len(ref):].strip()
-                prix_match  = re.findall(r'(\d+[,\.]\d+)€', rest)
-                nom_match   = re.match(r'^(.*?)\s+\d+\s+\d+[,\.]', rest)
-                nom         = nom_match.group(1).strip() if nom_match else rest.split('  ')[0].strip()
-                if (i + 1 < len(lines) and lines[i + 1]
-                        and not re.match(r'^[A-Z0-9][A-Z0-9\-@_]+\s', lines[i + 1])
-                        and not lines[i + 1].startswith('EAN')):
-                    nxt = lines[i + 1].strip()
-                    nll = nxt.lower()
-                    if (not re.search(r'[\d,\.]+€', nxt)
-                            and not nll.startswith('shipping')
-                            and not nll.startswith('total')
-                            and not nll.startswith('tva')):
-                        nom = nom + ' ' + nxt
-                        i += 1
-                prix_ht = float(prix_match[0].replace(',', '.')) if prix_match else None
-                qty     = 1
-                q_match = re.search(r'\s(\d+)\s+\d+[,\.]', rest)
-                if q_match: qty = int(q_match.group(1))
-                if any(kw in nom.lower() for kw in SKIP_NOM):
-                    i += 1; continue
-                if ref and prix_ht:
-                    r['items'].append({
-                        'reference': ref,
-                        'nom':       nom.strip(),
-                        'prix_ht':   prix_ht,
-                        'quantite':  qty,
-                    })
-            i += 1
+        nom = nom.strip()
+        if any(kw in nom.lower() for kw in SKIP_NOM):
+            continue
+        if ref and prix_ht:
+            r['items'].append({'reference': ref, 'nom': nom, 'prix_ht': prix_ht, 'quantite': qty})
 
     return r
 
@@ -210,9 +164,11 @@ def parse(path):
         'numero': '', 'date': '', 'fournisseur': '', 'transporteur': '',
         'items': [], 'total_ht': 0, 'total_ttc': 0, 'total_rcp': 0,
     }
+    pages_text = []
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
-            text       = page.extract_text() or ''
+            text = page.extract_text() or ''
+            pages_text.append(text)
             fournisseur = detect_fournisseur(text)
             result['fournisseur'] = fournisseur
             if 'UTOPYA' in text:
@@ -224,6 +180,8 @@ def parse(path):
                     result['items'].extend(v)
                 elif v:
                     result[k] = v
+    # Champ debug: premières lignes de chaque page (temporaire, pour diagnostic)
+    result['_dbg'] = [p[:800] for p in pages_text]
     return result
 
 print(json.dumps(parse(sys.argv[1]), ensure_ascii=False))

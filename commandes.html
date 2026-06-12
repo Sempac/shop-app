@@ -536,6 +536,7 @@ async function importFacturePDF(input) {
     var res  = await fetch('/api/import-facture-pdf/upload', {method:'POST', body:formData});
     var data = await res.json();
     overlay.remove();
+    if (data._dbg) console.log('=== PDF RAW TEXT ===', JSON.stringify(data._dbg));
     if (data.error) { alert('Erreur: ' + data.error); return; }
     if (!data.items || !data.items.length) { alert('Aucun produit detecte'); return; }
     showFacturePreview(data);
