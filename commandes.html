@@ -267,10 +267,14 @@ function renderCommandeDetail(data) {
     var tva = it.taux_tva || 20;
     var totalHT = Number(it.prix_ht||0) * Number(it.quantite_cmd||1);
     var inp = 'padding:3px 5px;border:1px solid #e2e8f0;border-radius:4px;font-size:11px;font-family:Arial;';
+    var tvaOpts = [0, 5.5, 10, 20].map(function(r) {
+      var label = r === 5.5 ? '5,50%' : (r === 0 ? '0,00%' : r.toFixed(0) + ',00%');
+      return '<option value="' + r + '"' + (r == tva ? ' selected' : '') + '>' + label + '</option>';
+    }).join('');
     return '<tr style="border-bottom:1px solid #f1f5f9;" data-item-id="' + it.id + '">' +
       '<td style="padding:5px 8px;"><input class="cmd-item-ref" value="' + (it.reference||'') + '" style="' + inp + 'width:80px;" title="Reference"></td>' +
       '<td style="padding:5px 8px;"><input class="cmd-item-nom" value="' + (it.nom||'').replace(/"/g,"&quot;") + '" style="' + inp + 'width:180px;" title="Designation"></td>' +
-      '<td style="padding:5px 8px;text-align:center;"><input class="cmd-item-tva" type="number" value="' + tva + '" style="' + inp + 'width:45px;text-align:center;" title="TVA %"></td>' +
+      '<td style="padding:5px 8px;text-align:center;"><select class="cmd-item-tva" style="' + inp + 'width:72px;text-align:center;">' + tvaOpts + '</select></td>' +
       '<td style="padding:5px 8px;text-align:right;"><input class="cmd-item-prix" type="number" step="0.01" value="' + Number(it.prix_ht||0).toFixed(2) + '" oninput="recalcTotal(this)" style="' + inp + 'width:70px;text-align:right;" title="Prix HT unitaire"></td>' +
       '<td style="padding:5px 8px;text-align:center;"><input class="cmd-item-qty" type="number" value="' + it.quantite_cmd + '" oninput="recalcTotal(this)" style="' + inp + 'width:50px;text-align:center;" title="Quantite"></td>' +
       '<td style="padding:5px 8px;text-align:right;"><input class="td-total-ht" readonly value="' + Number(totalHT).toFixed(2) + '" style="' + inp + 'width:70px;text-align:right;background:#f1f5f9;font-weight:bold;"></td>' +
@@ -1200,7 +1204,7 @@ async function openGmailPicker() {
     body.innerHTML = emails.map(function(m) {
       var att = m.attachments[0];
       var dateStr = new Date(m.date).toLocaleDateString('fr-FR');
-      return '<div onclick="pickGmailEmail(\'' + m.uid + '\',\'' + att.part + '\')" ' +
+      return '<div onclick="pickGmailEmail(\'' + m.id + '\',\'' + att.attachmentId + '\')" ' +
         'style="padding:11px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background 0.1s;" ' +
         'onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
@@ -1215,21 +1219,21 @@ async function openGmailPicker() {
     var body2 = document.getElementById('gmailPickerBody');
     if (body2) body2.innerHTML =
       '<div style="color:#ef4444;padding:20px;font-size:13px;">❌ ' + e.message +
-      '<br><small style="color:#64748b;">Vérifiez que EMAIL_PASS est configuré dans .env (mot de passe d\'application Google)</small></div>';
+      '<br><small style="color:#64748b;">Si c\'est la première utilisation, visitez <a href="/api/gmail/auth" target="_blank">/api/gmail/auth</a> pour autoriser Gmail.</small></div>';
   }
 }
 
-async function pickGmailEmail(uid, part) {
+async function pickGmailEmail(msgId, attachmentId) {
   closeGmailPicker();
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:#000a;z-index:9999;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-family:Arial;';
   overlay.innerHTML = 'Téléchargement et analyse de la facture...';
   document.body.appendChild(overlay);
   try {
-    var r = await fetch('/api/gmail/import-facture/' + uid, {
+    var r = await fetch('/api/gmail/import-facture/' + msgId, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ part: part })
+      body: JSON.stringify({ attachmentId: attachmentId })
     });
     var data = await r.json();
     overlay.remove();
