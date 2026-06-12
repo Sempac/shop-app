@@ -1001,6 +1001,11 @@ app.post('/api/auth/login', async(req,res)=>{
       });
     }
     clearAttempts(ip);
+    /* Donner accès au catalogue-admin pour vendeur/gérant/admin */
+    if(['vendeur','gerant','admin'].includes(user.role)){
+      const catExp=new Date(Date.now()+4*3600*1000).toUTCString();
+      res.setHeader('Set-Cookie',`cat_admin=${CAT_TOKEN}; Path=/; HttpOnly; Expires=${catExp}; SameSite=Strict`);
+    }
     res.json({user:{id:user.id,name:user.name,role:user.role,auth_type:user.auth_type}});
   }catch(e){res.status(500).json({error:e.message});}
 });
