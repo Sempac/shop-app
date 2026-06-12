@@ -10,7 +10,11 @@
 *{box-sizing:border-box;}
 body{margin:0;font-family:Arial;display:flex;height:100vh;background:#f1f5f9;}
 
-.left{width:45%;background:#f8fafc;color:#0f172a;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #e2e8f0;}
+.left{width:45%;min-width:250px;flex-shrink:0;background:#f8fafc;color:#0f172a;display:flex;flex-direction:column;overflow:hidden;}
+.resizer{width:5px;background:#e2e8f0;cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;}
+.resizer:hover,.resizer.dragging{background:#3b82f6;}
+.resizer::after{content:'↔';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#3b82f6;color:white;font-size:11px;padding:2px 5px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,.2);}
+.resizer:hover::after,.resizer.dragging::after{opacity:1;}
 .left-top{padding:10px;flex-shrink:0;}
 .home-btn{width:100%;padding:13px;background:#1e40af;color:white;border:none;font-size:14px;font-weight:bold;border-radius:8px;cursor:pointer;margin-bottom:8px;}
 .home-btn:hover{background:#1d4ed8;}
@@ -235,6 +239,8 @@ th{background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;}
   </div>
   <div class="product-list" id="productList"></div>
 </div>
+
+<div class="resizer" id="resizer" title="Glisser pour redimensionner"></div>
 
 <!-- ══ RIGHT ══ -->
 <div class="right" style="display:flex;flex-direction:column;overflow:hidden;">
@@ -1336,6 +1342,36 @@ document.getElementById('stockModalQty').addEventListener('keydown', function(e)
   role.textContent = lbl;
   role.style.background = bg;
   role.style.color = fg;
+})();
+</script>
+<script>
+/* ── RESIZE PANNEAU VENTE ── */
+(function(){
+  var r=document.getElementById('resizer');
+  var l=document.querySelector('.left');
+  var KEY='sales_lw';
+  var saved=localStorage.getItem(KEY);
+  if(saved)l.style.width=saved+'px';
+  var drag=false,sx=0,sw=0;
+  r.addEventListener('mousedown',function(e){
+    drag=true;sx=e.clientX;sw=l.offsetWidth;
+    r.classList.add('dragging');
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!drag)return;
+    var nw=Math.min(Math.max(sw+(e.clientX-sx),250),Math.round(window.innerWidth*0.72));
+    l.style.width=nw+'px';
+  });
+  document.addEventListener('mouseup',function(){
+    if(!drag)return;
+    drag=false;r.classList.remove('dragging');
+    document.body.style.cursor='';document.body.style.userSelect='';
+    localStorage.setItem(KEY,l.offsetWidth);
+  });
+  r.addEventListener('dblclick',function(){l.style.width='45%';localStorage.removeItem(KEY);});
 })();
 </script>
 </body>

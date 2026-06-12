@@ -11,7 +11,11 @@
 *{box-sizing:border-box;}
 body{margin:0;font-family:Arial;background:#f1f5f9;color:#0f172a;}
 .container{display:flex;height:100vh;}
-.left{width:52%;border-right:2px solid #e2e8f0;padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px;background:#ffffff;color:#0f172a;}
+.left{width:52%;min-width:300px;flex-shrink:0;padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px;background:#ffffff;color:#0f172a;}
+.resizer{width:5px;background:#e2e8f0;cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;}
+.resizer:hover,.resizer.dragging{background:#3b82f6;}
+.resizer::after{content:'↔';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#3b82f6;color:white;font-size:11px;padding:2px 5px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,.2);}
+.resizer:hover::after,.resizer.dragging::after{opacity:1;}
 .home-btn{width:100%;padding:14px;background:#1e40af;color:white;border:none;font-size:15px;font-weight:bold;border-radius:8px;cursor:pointer;font-family:Arial;}
 .search-row{display:flex;gap:6px;}
 .search-row input{flex:1;padding:9px 12px;border-radius:6px;border:1.5px solid #d1d5db;font-size:13px;background:#f8fafc;color:#0f172a;}
@@ -189,6 +193,8 @@ table.sticky thead tr th,
     <tbody id="repairList"></tbody>
   </table>
 </div>
+
+<div class="resizer" id="resizer" title="Glisser pour redimensionner"></div>
 
 <!-- RIGHT -->
 <div class="right">
@@ -2178,6 +2184,36 @@ document.getElementById('notre_prix').addEventListener('input', loadCompPrices);
   role.textContent = lbl;
   role.style.background = bg;
   role.style.color = fg;
+})();
+</script>
+<script>
+/* ── RESIZE PANNEAU RÉPARATIONS ── */
+(function(){
+  var r=document.getElementById('resizer');
+  var l=document.querySelector('.left');
+  var KEY='repairs_lw';
+  var saved=localStorage.getItem(KEY);
+  if(saved)l.style.width=saved+'px';
+  var drag=false,sx=0,sw=0;
+  r.addEventListener('mousedown',function(e){
+    drag=true;sx=e.clientX;sw=l.offsetWidth;
+    r.classList.add('dragging');
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!drag)return;
+    var nw=Math.min(Math.max(sw+(e.clientX-sx),300),Math.round(window.innerWidth*0.72));
+    l.style.width=nw+'px';
+  });
+  document.addEventListener('mouseup',function(){
+    if(!drag)return;
+    drag=false;r.classList.remove('dragging');
+    document.body.style.cursor='';document.body.style.userSelect='';
+    localStorage.setItem(KEY,l.offsetWidth);
+  });
+  r.addEventListener('dblclick',function(){l.style.width='52%';localStorage.removeItem(KEY);});
 })();
 </script>
 </body>

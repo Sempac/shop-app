@@ -33,6 +33,10 @@ tr:hover td{background:#f8fafc;}
 .del-btn{background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;}
 .role-notice{background:#fef3c7;border:1.5px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:12px;display:none;}
 @media print{.home-btn,.btn-add,.fg,.del-btn,.filters,.no-print{display:none!important;}body{background:white;}}
+.resizer{width:5px;background:#e2e8f0;cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;}
+.resizer:hover,.resizer.dragging{background:#3b82f6;}
+.resizer::after{content:'↔';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#3b82f6;color:white;font-size:11px;padding:2px 5px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,.2);}
+.resizer:hover::after,.resizer.dragging::after{opacity:1;}
 
 .table-wrap table thead tr th,
 table.sticky thead tr th,
@@ -133,8 +137,7 @@ table.sticky thead tr th,
   </div>
 
   <!-- SEPARATEUR DRAGGABLE -->
-  <div id="resizer" style="width:5px;cursor:col-resize;background:#e2e8f0;flex-shrink:0;transition:background 0.2s;"
-    onmousedown="initResize(event)" title="Glisser pour redimensionner le panneau"></div>
+  <div class="resizer" id="resizer" title="Glisser pour redimensionner"></div>
 
   <!-- PANNEAU DROIT -->
   <div id="rightPanel" style="flex:1;overflow-y:auto;padding:16px;min-width:400px;">
@@ -486,26 +489,34 @@ function calcDepHT() {
 </script>
   </div><!-- /rightPanel -->
 <script>
-/* ── RESIZE PANNEAU ── */
-function initResize(e) {
-  e.preventDefault();
-  var leftPanel = document.getElementById('leftPanel');
-  var startX    = e.clientX;
-  var startW    = leftPanel.offsetWidth;
-  var resizer   = document.getElementById('resizer');
-  resizer.style.background = '#3b82f6';
-  function onMove(ev) {
-    var newW = startW + (ev.clientX - startX);
-    if (newW >= 200 && newW <= 600) leftPanel.style.width = newW + 'px';
-  }
-  function onUp() {
-    resizer.style.background = '#e2e8f0';
-    document.removeEventListener('mousemove', onMove);
-    document.removeEventListener('mouseup', onUp);
-  }
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onUp);
-}
+/* ── RESIZE PANNEAU DÉPENSES ── */
+(function(){
+  var r=document.getElementById('resizer');
+  var lp=document.getElementById('leftPanel');
+  var KEY='expenses_lw';
+  var saved=localStorage.getItem(KEY);
+  if(saved)lp.style.width=saved+'px';
+  var drag=false,sx=0,sw=0;
+  r.addEventListener('mousedown',function(e){
+    drag=true;sx=e.clientX;sw=lp.offsetWidth;
+    r.classList.add('dragging');
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!drag)return;
+    var nw=Math.min(Math.max(sw+(e.clientX-sx),200),600);
+    lp.style.width=nw+'px';
+  });
+  document.addEventListener('mouseup',function(){
+    if(!drag)return;
+    drag=false;r.classList.remove('dragging');
+    document.body.style.cursor='';document.body.style.userSelect='';
+    localStorage.setItem(KEY,lp.offsetWidth);
+  });
+  r.addEventListener('dblclick',function(){lp.style.width='320px';localStorage.removeItem(KEY);});
+})();
 </script>
 </body>
 </html>
