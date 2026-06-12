@@ -662,6 +662,7 @@ async function importerFactureAvecOptions(avecDepenses, avecStock) {
             amount_ht:   it.prix_ht * it.quantite,
             amount_ttc:  it.prix_ht * it.quantite * 1.20,
             taux_tva:    20,
+            quantity:    it.quantite,
             category:    'Fournisseur',
             date:        date
           })
@@ -729,6 +730,7 @@ async function importerFactureEnCommande() {
           amount_ht:   it.prix_ht * it.quantite,
           amount_ttc:  ttc_ligne,
           taux_tva:    20,
+          quantity:    it.quantite,
           category:    'Fournisseur',
           date:        date
         })
