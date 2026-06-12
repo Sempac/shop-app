@@ -579,7 +579,7 @@ function showFacturePreview(data) {
         '<tbody>' + rows + '</tbody>' +
       '</table>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;">' +
-        '<div style="font-size:13px;color:#0f172a;">HT : <b>' + Number(data.total_ht||0).toFixed(2) + ' €</b> | TTC : <b>' + Number(data.total_ttc||0).toFixed(2) + ' €</b></div>' +
+        '<div style="font-size:13px;color:#0f172a;">HT : <b>' + Number(data.total_ht||0).toFixed(2) + ' €</b>' + (data.total_rcp ? ' | RCP : <b>' + Number(data.total_rcp).toFixed(2) + ' €</b>' : '') + ' | TTC : <b>' + Number(data.total_ttc||0).toFixed(2) + ' €</b></div>' +
         '<div style="display:flex;gap:8px;">' +
           /* Cases à cocher */
           '<div style="display:flex;gap:16px;align-items:center;margin-right:auto;">' +

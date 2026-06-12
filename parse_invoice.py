@@ -44,75 +44,78 @@ def parse_lcdphone(text, page):
 
 def parse_utopya(text):
     """Format UTOPYA"""
-    r = {'items': [], 'total_ht': 0, 'total_ttc': 0}
+    r = {'items': [], 'total_ht': 0, 'total_ttc': 0, 'total_rcp': 0}
     # Numéro facture
     m = re.search(r'Facture\s*#\s*(FA\d+)', text)
     if m: r['numero'] = m.group(1)
-    # Date — dans la facture Utopya, la date est sur la ligne "Carte Bancaire DD/MM/YYYY ..."
-    # car les en-têtes et valeurs sont sur des lignes séparées
+    # Date
     m = re.search(r'(?:Date facture\s+|Carte Bancaire\s+)(\d{2}/\d{2}/\d{4})', text)
     if not m: m = re.search(r'(\d{2}/\d{2}/\d{4})', text)
     if m: r['date'] = m.group(1)
     # Transporteur
-    # Transporteur UTOPYA — après "DPD", "Colissimo" etc.
     m = re.search(r'Méthode de livraison\s+(\S+)', text)
     if m:
         trans = m.group(1).strip()
-        # Exclure les modes de paiement
         if trans not in ['Carte','Virement','Chèque']:
             r['transporteur'] = trans
-    # Aussi chercher dans la ligne mode paiement/livraison
     m2 = re.search(r'(DPD|Colissimo|Chronopost|UPS|TNT|GLS|Mondial Relay)', text)
     if m2: r['transporteur'] = m2.group(1)
-    # Totaux
-    m = re.search(r'Total HT:\s*([\d,\.]+)€', text)
-    if m: r['total_ht'] = float(m.group(1).replace(',','.'))
-    m = re.search(r'Total TTC:\s*([\d,\.]+)€', text)
-    if m: r['total_ttc'] = float(m.group(1).replace(',','.'))
+    # Totaux — format flexible: "Total HT : 220,91 €" ou "Total HT:220,91€"
+    def _mont(s):
+        return float(s.strip().replace(' ','').replace(',','.')) if s and s.strip() else 0
+    m = re.search(r'Total HT\s*:\s*([\d\s,\.]+?)\s*€', text)
+    if m: r['total_ht'] = _mont(m.group(1))
+    m = re.search(r'Total TTC\s*:\s*([\d\s,\.]+?)\s*€', text)
+    if m: r['total_ttc'] = _mont(m.group(1))
+    m = re.search(r'Total RCP\s*:\s*([\d\s,\.]+?)\s*€', text)
+    if m: r['total_rcp'] = _mont(m.group(1))
+    # Codes à exclure (frais de port, RCP, transporteurs)
+    SKIP_REFS = {'UPS','DPD','TNT','GLS','CHRONOPOST','COLISSIMO','RCP','SHIP','SHIPPING','LIVRA','EXPEDIT'}
+    SKIP_NOM  = ['shipping','frais de port',"frais d'exp",'frais exp',
+                 'livraison','ups standard','dpd standard','colissimo','chronopost',
+                 'remuneration copie','rémunération copie','copie privée','copie prive']
     # Produits — format: SKU Nom Qté P.U. TVA Total
-    # Ligne: ref nom_multiline qte prix_u tva total
     lines = text.split('\n')
     i = 0
     while i < len(lines):
         line = lines[i]
-        # Chercher ligne avec SKU au début
         parts = line.strip().split(' ')
         if not parts: i += 1; continue
         ref = parts[0]
         # SKU valide: alphanumérique avec tirets/@
-        if re.match(r'^[A-Z0-9][A-Z0-9\-@_]+$', ref) and len(ref) >= 3 and ref not in ['SKU','EAN','TVA']:
-            # Extraire le reste de la ligne
+        if re.match(r'^[A-Z0-9][A-Z0-9\-@_]+$', ref) and len(ref) >= 3 and ref not in ('SKU','EAN','TVA','RCP','TVA%'):
+            # Exclure les codes transporteur/frais
+            if ref.upper() in SKIP_REFS:
+                i += 1; continue
             rest = line[len(ref):].strip()
             # Chercher prix format: N,NN€
             prix_match = re.findall(r'(\d+[,\.]\d+)€', rest)
-            qty_match  = re.findall(r'\b(\d+)\b', rest)
-            
             # Nom = tout avant le premier chiffre isolé
             nom_match = re.match(r'^(.*?)\s+\d+\s+\d+[,\.]', rest)
             nom = nom_match.group(1).strip() if nom_match else rest.split('  ')[0].strip()
-            
-            # Si nom incomplet, vérifier ligne suivante (multiline)
+            # Nom multiline: vérifier ligne suivante
             if i+1 < len(lines) and lines[i+1] and not re.match(r'^[A-Z0-9][A-Z0-9\-@_]+\s', lines[i+1]) and not lines[i+1].startswith('EAN'):
                 next_line = lines[i+1].strip()
-                if not re.search(r'[\d,\.]+€', next_line) and not next_line.startswith('Shipping'):
+                nll = next_line.lower()
+                if (not re.search(r'[\d,\.]+€', next_line)
+                        and not nll.startswith('shipping')
+                        and not nll.startswith('total')
+                        and not nll.startswith('tva')):
                     nom = nom + ' ' + next_line
                     i += 1
-            
             # Prix unitaire = premier prix
             prix_ht = None
             if prix_match:
                 prix_ht = float(prix_match[0].replace(',','.'))
-            
             # Quantité
             qty = 1
             q_match = re.search(r'\s(\d+)\s+\d+[,\.]', rest)
             if q_match:
                 qty = int(q_match.group(1))
-            
-            # Ignorer shipping cost
-            if ref.lower() == 'shipping' or 'shipping' in nom.lower() or 'dpd' in nom.lower():
+            # Exclure shipping/frais/RCP par le nom
+            nom_l = nom.lower()
+            if any(kw in nom_l for kw in SKIP_NOM):
                 i += 1; continue
-            
             if ref and prix_ht:
                 r['items'].append({
                     'reference': ref,
@@ -124,7 +127,7 @@ def parse_utopya(text):
     return r
 
 def parse(path):
-    result = {'numero':'', 'date':'', 'fournisseur':'', 'items':[], 'total_ht':0, 'total_ttc':0, 'transporteur':''}
+    result = {'numero':'', 'date':'', 'fournisseur':'', 'items':[], 'total_ht':0, 'total_ttc':0, 'total_rcp':0, 'transporteur':''}
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
             text = page.extract_text() or ''
