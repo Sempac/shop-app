@@ -415,20 +415,14 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
       fs.writeFileSync(finalPath,pdfBuffer);
     }
 
-    /* ── Envoi email ── */
+    /* ── Envoi email via Gmail API ── */
     let emailSent=false, emailError=null;
     try{
-      const nodemailer=require('nodemailer');
-      const transporter=nodemailer.createTransport({
-        host:'smtp.gmail.com',port:465,secure:true,
-        auth:{user:process.env.EMAIL_USER,pass:process.env.EMAIL_PASS}
-      });
-      await transporter.sendMail({
-        from:`"The SMARTPHONE" <${process.env.EMAIL_USER}>`,
-        to:process.env.EMAIL_TO||'ittech75013@gmail.com',
-        subject:`Rapport Comptable – The SMARTPHONE – ${date}`,
-        text:`Bonjour,\n\nVeuillez trouver en pièce jointe le rapport comptable du ${dateLabel}.\n\nThe SMARTPHONE\n1 Avenue d'Italie, 75013 Paris`,
-        attachments:[{filename,content:pdfBuffer,contentType:'application/pdf'}]
+      await _gmailSendMail({
+        to: process.env.EMAIL_TO || 'ittech75013@gmail.com',
+        subject: `Rapport Comptable – The SMARTPHONE – ${date}`,
+        html: `<p>Bonjour,</p><p>Veuillez trouver en pièce jointe le rapport comptable du ${dateLabel}.</p><p>The SMARTPHONE<br>1 Avenue d'Italie, 75013 Paris</p>`,
+        attachments: [{ filename, content: pdfBuffer, contentType: 'application/pdf' }]
       });
       emailSent=true;
     }catch(emailErr){emailError=emailErr.message;}
@@ -2331,13 +2325,59 @@ function _gmailFindPdfParts(part, acc) {
   (part.parts || []).forEach(p => _gmailFindPdfParts(p, acc));
 }
 
-/* Autorisation OAuth2 — à visiter une seule fois dans le navigateur */
+/* Autorisation OAuth2 — lecture seule (import factures) */
 app.get('/api/gmail/auth', (req, res) => {
   const url = _gmailOAuth2().generateAuthUrl({
     access_type: 'offline', scope: ['https://www.googleapis.com/auth/gmail.readonly'], prompt: 'consent'
   });
   res.redirect(url);
 });
+
+/* Autorisation OAuth2 — lecture + envoi (pour emails automatiques) */
+app.get('/api/gmail/auth-send', (req, res) => {
+  const url = _gmailOAuth2().generateAuthUrl({
+    access_type: 'offline',
+    scope: ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send'],
+    prompt: 'consent'
+  });
+  res.redirect(url);
+});
+
+/* Envoi email via Gmail API (OAuth2) */
+async function _gmailSendMail({ to, subject, html, attachments }) {
+  const fs = require('fs');
+  const { google } = require('googleapis');
+  const tokens = JSON.parse(fs.readFileSync(GMAIL_TOKEN_FILE, 'utf8'));
+  const oauth2 = _gmailOAuth2();
+  oauth2.setCredentials(tokens);
+  oauth2.on('tokens', t => { Object.assign(tokens, t); fs.writeFileSync(GMAIL_TOKEN_FILE, JSON.stringify(tokens)); });
+  const gmail = google.gmail({ version: 'v1', auth: oauth2 });
+
+  const boundary = 'boundary_' + Date.now();
+  const toList = Array.isArray(to) ? to.join(', ') : to;
+  let raw = [
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    `From: "The SMARTPHONE" <${process.env.EMAIL_USER}>`,
+    `To: ${toList}`,
+    `Subject: ${subject}`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    '',
+    html
+  ].join('\r\n');
+
+  if (attachments && attachments.length) {
+    for (const att of attachments) {
+      const content = att.content ? att.content.toString('base64') : Buffer.from(att.path ? fs.readFileSync(att.path) : '').toString('base64');
+      raw += `\r\n--${boundary}\r\nContent-Type: ${att.contentType || 'application/octet-stream'}\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${att.filename}"\r\n\r\n${content}`;
+    }
+  }
+  raw += `\r\n--${boundary}--`;
+
+  await gmail.users.messages.send({ userId: 'me', requestBody: { raw: Buffer.from(raw).toString('base64url') } });
+}
 
 app.get('/api/gmail/auth/callback', async (req, res) => {
   const fs = require('fs');
