@@ -1,10 +1,16 @@
 require('dotenv').config();
-const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+const fs = require('fs');
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com', port: 465, secure: true,
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-});
+const tokens = JSON.parse(fs.readFileSync('gmail_tokens.json', 'utf8'));
+const oauth2 = new google.auth.OAuth2(
+  process.env.GMAIL_CLIENT_ID,
+  process.env.GMAIL_CLIENT_SECRET,
+  process.env.GMAIL_REDIRECT_URI || 'http://localhost:3000/api/gmail/auth/callback'
+);
+oauth2.setCredentials(tokens);
+
+const gmail = google.gmail({ version: 'v1', auth: oauth2 });
 
 const html = `<!DOCTYPE html>
 <html>
@@ -33,49 +39,47 @@ const html = `<!DOCTYPE html>
   À conserver précieusement. En cas de panne du serveur principal, suivre les étapes ci-dessous pour relancer l'application sur un PC de secours.
 </div>
 
-<h2>🔑 Informations essentielles (à garder en lieu sûr)</h2>
+<h2>🔑 Informations essentielles</h2>
 <div class="box">
   <table>
     <tr><th>Élément</th><th>Valeur</th></tr>
-    <tr><td>Dépôt code source (GitHub)</td><td>https://github.com/Sempac/shop-app.git</td></tr>
-    <tr><td>Utilisateur base de données</td><td>postgres</td></tr>
-    <tr><td>Mot de passe base de données</td><td>Sempac</td></tr>
+    <tr><td>Code source (GitHub)</td><td>https://github.com/Sempac/shop-app.git</td></tr>
+    <tr><td>Utilisateur BDD</td><td>postgres</td></tr>
+    <tr><td>Mot de passe BDD</td><td>Sempac</td></tr>
     <tr><td>Nom de la base</td><td>shop_db</td></tr>
     <tr><td>Port PostgreSQL</td><td>5432</td></tr>
     <tr><td>Backup OneDrive</td><td>OneDrive › Backups › smartphone-pos › dernier fichier .sql</td></tr>
+    <tr><td>Admin catalogue</td><td>Smartphone@Admin2026</td></tr>
   </table>
 </div>
 
 <h2><span class="step">1</span> Récupérer le backup depuis OneDrive</h2>
 <div class="box">
-  Ouvre OneDrive sur le PC de secours et navigue vers :<br><br>
+  Ouvre OneDrive sur le PC de secours :<br><br>
   <strong>OneDrive › Backups › smartphone-pos</strong><br><br>
-  Prends le fichier <strong>.sql le plus récent</strong> (ex : <code style="display:inline;background:#e2e8f0;color:#0f172a;padding:2px 6px;border-radius:4px;">backup_2026-06-14_02-00.sql</code>)<br>
-  Copie-le dans <strong>C:\backup-shop\</strong> (crée le dossier si besoin).
+  Prendre le fichier <strong>.sql le plus récent</strong> et le copier dans <strong>C:\backup-shop\</strong>
 </div>
 
-<h2><span class="step">2</span> Installer les prérequis</h2>
+<h2><span class="step">2</span> Installer les prérequis (si pas déjà fait)</h2>
 <div class="box">
-  Si ce n'est pas déjà installé sur le PC de secours :<br><br>
-  • <strong>PostgreSQL 18</strong> → <a href="https://www.postgresql.org/download/windows/">postgresql.org/download/windows</a><br>
+  • <strong>PostgreSQL 18</strong> → postgresql.org/download/windows<br>
   &nbsp;&nbsp;⚠️ Lors de l'installation, mettre le mot de passe : <strong>Sempac</strong><br><br>
-  • <strong>Node.js 20+</strong> → <a href="https://nodejs.org">nodejs.org</a>
+  • <strong>Node.js 20+</strong> → nodejs.org
 </div>
 
 <h2><span class="step">3</span> Restaurer la base de données</h2>
 <div class="box">
-  Ouvre une invite de commandes <strong>en tant qu'administrateur</strong> et exécute :
+  Ouvre une invite de commandes <strong>en tant qu'administrateur</strong> :
 <code>set PGPASSWORD=Sempac
 
 "C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe" -U postgres -c "CREATE DATABASE shop_db;"
 
 "C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe" -U postgres -d shop_db -f C:\\backup-shop\\backup_2026-06-14_02-00.sql</code>
-  ⚠️ Remplace le nom du fichier .sql par le plus récent disponible.
+  ⚠️ Remplacer le nom du fichier .sql par le plus récent disponible dans OneDrive.
 </div>
 
 <h2><span class="step">4</span> Récupérer le code source</h2>
 <div class="box">
-  Dans une invite de commandes :
 <code>git clone https://github.com/Sempac/shop-app.git C:\\apps\\shop-app
 cd C:\\apps\\shop-app
 npm install</code>
@@ -83,50 +87,59 @@ npm install</code>
 
 <h2><span class="step">5</span> Créer le fichier de configuration</h2>
 <div class="box">
-  Crée le fichier <strong>C:\apps\shop-app\.env</strong> avec ce contenu :
+  Créer le fichier <strong>C:\apps\shop-app\.env</strong> :
 <code>DB_USER=postgres
 DB_PASSWORD=Sempac
 DB_NAME=shop_db
 DB_HOST=localhost
 DB_PORT=5432
 EMAIL_USER=smartphonesatelier4@gmail.com
-EMAIL_PASS=(mot de passe application Gmail)
+EMAIL_PASS=(mot de passe application Gmail — voir paramètres Google)
 CATALOGUE_ADMIN_PASS=Smartphone@Admin2026</code>
-  ⚠️ Le mot de passe Gmail (EMAIL_PASS) est un <strong>mot de passe d'application</strong> généré dans les paramètres Google. À noter séparément.
 </div>
 
 <h2><span class="step">6</span> Lancer l'application</h2>
 <div class="box">
 <code>cd C:\\apps\\shop-app
 node server.js</code>
-  Puis ouvre le navigateur sur : <strong>http://localhost:3000</strong>
+  Puis ouvrir le navigateur sur : <strong>http://localhost:3000</strong>
 </div>
 
 <h2>⚠️ Points d'attention</h2>
 <div class="warning">
-  <strong>Ce qui sera récupéré ✅</strong><br>
-  • Toutes les données (ventes, réparations, dépenses, stock, clients)<br>
-  • Le code complet de l'application<br><br>
-  <strong>Ce qui ne sera PAS récupéré ❌</strong><br>
-  • Les photos produits (dossier uploads/) — non incluses dans le backup OneDrive<br>
-  • Les tokens Gmail OAuth2 (reconnexion requise sur /api/gmail/auth)
+  <strong>Récupéré ✅</strong> : Toutes les données (ventes, réparations, dépenses, stock, clients)<br><br>
+  <strong>Non récupéré ❌</strong> : Photos produits (uploads/) · Tokens Gmail OAuth2 (reconnexion sur /api/gmail/auth)
 </div>
 
 <hr style="margin:30px 0;border:none;border-top:1px solid #e2e8f0;">
 <p style="font-size:12px;color:#94a3b8;text-align:center;">
-  The SMARTPHONE — Document interne confidentiel — Généré automatiquement le 14/06/2026
+  The SMARTPHONE — Document interne confidentiel — 14/06/2026
 </p>
+</body></html>`;
 
-</body>
-</html>`;
+function makeEmail(to, subject, htmlBody) {
+  const msg = [
+    'MIME-Version: 1.0',
+    'Content-Type: text/html; charset=UTF-8',
+    `From: "The SMARTPHONE" <smartphonesatelier4@gmail.com>`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    '',
+    htmlBody
+  ].join('\r\n');
+  return Buffer.from(msg).toString('base64url');
+}
 
-transporter.sendMail({
-  from: '"The SMARTPHONE" <smartphonesatelier4@gmail.com>',
-  to: 'smartphonesatelier4@gmail.com, aek.boughari@gmail.com',
-  subject: '🔧 Procédure de récupération — The SMARTPHONE POS',
-  html: html
-}, (err, info) => {
-  if (err) { console.error('ERREUR:', err.message); process.exit(1); }
-  console.log('✅ Email envoyé:', info.messageId);
-  process.exit(0);
-});
+async function send() {
+  const dest = [
+    'smartphonesatelier4@gmail.com',
+    'aek.boughari@gmail.com'
+  ];
+  for (const to of dest) {
+    const raw = makeEmail(to, '🔧 Procédure de récupération — The SMARTPHONE POS', html);
+    await gmail.users.messages.send({ userId: 'me', requestBody: { raw } });
+    console.log(`✅ Envoyé à ${to}`);
+  }
+}
+
+send().catch(e => { console.error('❌', e.message); process.exit(1); });
