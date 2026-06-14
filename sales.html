@@ -409,7 +409,7 @@ let allProducts=[],cart=[],printMode=null,activeCat='Tous',activeCond='all';
 
 const SHOP={name:'The SMARTPHONE',sub:'Vente & Réparation de smartphones',
   address:"1 Avenue d'Italie, 75013 Paris",tel1:'01 47 07 18 66',tel2:'06 86 84 82 79',
-  email:'smartphonesatelier4@gmail.com'};
+  email:'smartphonesatelier4@gmail.com',website:'thesmartphone.pro'};
 
 const CAT_ICONS={'Tous':'⚡','Smartphone':'📱','Tablette':'📟','PC Portable':'💻',
   'Carte SIM':'📶','Accessoire Info':'⌨️','Coque':'🛡️','Protection écran':'🔲',
@@ -792,7 +792,7 @@ async function printOrder(id,type,cb,cash,credit){
   } else {
     w.document.write(`<html><head><meta charset="UTF-8">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"><style>body{font-family:Arial;padding:30px;}.sh{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:22px;}.sn{font-size:22px;font-weight:900;}.si{font-size:11px;color:#333;margin-top:3px;}.it{font-size:20px;font-weight:900;text-align:right;text-transform:uppercase;}.im{font-size:12px;text-align:right;margin-top:4px;color:#555;}table{width:100%;border-collapse:collapse;margin-top:20px;}th{border:1px solid #000;padding:8px;background:#e5e7eb;text-align:left;}td{border:1px solid #000;padding:8px;}.tb{margin-top:20px;text-align:right;font-size:20px;font-weight:bold;border-top:2px solid #000;padding-top:10px;}.pd{font-size:13px;color:#555;margin-top:4px;text-align:right;}.cb-box{margin-top:10px;padding:10px;border:2px solid #000;font-size:15px;font-weight:bold;text-align:right;}.ft{margin-top:40px;font-size:11px;color:#555;text-align:center;border-top:1px solid #ccc;padding-top:10px;}</style></head><body>
-    <div class="sh"><div><div class="sn">${SHOP.name}</div><div class="si">${SHOP.sub}</div><div class="si">📍 ${SHOP.address}</div><div class="si">📞 ${SHOP.tel1} | ${SHOP.tel2}</div><div class="si">✉️ ${SHOP.email}</div></div>
+    <div class="sh"><div><div class="sn">${SHOP.name}</div><div class="si">${SHOP.sub}</div><div class="si">📍 ${SHOP.address}</div><div class="si">📞 ${SHOP.tel1} | ${SHOP.tel2}</div><div class="si">✉️ ${SHOP.email}</div><div class="si">🌐 ${SHOP.website}</div></div>
     <div><div class="it">FACTURE</div><div class="im">N° ${data.order.id}</div><div class="im">${new Date(data.order.created_at).toLocaleString('fr-FR')}</div></div></div>
     <p><b>Client :</b> ${data.order.customer_name||'CLIENT'}</p>
     <table><tr><th>Produit</th><th>Qté</th><th>Prix unit.</th><th>Remise</th><th>Total</th></tr>${rows}</table>

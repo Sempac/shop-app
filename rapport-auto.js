@@ -112,7 +112,7 @@ async function envoyerRapport(pool, date) {
   doc.font('Helvetica-Bold').fontSize(14).text('The SMARTPHONE', 40, 40);
   doc.font('Helvetica').fontSize(9).fillColor('#444')
      .text("1 Avenue d'Italie, 75013 Paris", 40, 57)
-     .text('01 47 07 18 66  |  smartphonesatelier4@gmail.com', 40, 68);
+     .text('01 47 07 18 66  |  smartphonesatelier4@gmail.com  |  thesmartphone.pro', 40, 68);
   doc.font('Helvetica-Bold').fontSize(12).fillColor('#000')
      .text('Rapport Comptable', 0, 40, {align:'right'})
      .font('Helvetica').fontSize(10)
