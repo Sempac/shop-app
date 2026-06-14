@@ -5,12 +5,12 @@
 
 module.exports = function initRapportAuto(pool) {
 
-  /* ── Planifier l'envoi à 19h20 chaque soir ── */
+  /* ── Planifier l'envoi à 20h00 chaque soir ── */
   function scheduleDaily() {
-    function msUntil19h20() {
+    function msUntil20h00() {
       const now  = new Date();
       const next = new Date();
-      next.setHours(19, 20, 0, 0);
+      next.setHours(20, 0, 0, 0);
       if (next <= now) next.setDate(next.getDate() + 1);
       return next - now;
     }
@@ -28,10 +28,10 @@ module.exports = function initRapportAuto(pool) {
         console.log('[Rapport Auto] Dimanche — pas d\'envoi');
       }
       /* Replanifier pour le lendemain */
-      setTimeout(tick, msUntil19h20());
-    }, msUntil19h20());
+      setTimeout(tick, msUntil20h00());
+    }, msUntil20h00());
 
-    const h = Math.round(msUntil19h20() / 3600000 * 10) / 10;
+    const h = Math.round(msUntil20h00() / 3600000 * 10) / 10;
     console.log('[Rapport Auto] Prochain envoi dans', h, 'h');
   }
 
@@ -45,7 +45,6 @@ async function envoyerRapport(pool, date) {
   const PDFDocument = require('pdfkit');
   const fs          = require('fs');
   const path        = require('path');
-  const nodemailer  = require('nodemailer');
 
   /* ── Données ── */
   const ventes = await pool.query(`
@@ -204,19 +203,15 @@ async function envoyerRapport(pool, date) {
     fs.writeFileSync(finalPath, pdfBuffer);
   }
 
-  /* ── Envoi Email ── */
+  /* ── Envoi Email (Gmail API OAuth2) ── */
   let emailSent = false, emailError = null;
   try {
-    const transporter = nodemailer.createTransport({
-      host:'smtp.gmail.com', port:465, secure:true,
-      auth:{user:process.env.EMAIL_USER, pass:process.env.EMAIL_PASS}
-    });
-    await transporter.sendMail({
-      from: `"The SMARTPHONE" <${process.env.EMAIL_USER}>`,
-      to:   process.env.EMAIL_TO || 'ittech75013@gmail.com',
+    const { gmailSendMail } = require('./gmail-send');
+    await gmailSendMail({
+      to:      process.env.EMAIL_TO || 'ittech75013@gmail.com',
       subject: `Rapport Comptable - The SMARTPHONE - ${date}`,
-      text: `Bonjour,\n\nVeuillez trouver en pièce jointe le rapport comptable du ${dateLabel}.\n\nThe SMARTPHONE`,
-      attachments: [{filename, content:pdfBuffer, contentType:'application/pdf'}]
+      html:    `<p>Bonjour,</p><p>Veuillez trouver en pièce jointe le rapport comptable du ${dateLabel}.</p><p>The SMARTPHONE<br>1 Avenue d'Italie, 75013 Paris</p>`,
+      attachments: [{ filename, content: pdfBuffer, contentType: 'application/pdf' }]
     });
     emailSent = true;
   } catch(emailErr) { emailError = emailErr.message; }
