@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>QR Code Vitrine — The SMARTPHONE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:#fff; color:#1a1a2e; }
+
+  .card {
+    width: 148mm;
+    min-height: 210mm;
+    margin: 10mm auto;
+    border: 2.5px solid #1a1a2e;
+    border-radius: 12px;
+    padding: 14mm 12mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8mm;
+    text-align: center;
+  }
+
+  .logo { font-size: 15pt; font-weight: 900; letter-spacing: -0.5px; }
+  .logo span { color: #2563eb; }
+
+  .tagline { font-size: 9pt; color: #64748b; font-weight: 500; }
+
+  .qr-wrap {
+    background: #fff;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 6mm;
+    width: 60mm;
+    height: 60mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-wrap img { width: 100%; height: 100%; }
+
+  .scan-label {
+    font-size: 13pt;
+    font-weight: 900;
+    line-height: 1.3;
+  }
+  .scan-label span { color: #2563eb; }
+
+  .sub {
+    font-size: 8.5pt;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .services {
+    display: flex;
+    gap: 4mm;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .svc {
+    border: 1.5px solid #1a1a2e;
+    border-radius: 20px;
+    padding: 2mm 5mm;
+    font-size: 8pt;
+    font-weight: 700;
+  }
+
+  .divider { width: 100%; border: none; border-top: 1.5px solid #e5e7eb; }
+
+  .contact { font-size: 8.5pt; color: #374151; line-height: 1.8; }
+  .contact strong { color: #1a1a2e; }
+
+  .url {
+    font-size: 7pt;
+    color: #94a3b8;
+    word-break: break-all;
+  }
+
+  @media print {
+    body { margin: 0; }
+    .card { margin: 5mm auto; border: 2px solid #1a1a2e; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print" style="text-align:center;padding:10px;background:#f0f9ff;font-family:sans-serif;font-size:13px;">
+  💡 Pour imprimer : Ctrl+P → désactiver "En-têtes et pieds de page" → OK
+  &nbsp;|&nbsp; <button onclick="window.print()" style="padding:6px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;">🖨️ Imprimer</button>
+</div>
+
+<div class="card">
+
+  <div class="logo">📱 The <span>SMARTPHONE</span></div>
+  <div class="tagline">Réparation · Vente · Impression — Paris 13e</div>
+
+  <div class="qr-wrap">
+    <img src="/api/catalogue/qrcode-png" alt="QR Code catalogue" onerror="this.src='/api/catalogue/qrcode';this.style.width='100%'">
+  </div>
+
+  <div class="scan-label">
+    Scannez pour voir<br>
+    <span>notre catalogue</span> 📱
+  </div>
+
+  <div class="sub">
+    Tous nos produits · Prix · Disponibilité<br>
+    Demandez un devis réparation en ligne
+  </div>
+
+  <div class="services">
+    <div class="svc">📱 Smartphones</div>
+    <div class="svc">💻 PC Portables</div>
+    <div class="svc">🔧 Réparation</div>
+    <div class="svc">🖨️ Impression</div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="contact">
+    <strong>📍 1 Avenue d'Italie, 75013 Paris</strong><br>
+    📞 01 47 07 18 66 · 06 86 84 82 79<br>
+    🕐 Lun–Sam 9h30–19h30 · Dim Fermé<br>
+    ⭐ 4,8/5 · 490 avis Google
+  </div>
+
+  <div class="url">https://desktop-dpd7qn6.taild4a8c6.ts.net/catalogue</div>
+
+</div>
+
+<script>
+// Essaie de charger le QR code SVG si PNG non dispo
+(function(){
+  var img = document.querySelector('.qr-wrap img');
+  img.onerror = function(){
+    // Fallback : afficher le SVG inline
+    fetch('/api/catalogue/qrcode').then(r=>r.text()).then(svg=>{
+      var div = document.createElement('div');
+      div.innerHTML = svg;
+      div.style.width='100%';
+      div.style.height='100%';
+      img.parentNode.replaceChild(div, img);
+    }).catch(()=>{ img.alt='QR Code non disponible'; });
+  };
+})();
+</script>
+</body>
+</html>

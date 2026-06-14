@@ -2543,6 +2543,9 @@ app.get('/api/catalogue', async(req,res)=>{
 app.get('/catalogue', (req,res) => {
   res.sendFile(path.join(__dirname,'catalogue.html'));
 });
+app.get('/qr-vitrine', (req,res) => {
+  res.sendFile(path.join(__dirname,'qr-vitrine.html'));
+});
 
 // Données catalogue (public)
 app.get('/api/catalogue/data', async(req,res) => {
