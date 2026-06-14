@@ -19,10 +19,10 @@ let _ready  = false;
 let _status = 'disconnected'; /* disconnected | qr | connecting | ready */
 
 function cleanChromeLocks() {
-  /* Tuer les Chrome de la session Services (session 0) — ce sont les nôtres */
+  /* Tuer tous les Chrome orphelins lancés par puppeteer (toutes sessions) */
   try {
     execSync(
-      'powershell -Command "Get-Process -Name chrome -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq 0 } | Stop-Process -Force -ErrorAction SilentlyContinue"',
+      'powershell -Command "Get-Process -Name chrome -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue"',
       { stdio: 'ignore', timeout: 8000 }
     );
   } catch(e) {}
