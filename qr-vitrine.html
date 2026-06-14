@@ -97,8 +97,8 @@
   <div class="logo">📱 The <span>SMARTPHONE</span></div>
   <div class="tagline">Réparation · Vente · Impression — Paris 13e</div>
 
-  <div class="qr-wrap">
-    <img src="/api/catalogue/qrcode" alt="QR Code catalogue" style="width:100%;height:100%;">
+  <div class="qr-wrap" id="qrbox">
+    <span style="font-size:9pt;color:#94a3b8;">Chargement...</span>
   </div>
 
   <div class="scan-label">
@@ -131,5 +131,16 @@
 
 </div>
 
+<script>
+fetch('/api/catalogue/qrcode')
+  .then(r=>r.text())
+  .then(svg=>{
+    var box=document.getElementById('qrbox');
+    box.innerHTML=svg;
+    var s=box.querySelector('svg');
+    if(s){s.setAttribute('width','100%');s.setAttribute('height','100%');}
+  })
+  .catch(()=>{document.getElementById('qrbox').innerHTML='<span style="font-size:9pt;color:red;">QR non disponible</span>';});
+</script>
 </body>
 </html>
