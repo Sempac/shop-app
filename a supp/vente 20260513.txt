@@ -1,9 +1,0 @@
-Nom 									;Fournisseur	   ;Quantité		;CA
-A22 écran	 							;Lcd Phone 		   ;1 				;80.00 €
-A5 32GB BLACK 							;The Smartphone    ;1 				;60.00 €
-Coque Smartphone 						;It Tech 		   ;2 				;40.00 €
-Ecouteurs Type C, Akg  					;Utopya 		   ;1 				;15.00 €
-Ecran Iphone Xs Garantie 12 Mois 		;Lcd Phone 		   ;1 				;70.00 €
-Iphone 8, 8 Plus, Vitre Arrière 		;Lcd Phone 		   ;1 				;60.00 €
-Repartion ARGENT 						;It Tech 		   ;1 				;40.00 €
-										

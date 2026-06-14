@@ -3,15 +3,39 @@ node_modules/
 dist/
 build/
 coverage/
+
+# Logs
 *.log
+logs/
+
+# Fichiers sensibles OAuth2
+gmail_tokens.json
+client_secret*.json
+
+# Uploads et rapports (gros fichiers, locaux)
+uploads/
+rapports/
+files/
+tmp-photos/
+
+# Session WhatsApp (locale)
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Fichiers temporaires Excel
+~$*
+
+# Fichiers archives locaux
+ARCHIVE/
+historique_factures_2025-2026.xlsx
+test_factures_gmail_*.xlsx
+*.zip
 files.zip
-*.zip
-ARCHIVE/voice-scan.js
-~
-*.zip
-req appli shop app.xlsx 
-files.zip 
-files.zip 
-"req appli shop app.xlsx" 
-grep 
-archive/ 
+template_import_stock.xlsx
+
+# Fichiers divers locaux non nécessaires
+req appli shop app.xlsx
+lcp_cookies.txt
+print-display.pdf
+server-dev.log
+server-dev-err.log

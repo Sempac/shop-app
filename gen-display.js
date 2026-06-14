@@ -70,7 +70,7 @@ QRCode.toDataURL(QR_URL, {
       <div class="contacts">
         <div class="contact-row">📞 <strong>01 47 07 18 66</strong> &nbsp;·&nbsp; 📱 <strong>06 86 84 82 79</strong></div>
         <div class="contact-row">✉️ smartphonesatelier4@gmail.com</div>
-        <div class="contact-row">🌐 thesmartphone.pro</div>
+        <div class="contact-row">🌐 www.thesmartphone.pro</div>
       </div>
 
 
