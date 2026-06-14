@@ -38,7 +38,7 @@
     align-items: center;
     justify-content: center;
   }
-  .qr-wrap img { width: 100%; height: 100%; }
+  .qr-wrap img, .qr-wrap svg { width: 100%; height: 100%; }
 
   .scan-label {
     font-size: 13pt;
@@ -97,9 +97,7 @@
   <div class="logo">📱 The <span>SMARTPHONE</span></div>
   <div class="tagline">Réparation · Vente · Impression — Paris 13e</div>
 
-  <div class="qr-wrap" id="qrbox">
-    <span style="font-size:9pt;color:#94a3b8;">Chargement...</span>
-  </div>
+  <div class="qr-wrap" id="qrbox">__QR_SVG__</div>
 
   <div class="scan-label">
     Scannez pour voir<br>
@@ -131,16 +129,5 @@
 
 </div>
 
-<script>
-fetch('/api/catalogue/qrcode')
-  .then(r=>r.text())
-  .then(svg=>{
-    var box=document.getElementById('qrbox');
-    box.innerHTML=svg;
-    var s=box.querySelector('svg');
-    if(s){s.setAttribute('width','100%');s.setAttribute('height','100%');}
-  })
-  .catch(()=>{document.getElementById('qrbox').innerHTML='<span style="font-size:9pt;color:red;">QR non disponible</span>';});
-</script>
 </body>
 </html>
