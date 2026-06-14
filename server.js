@@ -2547,7 +2547,8 @@ app.get('/qr-vitrine', async(req,res) => {
   try {
     const QRCode = require('qrcode');
     const s = await pool.query("SELECT value FROM catalogue_settings WHERE key='catalogue_url'");
-    const url = s.rows[0]?.value || 'https://www.thesmartphone.pro/catalogue';
+    const base = (s.rows[0]?.value || 'https://www.thesmartphone.pro/catalogue').replace(/\?.*$/,'');
+    const url = base + '?type=Smartphone';
     const svg = await QRCode.toString(url, {type:'svg', margin:1, width:200});
     const html = require('fs').readFileSync(path.join(__dirname,'qr-vitrine.html'),'utf8');
     res.send(html.replace('__QR_SVG__', svg));

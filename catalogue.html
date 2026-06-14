@@ -1113,6 +1113,18 @@ async function loadAll(){
     }
   }catch(e){allProducts=[];allServices=[];}
   buildStorageChips();renderProducts();renderRepairs();renderPrint();
+  // Appliquer filtre depuis URL (?type=Smartphone&tab=products...)
+  var urlP=new URLSearchParams(window.location.search);
+  var urlType=urlP.get('type');
+  if(urlType){
+    var chip=Array.from(document.querySelectorAll('#catChips .chip')).find(function(c){return c.textContent.trim().indexOf(urlType)!==-1;});
+    if(chip){setPF('type',urlType,chip);}
+  }
+  var urlTab=urlP.get('tab');
+  if(urlTab){
+    var tabBtn=Array.from(document.querySelectorAll('.tab')).find(function(t){return t.getAttribute('onclick')&&t.getAttribute('onclick').indexOf("'"+urlTab+"'")!==-1;});
+    if(tabBtn){showTab(urlTab,tabBtn);}
+  }
 }
 loadAll();
 
