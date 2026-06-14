@@ -2,12 +2,19 @@ const express=require('express');
 require('dotenv').config();
 
 /* Empêcher les crashes sur erreurs non gérées (ex: puppeteer/WhatsApp) */
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', (reason, promise) => {
   console.error('[Unhandled Rejection]', reason?.message || reason);
+  /* Ne pas quitter le process */
 });
 process.on('uncaughtException', (err) => {
-  console.error('[Uncaught Exception]', err.message);
+  console.error('[Uncaught Exception]', err.message, err.stack);
+  /* Ne pas quitter le process */
 });
+process.on('exit', (code) => {
+  console.error('[Process Exit] code:', code, new Date().toISOString());
+});
+process.on('SIGTERM', () => { console.error('[SIGTERM reçu]'); });
+process.on('SIGINT',  () => { console.error('[SIGINT reçu]'); });
 const initRapportAuto = require('./rapport-auto');
 const waClient = require('./wa-client');
 const cors=require('cors');
