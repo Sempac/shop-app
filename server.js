@@ -3066,6 +3066,26 @@ app.post('/api/whatsapp/test',async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
+/* Supprime les N derniers messages envoyés par le bot dans WA_TO */
+app.delete('/api/whatsapp/messages/mine', async(req,res)=>{
+  try{
+    const n = parseInt(req.query.n) || 10;
+    const client = waClient.getClient();
+    if(!client) return res.status(400).json({error:'WhatsApp non initialisé'});
+    const chats = await client.getChats();
+    const waTo = process.env.WA_TO;
+    const chat = chats.find(c => c.id._serialized === waTo);
+    if(!chat) return res.status(404).json({error:'Groupe non trouvé: ' + waTo});
+    const msgs = await chat.fetchMessages({ limit: 30 });
+    const mine = msgs.filter(m => m.fromMe).slice(-n);
+    const deleted = [];
+    for(const m of mine){
+      try{ await m.delete(true); deleted.push(m.id._serialized); }catch(e){}
+    }
+    res.json({ deleted: deleted.length, ids: deleted });
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 app.listen(3000,()=>{
   console.log('🚀 The SMARTPHONE POS — http://localhost:3000');
   /* Démarrer WhatsApp en arrière-plan */
