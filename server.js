@@ -3069,20 +3069,26 @@ app.post('/api/whatsapp/test',async(req,res)=>{
 /* Supprime les N derniers messages envoyés par le bot dans WA_TO */
 app.delete('/api/whatsapp/messages/mine', async(req,res)=>{
   try{
-    const n = parseInt(req.query.n) || 10;
+    const n = parseInt(req.query.n) || 20;
     const client = waClient.getClient();
     if(!client) return res.status(400).json({error:'WhatsApp non initialisé'});
     const chats = await client.getChats();
     const waTo = process.env.WA_TO;
     const chat = chats.find(c => c.id._serialized === waTo);
     if(!chat) return res.status(404).json({error:'Groupe non trouvé: ' + waTo});
-    const msgs = await chat.fetchMessages({ limit: 30 });
-    const mine = msgs.filter(m => m.fromMe).slice(-n);
-    const deleted = [];
+    const msgs = await chat.fetchMessages({ limit: 100 });
+    const mine = msgs.filter(m => m.fromMe);
+    const deleted = [], failed = [];
     for(const m of mine){
-      try{ await m.delete(true); deleted.push(m.id._serialized); }catch(e){}
+      try{
+        await m.delete(true);
+        deleted.push({ id: m.id._serialized, type: m.type });
+      }catch(e){
+        /* Retry: delete just for me si "pour tous" échoue */
+        try{ await m.delete(false); failed.push({ id: m.id._serialized, type: m.type, err: e.message }); }catch(_){}
+      }
     }
-    res.json({ deleted: deleted.length, ids: deleted });
+    res.json({ deleted: deleted.length, failed: failed.length, details: deleted, failedDetails: failed });
   }catch(e){res.status(500).json({error:e.message});}
 });
 
