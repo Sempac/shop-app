@@ -1137,6 +1137,9 @@ function storeProd(p){ productMap[p.id]=p; }
 function openProduct(id){
   var p=productMap[id]; if(!p) return;
   pmCurrent=p; pmPhotos=[]; pmIdx=0;
+  if(window._visitId){
+    fetch('/api/catalogue/visit/'+window._visitId+'/product',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:p.id,product_name:p.name})}).catch(function(){});
+  }
   var t=T[lang];
   var cond=t.cond||{};
   var accCats=(typeof TYPE_CATS!=='undefined'&&TYPE_CATS.Accessoire)||[];
@@ -1279,7 +1282,7 @@ document.addEventListener('keydown',function(e){
   var vid=null;
   fetch('/api/catalogue/visit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ua:navigator.userAgent})})
     .then(function(r){return r.json();}).then(function(d){
-      vid=d.id;
+      vid=d.id; window._visitId=d.id;
       if(vid){
         setInterval(function(){fetch('/api/catalogue/visit/'+vid+'/ping',{method:'POST'});},30000);
       }

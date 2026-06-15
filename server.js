@@ -2623,6 +2623,13 @@ app.get('/api/catalogue/qrcode', async(req,res) => {
       duration_seconds INTEGER,
       user_agent TEXT
     )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS catalogue_product_views(
+      id SERIAL PRIMARY KEY,
+      visit_id INTEGER REFERENCES catalogue_visits(id) ON DELETE SET NULL,
+      product_id INTEGER,
+      product_name TEXT,
+      viewed_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
   }catch(e){console.error('catalogue_visits init:',e.message);}
 })();
 
@@ -2639,6 +2646,16 @@ app.post('/api/catalogue/visit', async(req,res)=>{
 app.post('/api/catalogue/visit/:id/ping', async(req,res)=>{
   try{
     await pool.query('UPDATE catalogue_visits SET last_ping=NOW() WHERE id=$1',[req.params.id]);
+    res.json({ok:true});
+  }catch(e){res.json({ok:false});}
+});
+
+// Vue produit
+app.post('/api/catalogue/visit/:id/product', async(req,res)=>{
+  try{
+    const {product_id, product_name}=req.body||{};
+    await pool.query('INSERT INTO catalogue_product_views(visit_id,product_id,product_name) VALUES($1,$2,$3)',
+      [req.params.id, product_id||null, (product_name||'').substring(0,200)]);
     res.json({ok:true});
   }catch(e){res.json({ok:false});}
 });
@@ -2725,7 +2742,7 @@ app.get('/catalogue-stats', requireCatAdmin, (req,res) => {
 
 app.get('/api/catalogue-admin/stats', async(req,res)=>{
   try{
-    const now = await pool.query(`SELECT
+    const summary = await pool.query(`SELECT
       COUNT(*) FILTER(WHERE started_at >= NOW()-INTERVAL '1 day') AS today,
       COUNT(*) FILTER(WHERE started_at >= NOW()-INTERVAL '7 days') AS week,
       COUNT(*) AS total,
@@ -2734,7 +2751,17 @@ app.get('/api/catalogue-admin/stats', async(req,res)=>{
     FROM catalogue_visits`);
     const recent = await pool.query(`SELECT id, started_at, last_ping, ended_at, duration_seconds
       FROM catalogue_visits ORDER BY started_at DESC LIMIT 50`);
-    res.json({summary: now.rows[0], visits: recent.rows});
+    const topProducts = await pool.query(`SELECT product_name,
+      COUNT(*) AS views,
+      COUNT(*) FILTER(WHERE viewed_at >= NOW()-INTERVAL '1 day') AS views_today
+      FROM catalogue_product_views
+      WHERE product_name IS NOT NULL
+      GROUP BY product_name ORDER BY views DESC LIMIT 20`);
+    const recentViews = await pool.query(`SELECT pv.product_name, pv.viewed_at, v.id AS visit_id
+      FROM catalogue_product_views pv
+      LEFT JOIN catalogue_visits v ON pv.visit_id=v.id
+      ORDER BY pv.viewed_at DESC LIMIT 30`);
+    res.json({summary: summary.rows[0], visits: recent.rows, topProducts: topProducts.rows, recentViews: recentViews.rows});
   }catch(e){res.status(500).json({error:e.message});}
 });
 

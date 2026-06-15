@@ -63,6 +63,30 @@ tr:hover td{background:#13131a;}
   <span id="lastUpdate" style="margin-left:10px;font-size:11px;color:#6b6b85;"></span>
 </div>
 
+<h2 style="font-size:14px;font-weight:700;margin-bottom:10px;color:#e8ff00;">🏆 Produits les plus consultés</h2>
+<table style="margin-bottom:28px;">
+  <thead>
+    <tr>
+      <th>Produit</th>
+      <th>Total vues</th>
+      <th>Aujourd'hui</th>
+    </tr>
+  </thead>
+  <tbody id="tbody-products"></tbody>
+</table>
+
+<h2 style="font-size:14px;font-weight:700;margin-bottom:10px;">🕐 Consultations récentes</h2>
+<table style="margin-bottom:28px;">
+  <thead>
+    <tr>
+      <th>Produit</th>
+      <th>Quand</th>
+    </tr>
+  </thead>
+  <tbody id="tbody-recent"></tbody>
+</table>
+
+<h2 style="font-size:14px;font-weight:700;margin-bottom:10px;">📋 Sessions</h2>
 <table>
   <thead>
     <tr>
@@ -109,6 +133,19 @@ function load(){
       return '<tr><td>'+v.id+'</td><td>'+fmtDate(v.started_at)+'</td><td>'+dur+'</td><td>'+badge+'</td></tr>';
     }).join('');
     document.getElementById('tbody').innerHTML=rows||'<tr><td colspan="4" style="text-align:center;color:#6b6b85;padding:20px;">Aucune visite encore</td></tr>';
+
+    var topRows=(d.topProducts||[]).map(function(p,i){
+      return '<tr><td><span style="color:#6b6b85;margin-right:8px;">'+(i+1)+'.</span>'+p.product_name+'</td>'
+        +'<td style="color:#e8ff00;font-weight:700;">'+p.views+'</td>'
+        +'<td style="color:#00d4ff;">'+p.views_today+'</td></tr>';
+    }).join('');
+    document.getElementById('tbody-products').innerHTML=topRows||'<tr><td colspan="3" style="text-align:center;color:#6b6b85;padding:20px;">Aucun produit consulté encore</td></tr>';
+
+    var recentRows=(d.recentViews||[]).map(function(v){
+      return '<tr><td>'+v.product_name+'</td><td>'+fmtDate(v.viewed_at)+'</td></tr>';
+    }).join('');
+    document.getElementById('tbody-recent').innerHTML=recentRows||'<tr><td colspan="2" style="text-align:center;color:#6b6b85;padding:20px;">—</td></tr>';
+
     document.getElementById('lastUpdate').textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR');
   }).catch(function(e){console.error(e);});
 }
