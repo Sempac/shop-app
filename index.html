@@ -332,6 +332,7 @@ var CARDS = {
   contacts: {href:'contacts.html',           icon:'📒', title:'CONTACTS',          desc:'Fournisseurs · Équipe<br>Réparateurs · Banque<br>WA · Email', cls:'contacts'},
   catalogue:{href:'/catalogue',             icon:'🛍️', title:'CATALOGUE',          desc:'Vitrine publique<br>Vue client<br>S\'ouvre dans un onglet',cls:'catalogue', blank:true},
   catadmin: {href:'/catalogue-admin',       icon:'🏷️', title:'ADMIN CATALOGUE',    desc:'Prix · Stock · Photos<br>Services · Réparations<br>Paramètres', cls:'cat-admin', blank:true},
+  catstats: {href:'/catalogue-stats',      icon:'📊', title:'STATS CATALOGUE',    desc:'Visiteurs en ligne<br>Produits consultés<br>Durée de session',  cls:'cat-admin', blank:true},
   users:    {href:'users-admin.html',        icon:'👥', title:'UTILISATEURS',       desc:'Gérer les comptes<br>PINs · Rôles<br>Paramètres appli',   cls:'users', adminOnly:true},
 };
 
@@ -342,7 +343,7 @@ var CARD_MODULE = {
   print: 'printshop', credits: 'credits', returns: 'returns',
   compta: 'rapport-comptable', expenses: 'expenses-limited',
   caisse: 'rapport-comptable', dashboard: 'rapport-comptable',
-  devis: 'sales', commandes: 'commandes', catalogue: null, catadmin: null,
+  devis: 'sales', commandes: 'commandes', catalogue: null, catadmin: null, catstats: null,
 };
 
 var DEFAULT_LAYOUT = {
@@ -350,7 +351,7 @@ var DEFAULT_LAYOUT = {
   vente:    ['devis','credits'],
   finances: ['expenses','caisse','dashboard'],
   appro:    ['commandes','lots','returns'],
-  outils:   ['print','contacts','catalogue','catadmin','users'],
+  outils:   ['print','contacts','catalogue','catadmin','catstats','users'],
 };
 var LAYOUT_KEY = 'smartphone_layout_v2';
 
