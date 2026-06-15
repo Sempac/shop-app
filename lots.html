@@ -623,7 +623,16 @@ function renderLotStockProds(prods) {
         ? '<div class="rent-neg">−'+fmt(achat+frais)+'</div>'
         : '<div class="rent-pending">En cours… −'+fmt(achat+frais)+'</div>';
 
-    return '<tr>' +
+    /* Normaliser le statut stock vers les valeurs attendues par le filtre */
+    var statusFilter = statut === 'DISPONIBLE' ? 'EN_STOCK' : statut === 'REPARATION' ? 'EN_REPARATION' : statut;
+
+    return '<tr' +
+      ' data-name="' + (p.name||'').toLowerCase().replace(/"/g,'') + '"' +
+      ' data-status="' + statusFilter + '"' +
+      ' data-achat="' + achat + '"' +
+      ' data-frais="' + frais + '"' +
+      ' data-vendu="' + (estVendu ? vendu : '') + '"' +
+      ' data-rent="' + ((estVendu||estIrrep) ? rentabilite : '') + '">' +
       '<td>' +
         '<div style="font-weight:bold;font-size:13px">' + (p.name||'—') + '</div>' +
         ((p.color||p.grade) ? '<div style="font-size:11px;color:#64748b">' + [p.color,p.grade].filter(Boolean).join(' · ') + '</div>' : '') +
