@@ -2611,6 +2611,49 @@ app.get('/api/catalogue/qrcode', async(req,res) => {
 });
 
 /* =======================================================
+   CATALOGUE — STATISTIQUES DE VISITES
+======================================================= */
+(async()=>{
+  try{
+    await pool.query(`CREATE TABLE IF NOT EXISTS catalogue_visits(
+      id SERIAL PRIMARY KEY,
+      started_at TIMESTAMPTZ DEFAULT NOW(),
+      last_ping TIMESTAMPTZ DEFAULT NOW(),
+      ended_at TIMESTAMPTZ,
+      duration_seconds INTEGER,
+      user_agent TEXT
+    )`);
+  }catch(e){console.error('catalogue_visits init:',e.message);}
+})();
+
+// Démarrer une session
+app.post('/api/catalogue/visit', async(req,res)=>{
+  try{
+    const ua=(req.body&&req.body.ua)||req.headers['user-agent']||'';
+    const r=await pool.query('INSERT INTO catalogue_visits(user_agent) VALUES($1) RETURNING id',[ua.substring(0,200)]);
+    res.json({id:r.rows[0].id});
+  }catch(e){res.json({id:null});}
+});
+
+// Heartbeat (toutes les 30s)
+app.post('/api/catalogue/visit/:id/ping', async(req,res)=>{
+  try{
+    await pool.query('UPDATE catalogue_visits SET last_ping=NOW() WHERE id=$1',[req.params.id]);
+    res.json({ok:true});
+  }catch(e){res.json({ok:false});}
+});
+
+// Fin de session
+app.post('/api/catalogue/visit/:id/end', async(req,res)=>{
+  try{
+    await pool.query(`UPDATE catalogue_visits
+      SET ended_at=NOW(), duration_seconds=EXTRACT(EPOCH FROM (NOW()-started_at))::int
+      WHERE id=$1`,[req.params.id]);
+    res.json({ok:true});
+  }catch(e){res.json({ok:false});}
+});
+
+/* =======================================================
    CATALOGUE ADMIN — AUTHENTIFICATION PAR MOT DE PASSE
 ======================================================= */
 const crypto=require('crypto');
@@ -2674,6 +2717,25 @@ app.get('/catalogue-admin-logout',(req,res)=>{
 // Page admin catalogue
 app.get('/catalogue-admin', requireCatAdmin, (req,res) => {
   res.sendFile(path.join(__dirname,'catalogue-admin.html'));
+});
+
+app.get('/catalogue-stats', requireCatAdmin, (req,res) => {
+  res.sendFile(path.join(__dirname,'catalogue-stats.html'));
+});
+
+app.get('/api/catalogue-admin/stats', async(req,res)=>{
+  try{
+    const now = await pool.query(`SELECT
+      COUNT(*) FILTER(WHERE started_at >= NOW()-INTERVAL '1 day') AS today,
+      COUNT(*) FILTER(WHERE started_at >= NOW()-INTERVAL '7 days') AS week,
+      COUNT(*) AS total,
+      ROUND(AVG(duration_seconds) FILTER(WHERE duration_seconds IS NOT NULL AND duration_seconds > 0)) AS avg_duration,
+      COUNT(*) FILTER(WHERE last_ping >= NOW()-INTERVAL '2 minutes' AND ended_at IS NULL) AS active_now
+    FROM catalogue_visits`);
+    const recent = await pool.query(`SELECT id, started_at, last_ping, ended_at, duration_seconds
+      FROM catalogue_visits ORDER BY started_at DESC LIMIT 50`);
+    res.json({summary: now.rows[0], visits: recent.rows});
+  }catch(e){res.status(500).json({error:e.message});}
 });
 
 // Protection middleware sur toutes les routes API admin

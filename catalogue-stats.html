@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stats Catalogue — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0f;color:#f0f0f0;padding:20px;}
+h1{font-size:20px;font-weight:900;margin-bottom:4px;}h1 span{color:#e8ff00;}
+.sub{font-size:12px;color:#6b6b85;margin-bottom:24px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px;}
+.card{background:#1a1a24;border:1px solid #2a2a3a;border-radius:12px;padding:16px;text-align:center;}
+.card .val{font-size:32px;font-weight:900;color:#e8ff00;line-height:1;}
+.card .lbl{font-size:11px;color:#6b6b85;margin-top:6px;}
+.card.green .val{color:#00e676;}
+.card.blue .val{color:#00d4ff;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;color:#6b6b85;font-weight:600;padding:8px 10px;border-bottom:1px solid #2a2a3a;}
+td{padding:8px 10px;border-bottom:1px solid #1a1a24;color:#ccc;}
+tr:hover td{background:#13131a;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+.badge.active{background:rgba(0,230,118,.15);color:#00e676;}
+.badge.ended{background:rgba(107,107,133,.15);color:#6b6b85;}
+.badge.pending{background:rgba(0,212,255,.1);color:#00d4ff;}
+.refresh{margin-bottom:16px;}
+.refresh button{padding:8px 16px;background:#2a2a3a;color:#f0f0f0;border:1px solid #3a3a5a;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;}
+.refresh button:hover{background:#3a3a5a;}
+.back{display:inline-block;margin-bottom:20px;color:#6b6b85;font-size:12px;text-decoration:none;}
+.back:hover{color:#e8ff00;}
+</style>
+</head>
+<body>
+<a class="back" href="/catalogue-admin">← Retour admin</a>
+<h1>📊 Stats <span>Catalogue</span></h1>
+<div class="sub">Visites du catalogue public</div>
+
+<div class="cards">
+  <div class="card green">
+    <div class="val" id="s-active">—</div>
+    <div class="lbl">En ligne maintenant</div>
+  </div>
+  <div class="card">
+    <div class="val" id="s-today">—</div>
+    <div class="lbl">Visites aujourd'hui</div>
+  </div>
+  <div class="card">
+    <div class="val" id="s-week">—</div>
+    <div class="lbl">Cette semaine</div>
+  </div>
+  <div class="card">
+    <div class="val" id="s-total">—</div>
+    <div class="lbl">Total visites</div>
+  </div>
+  <div class="card blue">
+    <div class="val" id="s-avg">—</div>
+    <div class="lbl">Durée moyenne</div>
+  </div>
+</div>
+
+<div class="refresh">
+  <button onclick="load()">🔄 Rafraîchir</button>
+  <span id="lastUpdate" style="margin-left:10px;font-size:11px;color:#6b6b85;"></span>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Arrivée</th>
+      <th>Durée</th>
+      <th>Statut</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<script>
+function fmt(sec){
+  if(!sec||sec<0)return '—';
+  if(sec<60)return sec+'s';
+  var m=Math.floor(sec/60),s=sec%60;
+  if(m<60)return m+'m'+(s?s+'s':'');
+  return Math.floor(m/60)+'h'+('0'+m%60).slice(-2)+'m';
+}
+function fmtDate(iso){
+  var d=new Date(iso);
+  var now=new Date();
+  var diff=Math.floor((now-d)/1000);
+  if(diff<60)return 'il y a '+diff+'s';
+  if(diff<3600)return 'il y a '+Math.floor(diff/60)+'min';
+  if(diff<86400)return 'il y a '+Math.floor(diff/3600)+'h';
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+}
+function load(){
+  fetch('/api/catalogue-admin/stats').then(r=>r.json()).then(d=>{
+    var s=d.summary;
+    document.getElementById('s-active').textContent=s.active_now||0;
+    document.getElementById('s-today').textContent=s.today||0;
+    document.getElementById('s-week').textContent=s.week||0;
+    document.getElementById('s-total').textContent=s.total||0;
+    document.getElementById('s-avg').textContent=fmt(parseInt(s.avg_duration)||0);
+    var rows=d.visits.map(function(v){
+      var now=new Date();
+      var active=!v.ended_at&&new Date(v.last_ping)>new Date(now-130000);
+      var dur=v.duration_seconds?fmt(v.duration_seconds):(active?fmt(Math.floor((now-new Date(v.started_at))/1000)):'—');
+      var badge=v.ended_at?'<span class="badge ended">Terminé</span>'
+        :(active?'<span class="badge active">● En ligne</span>':'<span class="badge pending">En attente</span>');
+      return '<tr><td>'+v.id+'</td><td>'+fmtDate(v.started_at)+'</td><td>'+dur+'</td><td>'+badge+'</td></tr>';
+    }).join('');
+    document.getElementById('tbody').innerHTML=rows||'<tr><td colspan="4" style="text-align:center;color:#6b6b85;padding:20px;">Aucune visite encore</td></tr>';
+    document.getElementById('lastUpdate').textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR');
+  }).catch(function(e){console.error(e);});
+}
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

@@ -1273,6 +1273,22 @@ document.addEventListener('keydown',function(e){
     </div>
   </div>
 </div>
+<script>
+// Tracking visite catalogue
+(function(){
+  var vid=null;
+  fetch('/api/catalogue/visit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ua:navigator.userAgent})})
+    .then(function(r){return r.json();}).then(function(d){
+      vid=d.id;
+      if(vid){
+        setInterval(function(){fetch('/api/catalogue/visit/'+vid+'/ping',{method:'POST'});},30000);
+      }
+    }).catch(function(){});
+  window.addEventListener('beforeunload',function(){
+    if(vid)navigator.sendBeacon('/api/catalogue/visit/'+vid+'/end');
+  });
+})();
+</script>
 </body>
 </html>
 
