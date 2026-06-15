@@ -134,3 +134,25 @@ function showLockScreen(userName) {
   document.addEventListener(ev, resetLockTimer, {passive:true});
 });
 resetLockTimer();
+
+/* ── INTERCEPTEUR FETCH — envoie X-User-Name sur toutes les requêtes /api/ ── */
+(function() {
+  var _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    var urlStr = (typeof url === 'string') ? url : (url && url.url) || '';
+    if (urlStr.indexOf('/api/') !== -1) {
+      var user = getUser();
+      if (user && user.name) {
+        opts = opts ? Object.assign({}, opts) : {};
+        var existingHeaders = opts.headers || {};
+        if (existingHeaders instanceof Headers) {
+          existingHeaders.set('X-User-Name', user.name);
+          opts.headers = existingHeaders;
+        } else {
+          opts.headers = Object.assign({}, existingHeaders, { 'X-User-Name': user.name });
+        }
+      }
+    }
+    return _origFetch.apply(this, arguments);
+  };
+})();

@@ -28,6 +28,44 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+/* ── AUDIT LOG ─────────────────────────────────────────────────────────── */
+/* Créer la table si elle n'existe pas */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id          SERIAL PRIMARY KEY,
+    action      VARCHAR(20)  NOT NULL,
+    module      VARCHAR(30)  NOT NULL,
+    record_id   INTEGER      NOT NULL,
+    record_date DATE,
+    user_name   VARCHAR(100) DEFAULT 'Inconnu',
+    details     JSONB,
+    created_at  TIMESTAMP    DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_audit_log_module     ON audit_log(module);
+`).catch(e => console.error('[AuditLog] Erreur création table:', e.message));
+
+async function logAudit(module, action, recordId, recordDate, userName, details) {
+  try {
+    await pool.query(
+      `INSERT INTO audit_log(action,module,record_id,record_date,user_name,details)
+       VALUES($1,$2,$3,$4,$5,$6)`,
+      [action, module, recordId, recordDate || null, userName || 'Inconnu', JSON.stringify(details)]
+    );
+  } catch(e) {
+    console.error('[AuditLog] Erreur insertion:', e.message);
+  }
+}
+
+/* Vérifie si une date est strictement antérieure à aujourd'hui */
+function isBeforeToday(dateStr) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d < today;
+}
+
 /* Config base de données depuis .env */
 
 const pool=new Pool({
@@ -155,6 +193,16 @@ app.get('/api/orders/:id',async(req,res)=>{
 app.delete('/api/orders/:id',async(req,res)=>{
   const client=await pool.connect();
   try{await client.query('BEGIN');
+    /* Audit : lire la vente AVANT suppression si antérieure à aujourd'hui */
+    const snap=await client.query(
+      `SELECT o.id,o.total,o.payment_method,o.amount_credit,o.created_at,
+              STRING_AGG(COALESCE(p.name,'Produit supprimé'),', ') AS articles
+       FROM orders o
+       JOIN order_items oi ON oi.order_id=o.id
+       LEFT JOIN products p ON p.id=oi.product_id
+       WHERE o.id=$1 GROUP BY o.id`,
+      [req.params.id]);
+    const orderSnap=snap.rows[0];
     /* Remettre le stock */
     await client.query(`UPDATE products p SET stock_quantity=stock_quantity+oi.quantity,updated_at=NOW() FROM order_items oi WHERE oi.order_id=$1 AND p.id=oi.product_id`,[req.params.id]);
     /* Remettre les produits LOT à DISPONIBLE */
@@ -162,7 +210,17 @@ app.delete('/api/orders/:id',async(req,res)=>{
     await client.query(`DELETE FROM customer_credits WHERE order_id=$1`,[req.params.id]);
     await client.query(`DELETE FROM order_items WHERE order_id=$1`,[req.params.id]);
     await client.query(`DELETE FROM orders WHERE id=$1`,[req.params.id]);
-    await client.query('COMMIT');res.json({success:true});
+    await client.query('COMMIT');
+    /* Enregistrer dans l'audit si vente ancienne */
+    if(orderSnap && isBeforeToday(orderSnap.created_at)){
+      const userName=req.headers['x-user-name']||'Inconnu';
+      await logAudit('VENTE','SUPPRESSION',orderSnap.id,
+        new Date(orderSnap.created_at).toISOString().split('T')[0],
+        userName,
+        { total: orderSnap.total, paiement: orderSnap.payment_method, articles: orderSnap.articles, date_originale: orderSnap.created_at }
+      );
+    }
+    res.json({success:true});
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
   finally{client.release();}
 });
@@ -516,6 +574,12 @@ app.put('/api/repairs/:id',async(req,res)=>{
   const client=await pool.connect();
   try{
     await client.query('BEGIN');
+    /* Audit : snapshot AVANT modification si réparation ancienne */
+    const snapR=await client.query(
+      `SELECT id,customer_name,phone,brand,model,device_type,issue,status,
+              final_price,estimated_price,payment_method,created_at FROM repairs WHERE id=$1`,
+      [req.params.id]);
+    const repSnap=snapR.rows[0];
     const status=String(req.body.status||'EN_ATTENTE');
     const repair_date=req.body.repair_date||null;
     const delivery_date=req.body.delivery_date||null;
@@ -569,13 +633,47 @@ app.put('/api/repairs/:id',async(req,res)=>{
           [req.params.id,item.nom||item.panne||'',0,item.panne||null,Number(item.prix_reparation||0)]);
       }
     }
-    await client.query('COMMIT');res.json(r.rows[0]);
+    await client.query('COMMIT');
+    /* Audit si réparation antérieure à aujourd'hui */
+    if(repSnap && isBeforeToday(repSnap.created_at)){
+      const userName=req.headers['x-user-name']||'Inconnu';
+      await logAudit('REPARATION','MODIFICATION',repSnap.id,
+        new Date(repSnap.created_at).toISOString().split('T')[0],
+        userName,
+        {
+          avant:{ statut:repSnap.status, montant:repSnap.final_price||repSnap.estimated_price, paiement:repSnap.payment_method },
+          apres:{ statut:status, montant:req.body.final_price||req.body.estimated_price, paiement:req.body.payment_method },
+          client: repSnap.customer_name, appareil:`${repSnap.brand||''} ${repSnap.model||''}`.trim()||repSnap.device_type
+        }
+      );
+    }
+    res.json(r.rows[0]);
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
 });
 app.delete('/api/repairs/:id',async(req,res)=>{
   const client=await pool.connect();
-  try{await client.query('BEGIN');await client.query(`DELETE FROM customer_credits WHERE repair_id=$1`,[req.params.id]);await client.query(`DELETE FROM repairs WHERE id=$1`,[req.params.id]);await client.query('COMMIT');res.json({success:true});}
-  catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
+  try{
+    await client.query('BEGIN');
+    /* Audit : snapshot AVANT suppression si réparation ancienne */
+    const snapD=await client.query(
+      `SELECT id,customer_name,phone,brand,model,device_type,issue,status,
+              final_price,estimated_price,payment_method,created_at FROM repairs WHERE id=$1`,
+      [req.params.id]);
+    const repDel=snapD.rows[0];
+    await client.query(`DELETE FROM customer_credits WHERE repair_id=$1`,[req.params.id]);
+    await client.query(`DELETE FROM repairs WHERE id=$1`,[req.params.id]);
+    await client.query('COMMIT');
+    if(repDel && isBeforeToday(repDel.created_at)){
+      const userName=req.headers['x-user-name']||'Inconnu';
+      await logAudit('REPARATION','SUPPRESSION',repDel.id,
+        new Date(repDel.created_at).toISOString().split('T')[0],
+        userName,
+        { client:repDel.customer_name, appareil:`${repDel.brand||''} ${repDel.model||''}`.trim()||repDel.device_type,
+          statut:repDel.status, montant:repDel.final_price||repDel.estimated_price, paiement:repDel.payment_method }
+      );
+    }
+    res.json({success:true});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
 });
 
 /* =======================================================
@@ -584,6 +682,9 @@ app.delete('/api/repairs/:id',async(req,res)=>{
 app.get('/api/expenses',async(req,res)=>{try{const{from='2000-01-01',to='2999-12-31',category}=req.query;let q=`SELECT * FROM expenses WHERE DATE(date) BETWEEN $1 AND $2`;const p=[from,to];if(category){q+=` AND category=$3`;p.push(category);}q+=` ORDER BY date DESC`;const r=await pool.query(q,p);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.put('/api/expenses/:id', async(req,res)=>{
   try{
+    /* Audit : snapshot AVANT modification si dépense ancienne */
+    const snapE=await pool.query(`SELECT id,description,amount,category,date FROM expenses WHERE id=$1`,[req.params.id]);
+    const expSnap=snapE.rows[0];
     const{description,amount,amount_ht,amount_ttc,taux_tva,category,date,quantity}=req.body;
     const qty=Math.max(1,parseInt(quantity)||1);
     const tva=Number(taux_tva||20);
@@ -594,13 +695,33 @@ app.put('/api/expenses/:id', async(req,res)=>{
        taux_tva=$5,category=$6,date=$7,quantity=$8 WHERE id=$9 RETURNING *`,
       [description||'',ttc,Number(ht.toFixed(2)),Number(ttc.toFixed(2)),
        tva,category||'Autre',date||new Date().toISOString().split('T')[0],qty,req.params.id]);
+    if(expSnap && isBeforeToday(expSnap.date)){
+      const userName=req.headers['x-user-name']||'Inconnu';
+      await logAudit('DEPENSE','MODIFICATION',expSnap.id,
+        new Date(expSnap.date).toISOString().split('T')[0],
+        userName,
+        { avant:{description:expSnap.description,montant:expSnap.amount,categorie:expSnap.category},
+          apres:{description:description||expSnap.description,montant:ttc,categorie:category||expSnap.category} }
+      );
+    }
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
 
 app.delete('/api/expenses/:id', async(req,res)=>{
   try{
+    /* Audit : snapshot AVANT suppression si dépense ancienne */
+    const snapED=await pool.query(`SELECT id,description,amount,category,date FROM expenses WHERE id=$1`,[req.params.id]);
+    const expDel=snapED.rows[0];
     await pool.query('DELETE FROM expenses WHERE id=$1',[req.params.id]);
+    if(expDel && isBeforeToday(expDel.date)){
+      const userName=req.headers['x-user-name']||'Inconnu';
+      await logAudit('DEPENSE','SUPPRESSION',expDel.id,
+        new Date(expDel.date).toISOString().split('T')[0],
+        userName,
+        { description:expDel.description, montant:expDel.amount, categorie:expDel.category, date_originale:expDel.date }
+      );
+    }
     res.json({success:true});
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -3210,6 +3331,25 @@ app.delete('/api/whatsapp/messages/mine', async(req,res)=>{
 
     res.json({ total: results.length, results });
   }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* =======================================================
+   AUDIT LOG — Consultation journal des modifications
+======================================================= */
+app.get('/api/audit-log', async(req,res)=>{
+  try{
+    const { from, to, module, action, user_name } = req.query;
+    let q = `SELECT * FROM audit_log WHERE 1=1`;
+    const p = [];
+    if(from)   { p.push(from);        q += ` AND DATE(created_at) >= $${p.length}`; }
+    if(to)     { p.push(to);          q += ` AND DATE(created_at) <= $${p.length}`; }
+    if(module) { p.push(module);      q += ` AND module = $${p.length}`; }
+    if(action) { p.push(action);      q += ` AND action = $${p.length}`; }
+    if(user_name){ p.push(`%${user_name}%`); q += ` AND user_name ILIKE $${p.length}`; }
+    q += ` ORDER BY created_at DESC LIMIT 500`;
+    const r = await pool.query(q, p);
+    res.json(r.rows);
+  }catch(e){ res.status(500).json({error:e.message}); }
 });
 
 app.listen(3000,()=>{

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Journal d'audit — The SMARTPHONE</title>
+<link rel="stylesheet" href="theme.css">
+<script src="auth.js"></script>
+<style>
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#f1f5f9; margin:0; min-height:100vh; }
+
+  /* ── Topbar ── */
+  .topbar {
+    background:#0f172a; color:white; padding:0 20px;
+    display:flex; align-items:center; gap:16px; height:52px;
+    position:sticky; top:0; z-index:100;
+  }
+  .topbar-title { font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .topbar-back {
+    background:#1e293b; border:none; color:#94a3b8; padding:6px 14px;
+    border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;
+  }
+  .topbar-back:hover { background:#334155; color:white; }
+
+  /* ── Filtres ── */
+  .filters {
+    background:white; border-bottom:1px solid #e2e8f0;
+    padding:14px 20px; display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;
+  }
+  .filter-group { display:flex; flex-direction:column; gap:4px; }
+  .filter-group label { font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+  .filter-group input, .filter-group select {
+    padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:7px;
+    font-size:13px; color:#0f172a; background:white; outline:none;
+  }
+  .filter-group input:focus, .filter-group select:focus { border-color:#3b82f6; }
+  .btn-search {
+    background:#1e40af; color:white; border:none; padding:8px 20px;
+    border-radius:7px; cursor:pointer; font-size:13px; font-weight:600;
+    align-self:flex-end;
+  }
+  .btn-search:hover { background:#1e3a8a; }
+  .btn-reset {
+    background:#f1f5f9; color:#475569; border:1.5px solid #e2e8f0;
+    padding:8px 14px; border-radius:7px; cursor:pointer; font-size:13px; font-weight:600;
+    align-self:flex-end;
+  }
+  .btn-reset:hover { background:#e2e8f0; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    padding:12px 20px; display:flex; gap:16px; flex-wrap:wrap;
+  }
+  .stat-chip {
+    background:white; border:1.5px solid #e2e8f0; border-radius:20px;
+    padding:5px 14px; font-size:12px; font-weight:600; color:#475569;
+    display:flex; align-items:center; gap:6px;
+  }
+  .stat-chip.red   { border-color:#fca5a5; background:#fff1f2; color:#b91c1c; }
+  .stat-chip.orange{ border-color:#fdba74; background:#fff7ed; color:#c2410c; }
+  .stat-chip.blue  { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; }
+
+  /* ── Tableau ── */
+  .table-wrap { padding:0 20px 32px; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; background:white; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  thead tr { background:#0f172a; }
+  th { padding:11px 14px; text-align:left; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+  td { padding:11px 14px; font-size:13px; color:#1e293b; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#f8fafc; }
+
+  /* ── Badges ── */
+  .badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap;
+  }
+  .badge-suppr  { background:#fee2e2; color:#b91c1c; }
+  .badge-modif  { background:#fef3c7; color:#92400e; }
+  .badge-vente  { background:#dbeafe; color:#1d4ed8; }
+  .badge-repair { background:#f3e8ff; color:#6b21a8; }
+  .badge-depense{ background:#dcfce7; color:#15803d; }
+
+  /* ── Détail ── */
+  .detail-cell { font-size:12px; color:#475569; }
+  .detail-cell .kv { display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:4px; }
+  .detail-cell .kv-item { display:flex; gap:4px; }
+  .detail-cell .kv-key { color:#94a3b8; font-weight:600; }
+  .detail-cell .kv-val { color:#1e293b; }
+  .detail-cell .arrow { color:#94a3b8; margin:0 4px; }
+  .diff-before { text-decoration:line-through; color:#ef4444; }
+  .diff-after  { color:#16a34a; font-weight:600; }
+
+  /* ── Date ── */
+  .date-col { white-space:nowrap; }
+  .date-main { font-weight:600; }
+  .date-time { font-size:11px; color:#94a3b8; }
+
+  /* ── Empty / loading ── */
+  .empty-state {
+    text-align:center; padding:60px 20px; color:#94a3b8;
+  }
+  .empty-state .icon { font-size:40px; margin-bottom:12px; }
+  .empty-state p { font-size:14px; margin:0; }
+  .loading { text-align:center; padding:40px; color:#64748b; font-size:14px; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <button class="topbar-back" onclick="history.back()">← Retour</button>
+  <div class="topbar-title">🔍 Journal d'audit — Modifications sur transactions passées</div>
+  <div style="margin-left:auto;" id="userBadgeTop"></div>
+</div>
+
+<!-- Filtres -->
+<div class="filters">
+  <div class="filter-group">
+    <label>Du</label>
+    <input type="date" id="fFrom">
+  </div>
+  <div class="filter-group">
+    <label>Au</label>
+    <input type="date" id="fTo">
+  </div>
+  <div class="filter-group">
+    <label>Module</label>
+    <select id="fModule">
+      <option value="">Tous</option>
+      <option value="VENTE">🛒 Vente</option>
+      <option value="REPARATION">🔧 Réparation</option>
+      <option value="DEPENSE">💸 Dépense</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Action</label>
+    <select id="fAction">
+      <option value="">Toutes</option>
+      <option value="SUPPRESSION">🗑️ Suppression</option>
+      <option value="MODIFICATION">✏️ Modification</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Utilisateur</label>
+    <input type="text" id="fUser" placeholder="Nom…" style="width:130px">
+  </div>
+  <button class="btn-search" onclick="load()">🔍 Rechercher</button>
+  <button class="btn-reset" onclick="resetFilters()">✕ Réinitialiser</button>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-chip" id="statTotal">— résultats</div>
+  <div class="stat-chip red"    id="statSuppr">— suppressions</div>
+  <div class="stat-chip orange" id="statModif">— modifications</div>
+  <div class="stat-chip blue"   id="statUsers">— utilisateur(s)</div>
+</div>
+
+<!-- Tableau -->
+<div class="table-wrap">
+  <div class="loading" id="loadingMsg">Chargement…</div>
+  <table id="auditTable" style="display:none">
+    <thead>
+      <tr>
+        <th>Date de l'action</th>
+        <th>Utilisateur</th>
+        <th>Action</th>
+        <th>Module</th>
+        <th>ID transaction</th>
+        <th>Date transaction</th>
+        <th>Détail</th>
+      </tr>
+    </thead>
+    <tbody id="auditBody"></tbody>
+  </table>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="icon">✅</div>
+    <p>Aucune modification sur des transactions passées pour cette période.</p>
+  </div>
+</div>
+
+<script>
+var user = requireAuth('audit');
+if (user) showUserBadge('userBadgeTop');
+
+/* Dates par défaut : 30 derniers jours */
+(function(){
+  var to   = new Date();
+  var from = new Date(); from.setDate(from.getDate() - 30);
+  document.getElementById('fTo').value   = to.toISOString().split('T')[0];
+  document.getElementById('fFrom').value = from.toISOString().split('T')[0];
+})();
+
+function resetFilters() {
+  var to   = new Date();
+  var from = new Date(); from.setDate(from.getDate() - 30);
+  document.getElementById('fFrom').value   = from.toISOString().split('T')[0];
+  document.getElementById('fTo').value     = to.toISOString().split('T')[0];
+  document.getElementById('fModule').value = '';
+  document.getElementById('fAction').value = '';
+  document.getElementById('fUser').value   = '';
+  load();
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.toLocaleDateString('fr-FR');
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return {
+    date: d.toLocaleDateString('fr-FR'),
+    time: d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})
+  };
+}
+
+function fmtMontant(v) {
+  if (v === undefined || v === null) return '—';
+  return Number(v).toFixed(2) + ' €';
+}
+
+function buildDetail(row) {
+  var d = row.details || {};
+  var html = '';
+
+  if (row.action === 'SUPPRESSION') {
+    if (row.module === 'VENTE') {
+      html += kv('Articles', d.articles || '—');
+      html += kv('Montant', fmtMontant(d.total));
+      html += kv('Paiement', d.paiement || '—');
+    } else if (row.module === 'REPARATION') {
+      html += kv('Client', d.client || '—');
+      html += kv('Appareil', d.appareil || '—');
+      html += kv('Statut', d.statut || '—');
+      html += kv('Montant', fmtMontant(d.montant));
+    } else if (row.module === 'DEPENSE') {
+      html += kv('Description', d.description || '—');
+      html += kv('Montant', fmtMontant(d.montant));
+      html += kv('Catégorie', d.categorie || '—');
+    }
+  } else if (row.action === 'MODIFICATION') {
+    var av = d.avant || {};
+    var ap = d.apres || {};
+    if (row.module === 'REPARATION') {
+      html += kv('Client', d.client || '—');
+      html += kv('Appareil', d.appareil || '—');
+      if (av.statut !== ap.statut)
+        html += kvDiff('Statut', av.statut, ap.statut);
+      if (String(av.montant) !== String(ap.montant))
+        html += kvDiff('Montant', fmtMontant(av.montant), fmtMontant(ap.montant));
+      if (av.paiement !== ap.paiement)
+        html += kvDiff('Paiement', av.paiement, ap.paiement);
+    } else if (row.module === 'DEPENSE') {
+      if (av.description !== ap.description)
+        html += kvDiff('Description', av.description, ap.description);
+      if (String(av.montant) !== String(ap.montant))
+        html += kvDiff('Montant', fmtMontant(av.montant), fmtMontant(ap.montant));
+      if (av.categorie !== ap.categorie)
+        html += kvDiff('Catégorie', av.categorie, ap.categorie);
+    }
+    if (!html) html = '<span style="color:#94a3b8;font-size:12px;">Aucun changement détecté</span>';
+  }
+
+  return '<div class="detail-cell"><div class="kv">' + html + '</div></div>';
+}
+
+function kv(key, val) {
+  return '<div class="kv-item"><span class="kv-key">' + key + ' :</span><span class="kv-val">' + escHtml(String(val)) + '</span></div>';
+}
+
+function kvDiff(key, before, after) {
+  return '<div class="kv-item"><span class="kv-key">' + key + ' :</span>' +
+    '<span class="diff-before">' + escHtml(String(before||'—')) + '</span>' +
+    '<span class="arrow">→</span>' +
+    '<span class="diff-after">'  + escHtml(String(after||'—'))  + '</span>' +
+    '</div>';
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function moduleIcon(m) {
+  if (m === 'VENTE')      return '🛒';
+  if (m === 'REPARATION') return '🔧';
+  if (m === 'DEPENSE')    return '💸';
+  return '📄';
+}
+
+function moduleBadgeClass(m) {
+  if (m === 'VENTE')      return 'badge-vente';
+  if (m === 'REPARATION') return 'badge-repair';
+  if (m === 'DEPENSE')    return 'badge-depense';
+  return '';
+}
+
+async function load() {
+  var from   = document.getElementById('fFrom').value;
+  var to     = document.getElementById('fTo').value;
+  var module = document.getElementById('fModule').value;
+  var action = document.getElementById('fAction').value;
+  var user   = document.getElementById('fUser').value;
+
+  document.getElementById('loadingMsg').style.display  = 'block';
+  document.getElementById('auditTable').style.display  = 'none';
+  document.getElementById('emptyState').style.display  = 'none';
+  document.getElementById('statsBar').style.display    = 'none';
+
+  var params = new URLSearchParams();
+  if (from)   params.set('from', from);
+  if (to)     params.set('to', to);
+  if (module) params.set('module', module);
+  if (action) params.set('action', action);
+  if (user)   params.set('user_name', user);
+
+  try {
+    var rows = await fetch('/api/audit-log?' + params).then(r => r.json());
+
+    document.getElementById('loadingMsg').style.display = 'none';
+
+    if (!rows.length) {
+      document.getElementById('emptyState').style.display = 'block';
+      return;
+    }
+
+    /* Stats */
+    var nbSuppr = rows.filter(r => r.action === 'SUPPRESSION').length;
+    var nbModif = rows.filter(r => r.action === 'MODIFICATION').length;
+    var users   = new Set(rows.map(r => r.user_name)).size;
+    document.getElementById('statTotal').textContent = rows.length + ' résultat' + (rows.length > 1 ? 's' : '');
+    document.getElementById('statSuppr').textContent = nbSuppr + ' suppression' + (nbSuppr > 1 ? 's' : '');
+    document.getElementById('statModif').textContent = nbModif + ' modification' + (nbModif > 1 ? 's' : '');
+    document.getElementById('statUsers').textContent = users + ' utilisateur' + (users > 1 ? 's' : '');
+    document.getElementById('statsBar').style.display = 'flex';
+
+    /* Tableau */
+    var tbody = document.getElementById('auditBody');
+    tbody.innerHTML = '';
+    rows.forEach(function(row) {
+      var dt = fmtDateTime(row.created_at);
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="date-col"><div class="date-main">' + dt.date + '</div><div class="date-time">' + dt.time + '</div></td>' +
+        '<td><strong>' + escHtml(row.user_name || 'Inconnu') + '</strong></td>' +
+        '<td><span class="badge ' + (row.action === 'SUPPRESSION' ? 'badge-suppr' : 'badge-modif') + '">' +
+          (row.action === 'SUPPRESSION' ? '🗑️ Suppression' : '✏️ Modification') + '</span></td>' +
+        '<td><span class="badge ' + moduleBadgeClass(row.module) + '">' + moduleIcon(row.module) + ' ' + row.module + '</span></td>' +
+        '<td><strong>#' + row.record_id + '</strong></td>' +
+        '<td>' + fmtDate(row.record_date) + '</td>' +
+        '<td>' + buildDetail(row) + '</td>';
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('auditTable').style.display = 'table';
+
+  } catch(e) {
+    document.getElementById('loadingMsg').innerHTML = '❌ Erreur de chargement : ' + e.message;
+  }
+}
+
+/* Chargement initial */
+load();
+</script>
+</body>
+</html>
