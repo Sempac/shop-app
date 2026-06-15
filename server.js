@@ -2757,15 +2757,6 @@ app.get('/api/catalogue/qrcode', async(req,res) => {
   }catch(e){console.error('catalogue_visits init:',e.message);}
 })();
 
-// Debug IP temporaire — à supprimer après test
-app.get('/api/debug-ip', (req,res)=>{
-  res.json({
-    req_ip: req.ip,
-    x_forwarded_for: req.headers['x-forwarded-for']||null,
-    remote_addr: req.socket&&req.socket.remoteAddress
-  });
-});
-
 // Démarrer une session
 app.post('/api/catalogue/visit', async(req,res)=>{
   try{
