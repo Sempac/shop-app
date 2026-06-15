@@ -261,7 +261,9 @@ app.get('/api/daily-report',async(req,res)=>{
         COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
       FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
     const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
-    res.json({date,ventes:ventes.rows,reparations:reps.rows,totaux_ventes:totV.rows[0],totaux_reparations:totR.rows[0],total_depenses:parseFloat(totDep.rows[0].total_depenses)});
+    const retours=await pool.query(`SELECT id,customer_name,refund_amount,refund_method,order_id FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE' ORDER BY id DESC`,[date]);
+    const totRet=await pool.query(`SELECT COALESCE(SUM(CASE WHEN refund_method='cash' THEN refund_amount ELSE 0 END),0) AS total_esp,COALESCE(SUM(CASE WHEN refund_method='card' THEN refund_amount ELSE 0 END),0) AS total_cb,COALESCE(SUM(refund_amount),0) AS total FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE'`,[date]);
+    res.json({date,ventes:ventes.rows,reparations:reps.rows,totaux_ventes:totV.rows[0],totaux_reparations:totR.rows[0],total_depenses:parseFloat(totDep.rows[0].total_depenses),retours:retours.rows,totaux_retours:totRet.rows[0]});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
@@ -299,11 +301,16 @@ app.get('/api/rapport-comptable',async(req,res)=>{
         COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
       FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
     const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
-    res.json({date,ventes:ventes.rows,reps:reps.rows,totaux:{
+    const totRetC=await pool.query(`SELECT COALESCE(SUM(CASE WHEN refund_method='cash' THEN refund_amount ELSE 0 END),0) AS total_esp,COALESCE(SUM(CASE WHEN refund_method='card' THEN refund_amount ELSE 0 END),0) AS total_cb,COALESCE(SUM(refund_amount),0) AS total FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE'`,[date]);
+    const retC=await pool.query(`SELECT id,customer_name,refund_amount,refund_method,order_id FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE' ORDER BY id DESC`,[date]);
+    res.json({date,ventes:ventes.rows,reps:reps.rows,retours:retC.rows,totaux:{
       total_ventes:parseFloat(totV.rows[0].total_ventes),total_reps:parseFloat(totR.rows[0].total_reps),
       total_cb:parseFloat(totV.rows[0].total_cb)+parseFloat(totR.rows[0].total_cb),
       total_esp:parseFloat(totV.rows[0].total_esp)+parseFloat(totR.rows[0].total_esp),
-      total_dep:parseFloat(totDep.rows[0].total_depenses)}});
+      total_dep:parseFloat(totDep.rows[0].total_depenses),
+      total_ret:parseFloat(totRetC.rows[0].total),
+      total_ret_esp:parseFloat(totRetC.rows[0].total_esp),
+      total_ret_cb:parseFloat(totRetC.rows[0].total_cb)}});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
@@ -343,16 +350,20 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
         COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
       FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
     const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
+    const totRetG=await pool.query(`SELECT COALESCE(SUM(CASE WHEN refund_method='cash' THEN refund_amount ELSE 0 END),0) AS total_esp,COALESCE(SUM(CASE WHEN refund_method='card' THEN refund_amount ELSE 0 END),0) AS total_cb,COALESCE(SUM(refund_amount),0) AS total FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE'`,[date]);
 
     const t={
       total_ventes:parseFloat(totV2.rows[0].total_ventes),
       total_reps:  parseFloat(totR.rows[0].total_reps),
       total_cb:    parseFloat(totV2.rows[0].total_cb)+parseFloat(totR.rows[0].total_cb),
       total_esp:   parseFloat(totV2.rows[0].total_esp)+parseFloat(totR.rows[0].total_esp),
-      total_dep:   parseFloat(totDep.rows[0].total_depenses)
+      total_dep:   parseFloat(totDep.rows[0].total_depenses),
+      total_ret:   parseFloat(totRetG.rows[0].total),
+      total_ret_esp:parseFloat(totRetG.rows[0].total_esp),
+      total_ret_cb: parseFloat(totRetG.rows[0].total_cb)
     };
     const totalCA   = t.total_ventes + t.total_reps;
-    const netCaisse = totalCA - t.total_dep;
+    const netCaisse = totalCA - t.total_dep - t.total_ret;
     const fmt = n => Number(n||0).toFixed(2)+' EUR';
 
     /* ── Nom du fichier ── */
@@ -446,6 +457,7 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
     [
       ['CB',                 fmt(t.total_cb)],
       ['Espèces (ES)',       fmt(t.total_esp)],
+      ['Remboursements (RB)',t.total_ret>0 ? '- '+fmt(t.total_ret) : fmt(0)],
       ['Dépenses (DP)',    t.total_dep>0 ? '- '+fmt(t.total_dep) : fmt(t.total_dep)],
     ].forEach(([lbl,val])=>{
       doc.font('Helvetica').fontSize(9).fillColor('#000')
@@ -749,7 +761,26 @@ app.post('/api/expenses',async(req,res)=>{
    RETOURS
 ======================================================= */
 app.get('/api/returns/store',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM returns_store ORDER BY created_at DESC`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
-app.post('/api/returns/store',async(req,res)=>{try{const{order_id,customer_name,phone,reason,refund_method,refund_amount,items,notes}=req.body;const r=await pool.query(`INSERT INTO returns_store(order_id,customer_name,phone,reason,refund_method,refund_amount,items,notes,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'EN_ATTENTE') RETURNING *`,[order_id||null,customer_name||'',phone||'',reason||'',refund_method||'cash',Number(refund_amount||0),JSON.stringify(items||[]),notes||'']);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+app.post('/api/returns/store',async(req,res)=>{
+  const{order_id,customer_name,phone,reason,refund_method,refund_amount,items,notes}=req.body;
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const r=await client.query(`INSERT INTO returns_store(order_id,customer_name,phone,reason,refund_method,refund_amount,items,notes,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'EN_ATTENTE') RETURNING *`,[order_id||null,customer_name||'',phone||'',reason||'',refund_method||'cash',Number(refund_amount||0),JSON.stringify(items||[]),notes||'']);
+    const stockUpdated=[];
+    if(order_id){
+      const oi=await client.query(`SELECT oi.product_id,oi.quantity,p.type_entree,p.statut_produit,p.name FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=$1`,[order_id]);
+      for(const it of oi.rows){
+        await client.query(`UPDATE products SET stock_quantity=stock_quantity+$1,updated_at=NOW() WHERE id=$2`,[it.quantity,it.product_id]);
+        if(it.type_entree==='LOT'&&it.statut_produit==='VENDU')
+          await client.query(`UPDATE products SET statut_produit='DISPONIBLE',updated_at=NOW() WHERE id=$1`,[it.product_id]);
+        stockUpdated.push({name:it.name,qty:it.quantity});
+      }
+    }
+    await client.query('COMMIT');
+    res.json({success:true,return:r.rows[0],stock_updated:stockUpdated});
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}finally{client.release();}
+});
 app.put('/api/returns/store/:id',async(req,res)=>{try{const r=await pool.query(`UPDATE returns_store SET status=$1,updated_at=NOW() WHERE id=$2 RETURNING *`,[req.body.status,req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
 app.get('/api/returns/supplier',async(req,res)=>{try{const r=await pool.query(`SELECT * FROM returns_supplier ORDER BY created_at DESC`);res.json(r.rows);}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/returns/supplier',async(req,res)=>{try{const{supplier_name,product_name,quantity,reason,refund_amount,tracking_number,notes}=req.body;const r=await pool.query(`INSERT INTO returns_supplier(supplier_name,product_name,quantity,reason,refund_amount,tracking_number,notes,status) VALUES($1,$2,$3,$4,$5,$6,$7,'EN_ATTENTE') RETURNING *`,[supplier_name||'',product_name||'',Number(quantity||1),reason||'',Number(refund_amount||0),tracking_number||'',notes||'']);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});

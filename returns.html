@@ -152,7 +152,15 @@ async function addStoreReturn(){
     refund_method: document.getElementById('rs_method').value,
   };
   if(!body.reason){alert('⚠️ Motif obligatoire');return;}
-  await fetch('/api/returns/store',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const res=await fetch('/api/returns/store',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await res.json();
+  if(d.error){alert('❌ '+d.error);return;}
+  let msg='✅ Retour enregistré';
+  if(d.stock_updated&&d.stock_updated.length){
+    msg+='\n\n📦 Stock remis à jour automatiquement :\n'+d.stock_updated.map(s=>'  + '+s.qty+' × '+s.name).join('\n');
+  }
+  alert(msg);
+  document.getElementById('rs_order').value='';
   document.getElementById('rs_customer').value='';
   document.getElementById('rs_phone').value='';
   document.getElementById('rs_product').value='';
