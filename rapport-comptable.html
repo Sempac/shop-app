@@ -127,10 +127,11 @@ async function loadRapport(){
 
 function renderRapport(date,data){
   const t=data.totaux;
-  const totalCA  =(t.total_ventes||0)+(t.total_reps||0);
-  const netCaisse=totalCA-(t.total_dep||0);
+  const totalCA   = (t.total_ventes||0)+(t.total_reps||0);
+  const totalRet  = t.total_ret||0;
+  const netCaisse = totalCA-(t.total_dep||0)-totalRet;
 
-  /* Lignes ventes — chaque order_item avec son vrai montant */
+  /* Lignes ventes */
   const rowsVentes=data.ventes.length===0
     ?`<tr><td colspan="5" style="text-align:center;color:#999;padding:12px">Aucune vente encaissée</td></tr>`
     :data.ventes.map(l=>`<tr>
@@ -151,6 +152,20 @@ function renderRapport(date,data){
         <td class="center">Réparation</td>
         <td class="right">${fmt(l.total_ligne)}</td>
       </tr>`).join('');
+
+  /* Lignes retours */
+  const retours=data.retours||[];
+  const rowsRetours=retours.length===0?''
+    :retours.map(r=>{
+      let prodName='Retour';
+      try{const its=typeof r.items==='string'?JSON.parse(r.items):(r.items||[]);if(its.length&&its[0].product_name)prodName=its[0].product_name;}catch(e){}
+      return `<tr style="background:#fff5f5">
+        <td style="color:#991b1b">${prodName}${r.customer_name?' — '+r.customer_name:''}${r.order_id?' (Vente #'+r.order_id+')':''}</td>
+        <td>—</td><td class="center">1</td>
+        <td class="center" style="color:#991b1b">Retour</td>
+        <td class="right" style="color:#dc2626">− ${fmt(r.refund_amount)}</td>
+      </tr>`;
+    }).join('');
 
   document.getElementById('placeholder').style.display='none';
   document.getElementById('content').style.display='block';
@@ -184,6 +199,7 @@ function renderRapport(date,data){
       <tbody>
         ${rowsVentes}
         ${rowsReps}
+        ${rowsRetours}
       </tbody>
       <tfoot>
         <tr>
@@ -194,9 +210,13 @@ function renderRapport(date,data){
           <td colspan="4" style="font-weight:bold">Total Réparations</td>
           <td class="right">${fmt(t.total_reps)}</td>
         </tr>
+        ${totalRet>0?`<tr style="color:#dc2626">
+          <td colspan="4" style="font-weight:bold">↩️ Remboursements (${retours.length})</td>
+          <td class="right">− ${fmt(totalRet)}</td>
+        </tr>`:''}
         <tr class="grand">
-          <td colspan="4" style="font-weight:900">Total CA</td>
-          <td class="right" style="font-size:14px;font-weight:900">${fmt(totalCA)}</td>
+          <td colspan="4" style="font-weight:900">Total CA net</td>
+          <td class="right" style="font-size:14px;font-weight:900">${fmt(totalCA-totalRet)}</td>
         </tr>
       </tfoot>
     </table>
@@ -204,6 +224,7 @@ function renderRapport(date,data){
     <table class="totals-table" style="margin-top:10px">
       <tr><td class="lbl">CB</td><td class="val">${fmt(t.total_cb)}</td></tr>
       <tr><td class="lbl">Espèces (ES)</td><td class="val">${fmt(t.total_esp)}</td></tr>
+      ${totalRet>0?`<tr><td class="lbl" style="color:#dc2626">Remboursements (RB)</td><td class="val" style="color:#dc2626">− ${fmt(totalRet)}</td></tr>`:''}
       <tr><td class="lbl">Dépenses (DP)</td><td class="val">− ${fmt(t.total_dep)}</td></tr>
       <tr class="grand"><td class="lbl">Net Caisse</td><td class="val">${fmt(netCaisse)}</td></tr>
     </table>

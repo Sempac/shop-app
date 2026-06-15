@@ -261,7 +261,7 @@ app.get('/api/daily-report',async(req,res)=>{
         COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
       FROM repairs WHERE DATE(COALESCE(delivered_at,created_at))=$1 AND status IN ('TERMINE','LIVRE')`,[date]);
     const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date)=$1`,[date]);
-    const retours=await pool.query(`SELECT id,customer_name,refund_amount,refund_method,order_id FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE' ORDER BY id DESC`,[date]);
+    const retours=await pool.query(`SELECT id,customer_name,refund_amount,refund_method,order_id,items FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE' ORDER BY id DESC`,[date]);
     const totRet=await pool.query(`SELECT COALESCE(SUM(CASE WHEN refund_method='cash' THEN refund_amount ELSE 0 END),0) AS total_esp,COALESCE(SUM(CASE WHEN refund_method='card' THEN refund_amount ELSE 0 END),0) AS total_cb,COALESCE(SUM(refund_amount),0) AS total FROM returns_store WHERE DATE(created_at)=$1 AND status!='REFUSE'`,[date]);
     res.json({date,ventes:ventes.rows,reparations:reps.rows,totaux_ventes:totV.rows[0],totaux_reparations:totR.rows[0],total_depenses:parseFloat(totDep.rows[0].total_depenses),retours:retours.rows,totaux_retours:totRet.rows[0]});
   }catch(e){res.status(500).json({error:e.message});}

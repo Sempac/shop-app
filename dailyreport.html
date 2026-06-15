@@ -341,16 +341,23 @@ function renderReport(date, data) {
       credit:      parseFloat(r.amount_credit || 0),
       isReturn:    false,
     })),
-    ...(data.retours || []).map(ret => ({
-      id:          'RET-' + ret.id,
-      designation: (ret.customer_name || 'Client') + (ret.order_id ? ' — Vente #'+ret.order_id : ''),
-      fournisseur: '—',
-      type:        'Retour',
-      method:      ret.refund_method,
-      total:       -parseFloat(ret.refund_amount || 0),
-      credit:      0,
-      isReturn:    true,
-    })),
+    ...(data.retours || []).map(ret => {
+      let prodName = 'Retour';
+      try {
+        const its = typeof ret.items === 'string' ? JSON.parse(ret.items) : (ret.items || []);
+        if (its.length && its[0].product_name) prodName = its[0].product_name;
+      } catch(e) {}
+      return {
+        id:          'RET-' + ret.id,
+        designation: prodName + (ret.customer_name ? ' — ' + ret.customer_name : '') + (ret.order_id ? ' (Vente #'+ret.order_id+')' : ''),
+        fournisseur: '—',
+        type:        'Retour',
+        method:      ret.refund_method,
+        total:       -parseFloat(ret.refund_amount || 0),
+        credit:      0,
+        isReturn:    true,
+      };
+    }),
   ];
 
   /* Titre page */
