@@ -200,6 +200,7 @@ header h1{font-size:1.1rem}
     <button class="fchip fchip-hid" onclick="setVisFilter('off',this)">🚫 Masqués</button>
     <span style="color:#ddd;padding:0 2px">|</span>
     <button class="fchip" onclick="setFilter('Smartphone',this)">📱 Smartphones</button>
+    <button class="fchip" onclick="setFilter('Téléphone',this)">📞 Téléphones</button>
     <button class="fchip" onclick="setFilter('Tablette',this)">📟 Tablettes</button>
     <button class="fchip" onclick="setFilter('Coque',this)">🛡️ Coques</button>
     <button class="fchip" onclick="setFilter('Protection écran',this)">🔲 Protections</button>
@@ -279,7 +280,7 @@ function condClass(c) {
 }
 
 function catIcon(cat) {
-  const m = {Smartphone:'📱',Tablette:'📟','PC Portable':'💻',PC:'🖥️',Coque:'🛡️','Protection écran':'🔲',Câble:'🔗',Chargeur:'⚡',Audio:'🎧','Pièce détachée':'🔧','Accessoire Info':'💾','Carte SIM':'📶'};
+  const m = {Smartphone:'📱',Téléphone:'📞',Tablette:'📟','PC Portable':'💻',PC:'🖥️',Coque:'🛡️','Protection écran':'🔲',Câble:'🔗',Chargeur:'⚡',Audio:'🎧','Pièce détachée':'🔧','Accessoire Info':'💾','Carte SIM':'📶'};
   return m[cat] || '📦';
 }
 

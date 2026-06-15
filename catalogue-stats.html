@@ -94,6 +94,8 @@ tr:hover td{background:#13131a;}
       <th>Arrivée</th>
       <th>Durée</th>
       <th>Statut</th>
+      <th>Onglets</th>
+      <th>Produits vus</th>
       <th>Origine</th>
       <th>Source</th>
     </tr>
@@ -118,12 +120,44 @@ function fmtDate(iso){
   if(diff<86400)return 'il y a '+Math.floor(diff/3600)+'h';
   return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
 }
-function classifyIp(ip){
-  if(!ip)return{label:'—',color:'#6b6b85',icon:'❓'};
-  if(ip==='127.0.0.1'||ip==='::1')return{label:'Localhost',color:'#ff9800',icon:'💻'};
-  if(/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip))return{label:'Réseau magasin',color:'#ff9800',icon:'🏠'};
-  if(/^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\./.test(ip))return{label:'Tailscale',color:'#a78bfa',icon:'🔒'};
-  return{label:'Externe',color:'#00e676',icon:'🌐'};
+var TAB_ICONS={products:'📱',repairs:'🔧',devis:'💬',print:'🖨️',contact:'📞'};
+function fmtTabs(tabs){
+  if(!tabs||!tabs.length)return'<span style="color:#6b6b85">—</span>';
+  return tabs.map(function(t){return'<span title="'+t+'">'+(TAB_ICONS[t]||'📄')+'</span>';}).join(' ');
+}
+function fmtProducts(prods){
+  if(!prods||!prods.length)return'<span style="color:#6b6b85">—</span>';
+  var shown=prods.slice(0,3).join(', ');
+  var more=prods.length>3?' <span style="color:#6b6b85">+'+( prods.length-3)+'</span>':'';
+  return'<span style="font-size:11px;" title="'+prods.join('\n')+'">'+shown+more+'</span>';
+}
+var BOTS=[
+  {r:/googlebot/i,      name:'Googlebot',   icon:'🔍'},
+  {r:/google-inspectiontool|google-site-verification|google page speed|adsbot-google|mediapartners-google/i, name:'Google Bot', icon:'🔍'},
+  {r:/bingbot|msnbot/i, name:'Bingbot',     icon:'🔎'},
+  {r:/yandexbot/i,      name:'Yandexbot',   icon:'🤖'},
+  {r:/facebookexternalhit|facebot/i, name:'Facebook Bot', icon:'📘'},
+  {r:/twitterbot/i,     name:'Twitter Bot', icon:'🐦'},
+  {r:/linkedinbot/i,    name:'LinkedIn Bot',icon:'💼'},
+  {r:/whatsapp/i,       name:'WhatsApp',    icon:'💬'},
+  {r:/applebot/i,       name:'Applebot',    icon:'🍎'},
+  {r:/semrushbot|ahrefsbot|dotbot|mj12bot|petalbot|bytespider/i, name:'SEO Bot', icon:'📊'},
+  {r:/python-requests|python-urllib|go-http-client|java\/|libwww-perl|curl\/|wget\//i, name:'Script',  icon:'⚙️'},
+];
+function detectBot(ua){
+  if(!ua)return null;
+  for(var i=0;i<BOTS.length;i++){if(BOTS[i].r.test(ua))return BOTS[i];}
+  return null;
+}
+function classifyIp(ip,geo,ua){
+  var bot=detectBot(ua);
+  if(bot)return{label:bot.name,color:'#6b6b85',icon:bot.icon,sub:'Robot automatique',isBot:true};
+  if(!ip)return{label:'—',color:'#6b6b85',icon:'❓',sub:''};
+  if(ip==='127.0.0.1'||ip==='::1')return{label:'Localhost',color:'#ff9800',icon:'💻',sub:''};
+  if(/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip))return{label:'Réseau magasin',color:'#ff9800',icon:'🏠',sub:''};
+  if(/^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\./.test(ip))return{label:'Tailscale',color:'#a78bfa',icon:'🔒',sub:''};
+  if(geo&&geo.city&&geo.country)return{label:geo.city+', '+geo.country,color:'#00e676',icon:'🌐',sub:geo.isp||''};
+  return{label:'Externe',color:'#00e676',icon:'🌐',sub:''};
 }
 function fmtReferrer(ref){
   if(!ref)return'<span style="color:#6b6b85">Direct / QR</span>';
@@ -150,11 +184,13 @@ function load(){
       var dur=v.duration_seconds?fmt(v.duration_seconds):(active?fmt(Math.floor((now-new Date(v.started_at))/1000)):'—');
       var badge=v.ended_at?'<span class="badge ended">Terminé</span>'
         :(active?'<span class="badge active">● En ligne</span>':'<span class="badge pending">En attente</span>');
-      var c=classifyIp(v.ip_address);
-      var orig='<span style="color:'+c.color+';font-size:11px;" title="'+(v.ip_address||'')+'">'+c.icon+' '+c.label+'</span>';
-      return '<tr><td>'+v.id+'</td><td>'+fmtDate(v.started_at)+'</td><td>'+dur+'</td><td>'+badge+'</td><td>'+orig+'</td><td>'+fmtReferrer(v.referrer)+'</td></tr>';
+      var c=classifyIp(v.ip_address,{city:v.geo_city,country:v.geo_country,isp:v.geo_isp},v.user_agent);
+      var tooltip=(v.ip_address||'')+(c.sub&&!c.isBot?' — '+c.sub:'');
+      var orig='<span style="color:'+c.color+';font-size:11px;'+(c.isBot?'opacity:0.55;':'')+'" title="'+tooltip+'">'+c.icon+' '+c.label+'</span>'
+        +(c.sub?'<br><span style="color:#6b6b85;font-size:10px;">'+c.sub+'</span>':'');
+      return '<tr><td>'+v.id+'</td><td>'+fmtDate(v.started_at)+'</td><td>'+dur+'</td><td>'+badge+'</td><td>'+fmtTabs(v.tabs)+'</td><td>'+fmtProducts(v.products)+'</td><td>'+orig+'</td><td>'+fmtReferrer(v.referrer)+'</td></tr>';
     }).join('');
-    document.getElementById('tbody').innerHTML=rows||'<tr><td colspan="6" style="text-align:center;color:#6b6b85;padding:20px;">Aucune visite encore</td></tr>';
+    document.getElementById('tbody').innerHTML=rows||'<tr><td colspan="8" style="text-align:center;color:#6b6b85;padding:20px;">Aucune visite encore</td></tr>';
 
     var topRows=(d.topProducts||[]).map(function(p,i){
       return '<tr><td><span style="color:#6b6b85;margin-right:8px;">'+(i+1)+'.</span>'+p.product_name+'</td>'

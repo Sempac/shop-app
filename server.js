@@ -2778,11 +2778,20 @@ app.get('/api/catalogue/qrcode', async(req,res) => {
     )`);
     await pool.query(`ALTER TABLE catalogue_visits ADD COLUMN IF NOT EXISTS ip_address TEXT`);
     await pool.query(`ALTER TABLE catalogue_visits ADD COLUMN IF NOT EXISTS referrer TEXT`);
+    await pool.query(`ALTER TABLE catalogue_visits ADD COLUMN IF NOT EXISTS geo_city TEXT`);
+    await pool.query(`ALTER TABLE catalogue_visits ADD COLUMN IF NOT EXISTS geo_country TEXT`);
+    await pool.query(`ALTER TABLE catalogue_visits ADD COLUMN IF NOT EXISTS geo_isp TEXT`);
     await pool.query(`CREATE TABLE IF NOT EXISTS catalogue_product_views(
       id SERIAL PRIMARY KEY,
       visit_id INTEGER REFERENCES catalogue_visits(id) ON DELETE SET NULL,
       product_id INTEGER,
       product_name TEXT,
+      viewed_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS catalogue_tab_views(
+      id SERIAL PRIMARY KEY,
+      visit_id INTEGER REFERENCES catalogue_visits(id) ON DELETE SET NULL,
+      tab_name TEXT,
       viewed_at TIMESTAMPTZ DEFAULT NOW()
     )`);
   }catch(e){console.error('catalogue_visits init:',e.message);}
@@ -2795,9 +2804,19 @@ app.post('/api/catalogue/visit', async(req,res)=>{
     const ref=(req.body&&req.body.referrer)||'';
     const rawIp=(req.headers['x-forwarded-for']||req.ip||'').split(',')[0].trim();
     const ip=rawIp.startsWith('::ffff:')?rawIp.slice(7):rawIp;
+    // Géolocalisation pour IPs externes uniquement
+    let geoCity=null,geoCountry=null,geoIsp=null;
+    const isLocal=/^(127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.)/.test(ip)||ip==='::1';
+    if(!isLocal&&ip){
+      try{
+        const geo=await fetch(`http://ip-api.com/json/${ip}?fields=status,city,country,isp`,{signal:AbortSignal.timeout(2500)});
+        const gd=await geo.json();
+        if(gd.status==='success'){geoCity=gd.city||null;geoCountry=gd.country||null;geoIsp=gd.isp||null;}
+      }catch(_){}
+    }
     const r=await pool.query(
-      'INSERT INTO catalogue_visits(user_agent,ip_address,referrer) VALUES($1,$2,$3) RETURNING id',
-      [ua.substring(0,200), ip.substring(0,100), ref.substring(0,500)]
+      'INSERT INTO catalogue_visits(user_agent,ip_address,referrer,geo_city,geo_country,geo_isp) VALUES($1,$2,$3,$4,$5,$6) RETURNING id',
+      [ua.substring(0,200),ip.substring(0,100),ref.substring(0,500),geoCity,geoCountry,geoIsp]
     );
     res.json({id:r.rows[0].id});
   }catch(e){res.json({id:null});}
@@ -2817,6 +2836,16 @@ app.post('/api/catalogue/visit/:id/product', async(req,res)=>{
     const {product_id, product_name}=req.body||{};
     await pool.query('INSERT INTO catalogue_product_views(visit_id,product_id,product_name) VALUES($1,$2,$3)',
       [req.params.id, product_id||null, (product_name||'').substring(0,200)]);
+    res.json({ok:true});
+  }catch(e){res.json({ok:false});}
+});
+
+// Vue onglet
+app.post('/api/catalogue/visit/:id/tab', async(req,res)=>{
+  try{
+    const {tab_name}=req.body||{};
+    await pool.query('INSERT INTO catalogue_tab_views(visit_id,tab_name) VALUES($1,$2)',
+      [req.params.id,(tab_name||'').substring(0,50)]);
     res.json({ok:true});
   }catch(e){res.json({ok:false});}
 });
@@ -2910,7 +2939,7 @@ app.get('/api/catalogue-admin/stats', async(req,res)=>{
       ROUND(AVG(duration_seconds) FILTER(WHERE duration_seconds IS NOT NULL AND duration_seconds > 0)) AS avg_duration,
       COUNT(*) FILTER(WHERE last_ping >= NOW()-INTERVAL '2 minutes' AND ended_at IS NULL) AS active_now
     FROM catalogue_visits`);
-    const recent = await pool.query(`SELECT id, started_at, last_ping, ended_at, duration_seconds, ip_address, referrer
+    const recent = await pool.query(`SELECT id, started_at, last_ping, ended_at, duration_seconds, ip_address, referrer, geo_city, geo_country, geo_isp, user_agent
       FROM catalogue_visits ORDER BY started_at DESC LIMIT 50`);
     const topProducts = await pool.query(`SELECT product_name,
       COUNT(*) AS views,
@@ -2922,7 +2951,24 @@ app.get('/api/catalogue-admin/stats', async(req,res)=>{
       FROM catalogue_product_views pv
       LEFT JOIN catalogue_visits v ON pv.visit_id=v.id
       ORDER BY pv.viewed_at DESC LIMIT 30`);
-    res.json({summary: summary.rows[0], visits: recent.rows, topProducts: topProducts.rows, recentViews: recentViews.rows});
+    const visitIds=recent.rows.map(v=>v.id);
+    let pvMap={},tvMap={};
+    if(visitIds.length){
+      const productsByVisit=await pool.query(
+        `SELECT visit_id,array_agg(DISTINCT product_name) AS products
+         FROM catalogue_product_views WHERE visit_id=ANY($1) GROUP BY visit_id`,
+        [visitIds]);
+      productsByVisit.rows.forEach(r=>{pvMap[r.visit_id]=r.products;});
+      try{
+        const tabsByVisit=await pool.query(
+          `SELECT visit_id,array_agg(DISTINCT tab_name) AS tabs
+           FROM catalogue_tab_views WHERE visit_id=ANY($1) GROUP BY visit_id`,
+          [visitIds]);
+        tabsByVisit.rows.forEach(r=>{tvMap[r.visit_id]=r.tabs;});
+      }catch(_){}
+    }
+    const visits=recent.rows.map(v=>({...v,products:pvMap[v.id]||[],tabs:tvMap[v.id]||[]}));
+    res.json({summary:summary.rows[0],visits,topProducts:topProducts.rows,recentViews:recentViews.rows});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
