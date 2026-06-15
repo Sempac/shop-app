@@ -2670,7 +2670,7 @@ app.get('/qr-vitrine', async(req,res) => {
     const url = base + '?type=Smartphone';
     const svg = await QRCode.toString(url, {type:'svg', margin:1, width:200});
     const html = require('fs').readFileSync(path.join(__dirname,'qr-vitrine.html'),'utf8');
-    res.send(html.replace('__QR_SVG__', svg));
+    res.send(html.split('__QR_SVG__').join(svg));
   } catch(e) {
     res.sendFile(path.join(__dirname,'qr-vitrine.html'));
   }
