@@ -28,8 +28,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+/* Config base de données depuis .env */
+
+const pool=new Pool({
+  user:     process.env.DB_USER     || 'postgres',
+  host:     process.env.DB_HOST     || 'localhost',
+  database: process.env.DB_NAME     || 'shop_db',
+  password: process.env.DB_PASSWORD || 'Sempac',
+  port:     Number(process.env.DB_PORT) || 5432
+});
+
 /* ── AUDIT LOG ─────────────────────────────────────────────────────────── */
-/* Créer la table si elle n'existe pas */
 pool.query(`
   CREATE TABLE IF NOT EXISTS audit_log (
     id          SERIAL PRIMARY KEY,
@@ -57,7 +66,6 @@ async function logAudit(module, action, recordId, recordDate, userName, details)
   }
 }
 
-/* Vérifie si une date est strictement antérieure à aujourd'hui */
 function isBeforeToday(dateStr) {
   if (!dateStr) return false;
   const d = new Date(dateStr);
@@ -65,16 +73,6 @@ function isBeforeToday(dateStr) {
   today.setHours(0, 0, 0, 0);
   return d < today;
 }
-
-/* Config base de données depuis .env */
-
-const pool=new Pool({
-  user:     process.env.DB_USER     || 'postgres',
-  host:     process.env.DB_HOST     || 'localhost',
-  database: process.env.DB_NAME     || 'shop_db',
-  password: process.env.DB_PASSWORD || 'Sempac',
-  port:     Number(process.env.DB_PORT) || 5432
-});
 
 const uploadDir=path.join(__dirname,'uploads');
 if(!fs.existsSync(uploadDir))fs.mkdirSync(uploadDir);
