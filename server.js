@@ -24,6 +24,7 @@ const path=require('path');
 const fs=require('fs');
 
 const app=express();
+app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -2761,7 +2762,8 @@ app.post('/api/catalogue/visit', async(req,res)=>{
   try{
     const ua=(req.body&&req.body.ua)||req.headers['user-agent']||'';
     const ref=(req.body&&req.body.referrer)||'';
-    const ip=(req.headers['x-forwarded-for']||req.ip||'').split(',')[0].trim();
+    const rawIp=(req.headers['x-forwarded-for']||req.ip||'').split(',')[0].trim();
+    const ip=rawIp.startsWith('::ffff:')?rawIp.slice(7):rawIp;
     const r=await pool.query(
       'INSERT INTO catalogue_visits(user_agent,ip_address,referrer) VALUES($1,$2,$3) RETURNING id',
       [ua.substring(0,200), ip.substring(0,100), ref.substring(0,500)]
