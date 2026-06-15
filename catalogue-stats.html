@@ -94,6 +94,8 @@ tr:hover td{background:#13131a;}
       <th>Arrivée</th>
       <th>Durée</th>
       <th>Statut</th>
+      <th>Origine</th>
+      <th>Source</th>
     </tr>
   </thead>
   <tbody id="tbody"></tbody>
@@ -116,6 +118,24 @@ function fmtDate(iso){
   if(diff<86400)return 'il y a '+Math.floor(diff/3600)+'h';
   return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
 }
+function classifyIp(ip){
+  if(!ip)return{label:'—',color:'#6b6b85',icon:'❓'};
+  if(ip==='127.0.0.1'||ip==='::1')return{label:'Localhost',color:'#ff9800',icon:'💻'};
+  if(/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip))return{label:'Réseau magasin',color:'#ff9800',icon:'🏠'};
+  if(/^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\./.test(ip))return{label:'Tailscale',color:'#a78bfa',icon:'🔒'};
+  return{label:'Externe',color:'#00e676',icon:'🌐'};
+}
+function fmtReferrer(ref){
+  if(!ref)return'<span style="color:#6b6b85">Direct / QR</span>';
+  try{
+    var u=new URL(ref);
+    var h=u.hostname.replace(/^www\./,'');
+    if(h.includes('google'))return'<span style="color:#4285f4">🔍 Google</span>';
+    if(h.includes('facebook')||h.includes('fb.'))return'<span style="color:#1877f2">📘 Facebook</span>';
+    if(h.includes('instagram'))return'<span style="color:#e1306c">📷 Instagram</span>';
+    return'<span style="color:#ccc" title="'+ref+'">↩ '+h+'</span>';
+  }catch(e){return'<span style="color:#6b6b85" title="'+ref+'">↩ Lien</span>';}
+}
 function load(){
   fetch('/api/catalogue-admin/stats').then(r=>r.json()).then(d=>{
     var s=d.summary;
@@ -130,9 +150,11 @@ function load(){
       var dur=v.duration_seconds?fmt(v.duration_seconds):(active?fmt(Math.floor((now-new Date(v.started_at))/1000)):'—');
       var badge=v.ended_at?'<span class="badge ended">Terminé</span>'
         :(active?'<span class="badge active">● En ligne</span>':'<span class="badge pending">En attente</span>');
-      return '<tr><td>'+v.id+'</td><td>'+fmtDate(v.started_at)+'</td><td>'+dur+'</td><td>'+badge+'</td></tr>';
+      var c=classifyIp(v.ip_address);
+      var orig='<span style="color:'+c.color+';font-size:11px;" title="'+(v.ip_address||'')+'">'+c.icon+' '+c.label+'</span>';
+      return '<tr><td>'+v.id+'</td><td>'+fmtDate(v.started_at)+'</td><td>'+dur+'</td><td>'+badge+'</td><td>'+orig+'</td><td>'+fmtReferrer(v.referrer)+'</td></tr>';
     }).join('');
-    document.getElementById('tbody').innerHTML=rows||'<tr><td colspan="4" style="text-align:center;color:#6b6b85;padding:20px;">Aucune visite encore</td></tr>';
+    document.getElementById('tbody').innerHTML=rows||'<tr><td colspan="6" style="text-align:center;color:#6b6b85;padding:20px;">Aucune visite encore</td></tr>';
 
     var topRows=(d.topProducts||[]).map(function(p,i){
       return '<tr><td><span style="color:#6b6b85;margin-right:8px;">'+(i+1)+'.</span>'+p.product_name+'</td>'

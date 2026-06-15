@@ -2740,8 +2740,12 @@ app.get('/api/catalogue/qrcode', async(req,res) => {
       last_ping TIMESTAMPTZ DEFAULT NOW(),
       ended_at TIMESTAMPTZ,
       duration_seconds INTEGER,
-      user_agent TEXT
+      user_agent TEXT,
+      ip_address TEXT,
+      referrer TEXT
     )`);
+    await pool.query(`ALTER TABLE catalogue_visits ADD COLUMN IF NOT EXISTS ip_address TEXT`);
+    await pool.query(`ALTER TABLE catalogue_visits ADD COLUMN IF NOT EXISTS referrer TEXT`);
     await pool.query(`CREATE TABLE IF NOT EXISTS catalogue_product_views(
       id SERIAL PRIMARY KEY,
       visit_id INTEGER REFERENCES catalogue_visits(id) ON DELETE SET NULL,
@@ -2756,7 +2760,12 @@ app.get('/api/catalogue/qrcode', async(req,res) => {
 app.post('/api/catalogue/visit', async(req,res)=>{
   try{
     const ua=(req.body&&req.body.ua)||req.headers['user-agent']||'';
-    const r=await pool.query('INSERT INTO catalogue_visits(user_agent) VALUES($1) RETURNING id',[ua.substring(0,200)]);
+    const ref=(req.body&&req.body.referrer)||'';
+    const ip=(req.headers['x-forwarded-for']||req.ip||'').split(',')[0].trim();
+    const r=await pool.query(
+      'INSERT INTO catalogue_visits(user_agent,ip_address,referrer) VALUES($1,$2,$3) RETURNING id',
+      [ua.substring(0,200), ip.substring(0,100), ref.substring(0,500)]
+    );
     res.json({id:r.rows[0].id});
   }catch(e){res.json({id:null});}
 });
@@ -2868,7 +2877,7 @@ app.get('/api/catalogue-admin/stats', async(req,res)=>{
       ROUND(AVG(duration_seconds) FILTER(WHERE duration_seconds IS NOT NULL AND duration_seconds > 0)) AS avg_duration,
       COUNT(*) FILTER(WHERE last_ping >= NOW()-INTERVAL '2 minutes' AND ended_at IS NULL) AS active_now
     FROM catalogue_visits`);
-    const recent = await pool.query(`SELECT id, started_at, last_ping, ended_at, duration_seconds
+    const recent = await pool.query(`SELECT id, started_at, last_ping, ended_at, duration_seconds, ip_address, referrer
       FROM catalogue_visits ORDER BY started_at DESC LIMIT 50`);
     const topProducts = await pool.query(`SELECT product_name,
       COUNT(*) AS views,

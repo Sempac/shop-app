@@ -1280,7 +1280,7 @@ document.addEventListener('keydown',function(e){
 // Tracking visite catalogue
 (function(){
   var vid=null;
-  fetch('/api/catalogue/visit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ua:navigator.userAgent})})
+  fetch('/api/catalogue/visit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ua:navigator.userAgent,referrer:document.referrer})})
     .then(function(r){return r.json();}).then(function(d){
       vid=d.id; window._visitId=d.id;
       if(vid){
