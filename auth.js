@@ -10,6 +10,7 @@ var AUTH_LOCK_MINUTES  = 240; /* Verrouillage auto après 4h d'inactivité */
 /* Modules accessibles par rôle */
 var AUTH_MODULES = {
   gerant: ['*'], /* Tout */
+  admin:  ['*'], /* Tout */
   vendeur: [
     'sales', 'repairs', 'stock', 'history', 'lots',
     'contacts', 'printshop', 'credits', 'returns',
@@ -46,7 +47,7 @@ function getUser() {
 function canAccess(module) {
   var user = getUser();
   if (!user) return false;
-  if (user.role === 'gerant') return true;
+  if (user.role === 'gerant' || user.role === 'admin') return true;
   var allowed = AUTH_MODULES[user.role] || AUTH_MODULES.vendeur;
   return allowed.indexOf(module) >= 0 || allowed.indexOf('*') >= 0;
 }
@@ -86,8 +87,8 @@ function showUserBadge(containerId) {
   var container = document.getElementById(containerId);
   if (!container) return;
 
-  var roleLabel = user.role === 'gerant' ? '👑 Gérant' : (user.role === 'stagiaire' ? '🎓 Stagiaire' : '👤 Vendeur');
-  var roleColor = user.role === 'gerant' ? '#3b82f6' : (user.role === 'stagiaire' ? '#7c3aed' : '#475569');
+  var roleLabel = (user.role === 'gerant' || user.role === 'admin') ? '👑 Gérant / Admin' : (user.role === 'stagiaire' ? '🎓 Stagiaire' : '👤 Vendeur');
+  var roleColor = (user.role === 'gerant' || user.role === 'admin') ? '#3b82f6' : (user.role === 'stagiaire' ? '#7c3aed' : '#475569');
 
   var badge = document.createElement('div');
   badge.style.cssText = 'display:flex;align-items:center;gap:8px;';
