@@ -194,7 +194,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
   <div class="header-right">
     <span>📍 1 Avenue d'Italie, 75013 Paris</span><br>
     <span>📞 01 47 07 18 66 &nbsp;|&nbsp; 06 86 84 82 79</span><br>
-    <span>✉️ smartphonesatelier4@gmail.com</span><br>
+    <span>✉️ smartphoneatelier4@gmail.com</span><br>
     <span>🌐 www.thesmartphone.pro</span>
   </div>
 </div>
@@ -407,8 +407,7 @@ function buildCard(id, isTop) {
   el.className = 'card ' + c.cls + (isTop ? ' card-main' : '');
   el.href = c.href;
   el.title = c.title;
-  /* Drag-and-drop uniquement pour le gérant */
-  el.draggable = isGerant;
+  el.draggable = true;
   el.dataset.cardId = id;
   if (c.blank) el.target = '_blank';
   el.innerHTML = '<div class="icon">' + c.icon + '</div><div class="title">' + c.title + '</div><div class="desc">' + c.desc + '</div>';
