@@ -27,8 +27,11 @@ header h1{font-size:1.1rem}
 .btn-hide-all{background:#e53935;color:#fff}
 
 /* Filtres chips */
-.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.fchip{padding:6px 13px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;color:#555;transition:.15s;white-space:nowrap}
+.filter-section{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+.filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-label{font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;min-width:72px}
+.filter-chips{display:flex;gap:5px;flex-wrap:wrap}
+.fchip{padding:5px 13px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;color:#555;transition:.15s;white-space:nowrap}
 .fchip:hover{border-color:#3b82f6;color:#3b82f6}
 .fchip.on{background:#3b82f6;border-color:#3b82f6;color:#fff}
 .fchip-vis.on{background:#4caf50;border-color:#4caf50;color:#fff}
@@ -194,22 +197,40 @@ header h1{font-size:1.1rem}
     <button class="btn-action btn-show-all" onclick="bulkVisible(true)">👁 Tout afficher</button>
     <button class="btn-action btn-hide-all" onclick="bulkVisible(false)">🚫 Tout masquer</button>
   </div>
-  <div class="filter-bar" id="filterBar">
-    <button class="fchip on" onclick="setFilter('',this)">Tous</button>
-    <button class="fchip fchip-vis" onclick="setVisFilter('on',this)">✅ Visibles</button>
-    <button class="fchip fchip-hid" onclick="setVisFilter('off',this)">🚫 Masqués</button>
-    <span style="color:#ddd;padding:0 2px">|</span>
-    <button class="fchip" onclick="setFilter('Smartphone',this)">📱 Smartphones</button>
-    <button class="fchip" onclick="setFilter('Téléphone',this)">📞 Téléphones</button>
-    <button class="fchip" onclick="setFilter('Tablette',this)">📟 Tablettes</button>
-    <button class="fchip" onclick="setFilter('Coque',this)">🛡️ Coques</button>
-    <button class="fchip" onclick="setFilter('Protection écran',this)">🔲 Protections</button>
-    <button class="fchip" onclick="setFilter('Câble',this)">🔗 Câbles</button>
-    <button class="fchip" onclick="setFilter('Chargeur',this)">🔌 Chargeurs</button>
-    <button class="fchip" onclick="setFilter('Audio',this)">🎧 Audio</button>
-    <button class="fchip" onclick="setFilter('Pièce détachée',this)">🔧 Pièces</button>
-    <button class="fchip" onclick="setFilter('Carte SIM',this)">📶 Cartes SIM</button>
-    <button class="fchip" onclick="setFilter('PC Portable',this)">💻 PC Portables</button>
+  <div class="filter-section">
+    <div class="filter-row">
+      <span class="filter-label">STATUT</span>
+      <div class="filter-chips">
+        <button class="fchip on" id="vis-all" onclick="setVisFilter('',this)">Tous</button>
+        <button class="fchip fchip-vis" onclick="setVisFilter('on',this)">✅ Visibles</button>
+        <button class="fchip fchip-hid" onclick="setVisFilter('off',this)">🚫 Masqués</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">TYPE</span>
+      <div class="filter-chips" id="typeBar">
+        <button class="fchip on" onclick="setTypeFilter('',this)">Tout</button>
+        <button class="fchip" onclick="setTypeFilter('Smartphone',this)">📱 Smartphone</button>
+        <button class="fchip" onclick="setTypeFilter('Téléphone',this)">📞 Téléphone</button>
+        <button class="fchip" onclick="setTypeFilter('Tablette',this)">📟 Tablette</button>
+        <button class="fchip" onclick="setTypeFilter('PC Portable',this)">💻 PC Portable</button>
+        <button class="fchip" onclick="setTypeFilter('Accessoire',this)">🎧 Accessoire</button>
+      </div>
+    </div>
+    <div class="filter-row" id="catRow" style="display:none">
+      <span class="filter-label">CATÉGORIE</span>
+      <div class="filter-chips" id="catBar">
+        <button class="fchip on" onclick="setCatFilter('',this)">Tout</button>
+        <button class="fchip" onclick="setCatFilter('Câble',this)">🔗 Câble</button>
+        <button class="fchip" onclick="setCatFilter('Chargeur',this)">⚡ Chargeur</button>
+        <button class="fchip" onclick="setCatFilter('Audio',this)">🎧 Audio</button>
+        <button class="fchip" onclick="setCatFilter('Coque',this)">🛡️ Coque</button>
+        <button class="fchip" onclick="setCatFilter('Protection écran',this)">🔲 Protection écran</button>
+        <button class="fchip" onclick="setCatFilter('Carte SIM',this)">📶 Carte SIM</button>
+        <button class="fchip" onclick="setCatFilter('Pièce détachée',this)">🔧 Pièces</button>
+        <button class="fchip" onclick="setCatFilter('Accessoire Info',this)">📦 Autres</button>
+      </div>
+    </div>
   </div>
   <div class="prod-grid" id="products-grid">
     <div class="grid-empty">Chargement...</div>
@@ -255,13 +276,33 @@ function showTab(name){
 }
 
 // ---- PRODUITS ----
+var activeType     = '';
 var activeCategory = '';
-var activeVisFilter = ''; // '' | 'on' | 'off'
+var activeVisFilter = '';
 
-function setFilter(cat, btn) {
+var TYPE_CATS = {
+  Smartphone:   ['Smartphone'],
+  Téléphone:    ['Téléphone'],
+  Tablette:     ['Tablette'],
+  'PC Portable':['PC Portable','PC'],
+  Accessoire:   ['Câble','Chargeur','Audio','Coque','Protection écran','Carte SIM','Accessoire Info','Pièce détachée']
+};
+
+function setTypeFilter(type, btn) {
+  activeType = type;
+  activeCategory = '';
+  document.querySelectorAll('#typeBar .fchip').forEach(c => c.classList.remove('on'));
+  btn.classList.add('on');
+  var catRow = document.getElementById('catRow');
+  catRow.style.display = (type === 'Accessoire') ? 'flex' : 'none';
+  document.querySelectorAll('#catBar .fchip').forEach(c => c.classList.remove('on'));
+  document.querySelector('#catBar .fchip').classList.add('on');
+  loadProducts();
+}
+
+function setCatFilter(cat, btn) {
   activeCategory = cat;
-  // Retire .on de tous les chips catégorie (pas visible/masqué)
-  document.querySelectorAll('#filterBar .fchip:not(.fchip-vis):not(.fchip-hid)').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('#catBar .fchip').forEach(c => c.classList.remove('on'));
   btn.classList.add('on');
   loadProducts();
 }
@@ -269,6 +310,7 @@ function setFilter(cat, btn) {
 function setVisFilter(val, btn) {
   activeVisFilter = activeVisFilter === val ? '' : val;
   document.querySelectorAll('.fchip-vis,.fchip-hid').forEach(c => c.classList.remove('on'));
+  document.getElementById('vis-all').classList.toggle('on', !activeVisFilter);
   if (activeVisFilter) btn.classList.add('on');
   loadProducts();
 }
@@ -304,6 +346,12 @@ async function loadProducts() {
   if (activeCategory) params.set('category', activeCategory);
   const r = await fetch('/api/catalogue-admin/products?' + params);
   let rows = await r.json();
+
+  // Filtre par type (côté client, couvre plusieurs catégories DB)
+  if (activeType && !activeCategory) {
+    const cats = TYPE_CATS[activeType] || [activeType];
+    rows = rows.filter(p => cats.includes(p.category));
+  }
 
   if (activeVisFilter === 'on')  rows = rows.filter(p => p.catalogue_visible);
   if (activeVisFilter === 'off') rows = rows.filter(p => !p.catalogue_visible);
