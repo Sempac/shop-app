@@ -343,13 +343,22 @@ async function loadProducts() {
   const search = document.getElementById('search').value;
   const params = new URLSearchParams();
   if (search) params.set('search', search);
-  if (activeCategory) params.set('category', activeCategory);
+
+  if (activeCategory) {
+    // Sous-catégorie Accessoire → filtre serveur précis
+    params.set('category', activeCategory);
+  } else if (activeType && activeType !== 'Accessoire') {
+    // Type simple (Smartphone, Téléphone, Tablette, PC Portable) → filtre serveur
+    params.set('category', activeType);
+  }
+  // Accessoire sans sous-cat → pas de filtre serveur, on filtre côté client ci-dessous
+
   const r = await fetch('/api/catalogue-admin/products?' + params);
   let rows = await r.json();
 
-  // Filtre par type (côté client, couvre plusieurs catégories DB)
-  if (activeType && !activeCategory) {
-    const cats = TYPE_CATS[activeType] || [activeType];
+  // Filtre client uniquement pour Accessoire (regroupe plusieurs catégories DB)
+  if (activeType === 'Accessoire' && !activeCategory) {
+    const cats = TYPE_CATS.Accessoire;
     rows = rows.filter(p => cats.includes(p.category));
   }
 
