@@ -356,9 +356,19 @@ async function loadProducts() {
   if (activeVisFilter === 'on')  rows = rows.filter(p => p.catalogue_visible);
   if (activeVisFilter === 'off') rows = rows.filter(p => !p.catalogue_visible);
 
+  // Tri : visibles d'abord, puis masqués ; dans chaque groupe ordre alphabétique
+  rows.sort((a, b) => {
+    if (a.catalogue_visible !== b.catalogue_visible) return a.catalogue_visible ? -1 : 1;
+    return (a.name || '').localeCompare(b.name || '', 'fr', {sensitivity:'base'});
+  });
+
   currentProducts = rows;
   const vis = rows.filter(p => p.catalogue_visible).length;
-  document.getElementById('stats').textContent = rows.length + ' produits — ' + vis + ' visibles';
+  const hid = rows.length - vis;
+  document.getElementById('stats').textContent =
+    rows.length + ' produit' + (rows.length > 1 ? 's' : '') +
+    ' — ' + vis + ' visible' + (vis > 1 ? 's' : '') +
+    (hid ? ' · ' + hid + ' masqué' + (hid > 1 ? 's' : '') : '');
 
   const grid = document.getElementById('products-grid');
   if (!rows.length) { grid.innerHTML = '<div class="grid-empty">Aucun produit trouvé</div>'; return; }
