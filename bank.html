@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="/theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+<title>Relevés Bancaires — The SMARTPHONE</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#f1f5f9;}
+.topbar{background:#111827;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.topbar h2{margin:0;font-size:18px;white-space:nowrap;}
+.home-btn{padding:8px 16px;background:#1e40af;color:white;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.btn{padding:9px 16px;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Arial;}
+.btn-green{background:#22c55e;color:white;} .btn-green:hover{background:#16a34a;}
+.btn-red{background:#fee2e2;color:#ef4444;} .btn-red:hover{background:#fca5a5;}
+.btn-blue{background:#3b82f6;color:white;} .btn-blue:hover{background:#2563eb;}
+.btn-gray{background:#475569;color:white;} .btn-gray:hover{background:#334155;}
+
+/* KPI row */
+.kpi-row{display:flex;gap:12px;padding:14px 16px 0;flex-wrap:wrap;}
+.kpi{background:white;border-radius:10px;padding:12px 16px;min-width:160px;flex:1;box-shadow:0 1px 3px #0001;}
+.kpi-lbl{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;margin-bottom:4px;}
+.kpi-val{font-size:22px;font-weight:bold;color:#0f172a;}
+.kpi-sub{font-size:11px;color:#64748b;margin-top:2px;}
+.neg{color:#ef4444;}.pos{color:#22c55e;}
+
+/* Layout 2 colonnes */
+.layout{display:flex;gap:0;height:calc(100vh - 130px);overflow:hidden;margin-top:14px;}
+.left-col{width:340px;min-width:260px;max-width:420px;overflow-y:auto;border-right:1px solid #e2e8f0;background:white;flex-shrink:0;}
+.right-col{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+
+/* En-tête colonne gauche */
+.col-header{padding:14px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:5;}
+.col-header h3{margin:0;font-size:15px;color:#0f172a;}
+
+/* Card relevé */
+.stmt-card{padding:13px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .12s;}
+.stmt-card:hover{background:#f8fafc;}
+.stmt-card.active{background:#eff6ff;border-left:3px solid #3b82f6;}
+.stmt-period{font-size:13px;font-weight:bold;color:#0f172a;}
+.stmt-meta{font-size:11px;color:#64748b;margin-top:3px;}
+.stmt-flux{font-size:13px;font-weight:bold;margin-top:4px;}
+
+/* Détail relevé */
+.detail-header{padding:14px 16px;border-bottom:1px solid #e2e8f0;background:#0f172a;color:white;}
+.detail-header h3{margin:0 0 8px;font-size:15px;}
+.detail-kpis{display:flex;gap:16px;flex-wrap:wrap;}
+.dk{font-size:12px;color:#94a3b8;}
+.dk span{display:block;font-size:16px;font-weight:bold;color:white;}
+
+/* Transactions table */
+.tx-toolbar{padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;background:white;}
+.tx-toolbar select,.tx-toolbar input{padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-family:Arial;}
+.tx-wrap{overflow-y:auto;flex:1;}
+table{width:100%;border-collapse:collapse;}
+thead th{background:#1e293b;color:white;padding:9px 11px;text-align:left;font-size:11px;position:sticky;top:0;z-index:4;}
+td{padding:8px 11px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#0f172a;vertical-align:top;}
+tr:hover td{background:#f8fafc;}
+.tx-debit{color:#ef4444;font-weight:bold;}
+.tx-credit{color:#22c55e;font-weight:bold;}
+
+/* Badges catégorie */
+.cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:#f1f5f9;color:#475569;}
+
+/* Add transaction bar */
+.add-tx-bar{background:white;border-top:1px solid #e2e8f0;padding:10px 14px;}
+.add-tx-bar form{display:flex;gap:7px;flex-wrap:wrap;align-items:flex-end;}
+.add-tx-bar .fg{display:flex;flex-direction:column;gap:3px;}
+.add-tx-bar label{font-size:10px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.add-tx-bar input,.add-tx-bar select{padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;font-family:Arial;}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:#94a3b8;font-size:14px;}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:white;border-radius:14px;padding:24px;width:440px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal h3{margin:0 0 18px;font-size:16px;color:#0f172a;}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.fg label{font-size:11px;color:#64748b;font-weight:bold;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:Arial;width:100%;}
+.modal-btns{display:flex;gap:8px;margin-top:16px;}
+
+/* Total bar */
+.total-bar{background:#0f172a;color:white;padding:10px 16px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
+.total-bar .tbl{font-size:12px;color:#94a3b8;}.total-bar .tbl span{font-size:15px;font-weight:bold;display:inline;margin-left:6px;}
+
+@media(max-width:680px){.layout{flex-direction:column;height:auto;}.left-col{width:100%;max-width:100%;height:auto;max-height:280px;}.kpi-row{overflow-x:auto;flex-wrap:nowrap;}}
+
+/* ── Synthèse overlay ── */
+.synth-overlay{display:none;position:fixed;inset:0;z-index:200;background:#f1f5f9;overflow-y:auto;flex-direction:column;}
+.synth-overlay.open{display:flex;}
+.synth-topbar{background:#111827;color:white;padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:10;flex-shrink:0;}
+.synth-topbar h3{margin:0;font-size:15px;}
+.synth-body{padding:16px 20px 40px;flex:1;}
+.synth-section{margin-bottom:24px;}
+.synth-section h4{font-size:13px;font-weight:bold;color:#1e293b;text-transform:uppercase;letter-spacing:.05em;margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid #3b82f6;}
+.s-card{background:white;border-radius:10px;box-shadow:0 1px 3px #0001;overflow:hidden;}
+.s-card canvas{width:100%;height:130px;display:block;}
+.chart-legend{padding:8px 14px 10px;display:flex;gap:16px;font-size:11px;color:#64748b;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+/* Tableau synthèse */
+.s-table-wrap{overflow-x:auto;}
+.s-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;}
+.s-table th{background:#1e293b;color:white;padding:8px 11px;text-align:right;font-size:10px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
+.s-table th:first-child{text-align:left;}
+.s-table td{padding:8px 11px;border-bottom:1px solid #f1f5f9;text-align:right;color:#0f172a;font-family:'Courier New',monospace;white-space:nowrap;}
+.s-table td:first-child{text-align:left;font-family:Arial;font-size:12px;}
+.s-table tr:last-child td{border-bottom:none;}
+.s-table tr:hover td{background:#f8fafc;}
+.s-table tr.s-total td{font-weight:bold;background:#eff6ff;border-top:2px solid #3b82f6;}
+.s-table tr.s-sub td{background:#f8fafc;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#64748b;font-family:Arial;font-weight:bold;text-align:left;padding-top:10px;padding-bottom:4px;}
+/* Badge état */
+.s-badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:bold;font-family:'Courier New',monospace;}
+.s-badge.ok{background:#dcfce7;color:#15803d;}
+.s-badge.warn{background:#fef3c7;color:#b45309;}
+.s-badge.crit{background:#fee2e2;color:#b91c1c;}
+/* Loyers grid */
+.loyer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.loyer-card{background:white;border-radius:8px;padding:12px 14px;box-shadow:0 1px 2px #0001;}
+.loyer-month{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin-bottom:4px;}
+.loyer-amt{font-size:18px;font-weight:bold;color:#ef4444;font-variant-numeric:tabular-nums;}
+.loyer-detail{font-size:11px;color:#64748b;margin-top:4px;line-height:1.7;}
+/* Alert banner */
+.s-alert{background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:14px;}
+.s-alert strong{display:block;color:#1e293b;margin-bottom:2px;font-size:13px;}
+</style>
+<script src="auth.js"></script>
+</head>
+<body>
+<div class="topbar">
+  <h2>🏦 Relevés Bancaires</h2>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-blue" onclick="openSynth()">📊 Synthèse</button>
+    <button class="btn btn-gray" onclick="openAddStmt()">➕ Nouveau relevé</button>
+    <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
+  </div>
+</div>
+
+<!-- KPI row -->
+<div class="kpi-row" id="kpiRow">
+  <div class="kpi"><div class="kpi-lbl">Solde actuel</div><div class="kpi-val" id="kSolde">—</div><div class="kpi-sub" id="kSoldeSub"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Total entrées</div><div class="kpi-val pos" id="kEntrees">—</div><div class="kpi-sub" id="kEntreesSub"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Total sorties</div><div class="kpi-val" id="kSorties">—</div><div class="kpi-sub" id="kSortiesSub"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Flux net</div><div class="kpi-val" id="kFlux">—</div><div class="kpi-sub" id="kFluxSub"></div></div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- LISTE DES RELEVÉS -->
+  <div class="left-col">
+    <div class="col-header">
+      <h3>📋 Relevés (<span id="stmtCount">0</span>)</h3>
+    </div>
+    <div id="stmtList"><div class="empty">Aucun relevé. Cliquez sur ➕ Nouveau relevé.</div></div>
+  </div>
+
+  <!-- DÉTAIL / TRANSACTIONS -->
+  <div class="right-col" id="rightCol">
+    <div class="empty" style="margin:auto;">
+      <div style="font-size:48px;">🏦</div>
+      <div style="margin-top:10px;">Sélectionnez un relevé pour voir ses transactions</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SYNTHÈSE OVERLAY ══════════ -->
+<div class="synth-overlay" id="synthOverlay">
+  <div class="synth-topbar">
+    <h3>📊 Analyse bancaire — IT TECH · CIC N° 00020370701</h3>
+    <button class="btn btn-gray" onclick="closeSynth()">✕ Fermer</button>
+  </div>
+  <div class="synth-body">
+
+    <!-- ALERTE -->
+    <div class="s-alert" id="synthAlert"></div>
+
+    <!-- S1: Évolution mensuelle -->
+    <div class="synth-section">
+      <h4>Évolution mensuelle</h4>
+      <div class="s-card" style="margin-bottom:12px;">
+        <canvas id="synthChart"></canvas>
+        <div class="chart-legend">
+          <span class="leg"><span class="leg-dot" style="background:#22c55e"></span>Crédits</span>
+          <span class="leg"><span class="leg-dot" style="background:#ef4444"></span>Débits</span>
+          <span class="leg"><span class="leg-dot" style="background:#3b82f6"></span>Solde fin de mois</span>
+        </div>
+      </div>
+      <div class="s-card">
+        <div class="s-table-wrap">
+          <table class="s-table">
+            <thead>
+              <tr>
+                <th>Période</th>
+                <th>Solde début</th>
+                <th>Crédits</th>
+                <th>Débits</th>
+                <th>Flux net</th>
+                <th>Solde fin</th>
+                <th>État</th>
+              </tr>
+            </thead>
+            <tbody id="synthMonthRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- S2: Charges récurrentes -->
+    <div class="synth-section">
+      <h4>Charges fixes récurrentes (d'après relevés PDF)</h4>
+      <div class="s-card">
+        <div class="s-table-wrap">
+          <table class="s-table">
+            <thead>
+              <tr>
+                <th>Charge</th><th>Prestataire</th>
+                <th>Déc 25</th><th>Jan 26</th><th>Fév 26</th><th>Mar 26</th>
+                <th>Avr 26</th><th>Mai 26</th><th>Jun 26</th><th>Moy/mois</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="s-sub"><td colspan="10">Charges sociales &amp; paie</td></tr>
+              <tr><td>Charges sociales</td><td style="color:#475569;font-size:11px">URSSAF IDF</td><td>1 030,00</td><td>1 030,00</td><td style="color:#ef4444">2 117,00 ¹</td><td>694,00</td><td>530,00</td><td>530,00</td><td>530,00</td><td style="color:#ef4444">923 €</td></tr>
+              <tr><td>Retraite complémentaire</td><td style="color:#475569;font-size:11px">MALAKOFF HUMANIS</td><td>216,80</td><td>216,82</td><td style="color:#ef4444">418,79 ¹</td><td>146,22</td><td>111,70</td><td>111,66</td><td>111,68</td><td style="color:#ef4444">190 €</td></tr>
+              <tr><td>Gestion paie</td><td style="color:#475569;font-size:11px">SOLUPAIE SARL</td><td>240,00</td><td>260,00</td><td>860,00 ²</td><td>260,00</td><td>260,00</td><td>260,00</td><td>260,00</td><td>257 €</td></tr>
+              <tr class="s-sub"><td colspan="10">Assurances &amp; prévoyance</td></tr>
+              <tr><td>Mutuelle santé entreprise</td><td style="color:#475569;font-size:11px">ACM IARD Plan Santé</td><td>173,96</td><td>173,96</td><td>173,96</td><td>177,50 ³</td><td>177,50</td><td>177,50</td><td>177,50</td><td>176 €</td></tr>
+              <tr><td>Assurance multi-risques</td><td style="color:#475569;font-size:11px">MULTI PRO ACM IARD</td><td>46,46</td><td>46,46</td><td>46,46</td><td>46,46</td><td>56,55</td><td>50,04</td><td>50,04</td><td>49 €</td></tr>
+              <tr><td>Prévoyance homme clé</td><td style="color:#475569;font-size:11px">ACM VIE SA</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td>53,74</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">ponct.</td></tr>
+              <tr><td>Assurance EPS</td><td style="color:#475569;font-size:11px">EPS</td><td>51,48</td><td>51,48</td><td>51,48</td><td>51,48</td><td>51,48</td><td>51,48</td><td>51,48</td><td>51 €</td></tr>
+              <tr class="s-sub"><td colspan="10">Télécom &amp; énergie</td></tr>
+              <tr><td>Internet / Téléphonie pro</td><td style="color:#475569;font-size:11px">FREE PRO</td><td style="color:#94a3b8">—</td><td style="color:#ef4444">94,45</td><td>47,99</td><td>47,99</td><td>53,63</td><td>47,99</td><td>47,99</td><td>57 €</td></tr>
+              <tr><td>Ligne SFR</td><td style="color:#475569;font-size:11px">SFR</td><td>15,96 ⁴</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td>15,96 ⁴</td><td>7,98</td><td style="color:#94a3b8">—</td><td>7,98</td><td>8 €</td></tr>
+              <tr><td>Énergie électricité</td><td style="color:#475569;font-size:11px">ENGIE</td><td>178,70 ⁴</td><td style="color:#94a3b8">—</td><td>89,35</td><td>178,70 ⁴</td><td style="color:#94a3b8">—</td><td>89,35</td><td>89,35</td><td>89 €</td></tr>
+              <tr><td>Téléphonie mobile</td><td style="color:#475569;font-size:11px">LYCAMOBILE</td><td style="color:#ef4444">225,02</td><td>100,00</td><td>100,00</td><td>100,00</td><td>100,00</td><td>100,00</td><td>100,00</td><td>118 €</td></tr>
+              <tr class="s-sub"><td colspan="10">Frais bancaires &amp; fiscalité</td></tr>
+              <tr><td>Frais bancaires / agios CIC</td><td style="color:#475569;font-size:11px">FACT SGT · CIC</td><td>17,33</td><td>65,92</td><td>16,70</td><td>45,19</td><td>71,11</td><td>38,33</td><td style="color:#ef4444">148,12</td><td>57 €</td></tr>
+              <tr><td>Location terminal TPE</td><td style="color:#475569;font-size:11px">EURO-INFORMATION SAS</td><td style="color:#94a3b8">—</td><td>79,20</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td>79,20</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">~40 €</td></tr>
+              <tr><td>TVA / CFE (DGFIP)</td><td style="color:#475569;font-size:11px">DGFIP</td><td style="color:#ef4444">2 977,00</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">—</td><td style="color:#ef4444">1 802,00</td><td style="color:#94a3b8">—</td><td style="color:#94a3b8">ponct.</td></tr>
+              <tr class="s-total">
+                <td colspan="2">TOTAL CHARGES FIXES (hors loyers, salaires, stock, impôts)</td>
+                <td>~2 520 €</td><td>~2 120 €</td><td>~3 320 €</td><td>~1 810 €</td>
+                <td>~1 550 €</td><td>~1 450 €</td><td>~1 480 €</td>
+                <td style="color:#ef4444">~2 036 €/mois</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:8px 14px 12px;font-size:10px;color:#94a3b8;line-height:1.8;">
+          ¹ URSSAF fév. 2 117 € et Malakoff fév. 418 € = régularisations annuelles.
+          ² Solupaie fév. = 260 € paie + 600 € régularisation cotisations (total 860 €).
+          ³ Hausse ACM IARD Plan Santé : 173,96 € → 177,50 € à partir de mars 2026.
+          ⁴ ENGIE et SFR : 2 prélèvements en décembre et mars (chevauchement de période).
+        </div>
+      </div>
+    </div>
+
+    <!-- S3: Loyers -->
+    <div class="synth-section">
+      <h4>Loyers — versements fragmentés</h4>
+      <p style="font-size:12px;color:#64748b;margin:0 0 12px;">
+        Total 7 mois : <strong style="color:#0f172a">13 455,92 €</strong> · Moyenne : <strong style="color:#0f172a">1 922 €/mois</strong>.
+        Versements jamais en une fois — signe de tension de trésorerie.
+      </p>
+      <div class="loyer-grid">
+        <div class="loyer-card"><div class="loyer-month">Décembre 2025</div><div class="loyer-amt" style="color:#64748b">890,00 €</div><div class="loyer-detail">Avocat renouvellement bail (2/2)</div></div>
+        <div class="loyer-card"><div class="loyer-month">Janvier 2026</div><div class="loyer-amt">2 500,00 €</div><div class="loyer-detail">1 500 + 1 000 (2 virements)</div></div>
+        <div class="loyer-card"><div class="loyer-month">Février 2026</div><div class="loyer-amt" style="color:#f59e0b">400,00 €</div><div class="loyer-detail">Partiel — loyer non soldé</div></div>
+        <div class="loyer-card"><div class="loyer-month">Mars 2026</div><div class="loyer-amt">3 200,00 €</div><div class="loyer-detail">800 + 500 + 1 900 (rattrapages)</div></div>
+        <div class="loyer-card"><div class="loyer-month">Avril 2026</div><div class="loyer-amt">1 300,00 €</div><div class="loyer-detail">500 + 800 (2 virements)</div></div>
+        <div class="loyer-card"><div class="loyer-month">Mai 2026</div><div class="loyer-amt">1 043,89 €</div><div class="loyer-detail">Fragments multiples</div></div>
+        <div class="loyer-card"><div class="loyer-month">Juin 2026</div><div class="loyer-amt">3 122,03 €</div><div class="loyer-detail">1 500 + 1 622,03 (régularisation)</div></div>
+      </div>
+    </div>
+
+  </div><!-- /synth-body -->
+</div><!-- /synthOverlay -->
+
+<!-- Modal ajout relevé -->
+<div class="overlay" id="stmtModal">
+  <div class="modal">
+    <h3 id="modalTitle">➕ Nouveau relevé bancaire</h3>
+    <input type="hidden" id="editStmtId">
+    <div class="fg"><label>Banque</label><input id="s_bank" value="CIC"></div>
+    <div class="fg"><label>N° de compte</label><input id="s_account" value="00020370701"></div>
+    <div style="display:flex;gap:10px;">
+      <div class="fg" style="flex:1"><label>Début période</label><input type="date" id="s_start"></div>
+      <div class="fg" style="flex:1"><label>Fin période</label><input type="date" id="s_end"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div class="fg" style="flex:1"><label>Solde début (€)</label><input type="number" step="0.01" id="s_bstart" placeholder="0.00"></div>
+      <div class="fg" style="flex:1"><label>Solde fin (€)</label><input type="number" step="0.01" id="s_bend" placeholder="0.00"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div class="fg" style="flex:1"><label>Total crédits (€)</label><input type="number" step="0.01" id="s_credit" placeholder="0.00"></div>
+      <div class="fg" style="flex:1"><label>Total débits (€)</label><input type="number" step="0.01" id="s_debit" placeholder="0.00"></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="s_notes" rows="2" placeholder="Remarques optionnelles..."></textarea></div>
+    <div class="modal-btns">
+      <button class="btn btn-green" onclick="saveStmt()">💾 Enregistrer</button>
+      <button class="btn btn-gray" onclick="closeModal('stmtModal')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ajout transaction -->
+<div class="overlay" id="txModal">
+  <div class="modal">
+    <h3>➕ Ajouter une transaction</h3>
+    <div class="fg"><label>Date</label><input type="date" id="t_date"></div>
+    <div class="fg"><label>Libellé</label><input id="t_label" placeholder="Ex: PRLV SEPA URSSAF..."></div>
+    <div style="display:flex;gap:10px;">
+      <div class="fg" style="flex:1"><label>Débit (€)</label><input type="number" step="0.01" id="t_debit" placeholder="0.00" oninput="if(this.value)document.getElementById('t_credit').value=''"></div>
+      <div class="fg" style="flex:1"><label>Crédit (€)</label><input type="number" step="0.01" id="t_credit" placeholder="0.00" oninput="if(this.value)document.getElementById('t_debit').value=''"></div>
+    </div>
+    <div class="fg">
+      <label>Catégorie</label>
+      <select id="t_cat">
+        <option value="">— Choisir —</option>
+        <option>Recettes TPE (REMCB)</option>
+        <option>Apports personnels</option>
+        <option>Virement reçu</option>
+        <option>Charges sociales (URSSAF)</option>
+        <option>Retraite (Malakoff)</option>
+        <option>Mutuelle / Prévoyance</option>
+        <option>Salaires</option>
+        <option>Loyers</option>
+        <option>Fournisseurs (achats CB)</option>
+        <option>Énergie (ENGIE)</option>
+        <option>Télécom (SFR/FREE)</option>
+        <option>Assurance pro</option>
+        <option>Location TPE</option>
+        <option>Impôts / TVA (DGFIP)</option>
+        <option>Frais bancaires CIC</option>
+        <option>Gestion paie (Solupaie)</option>
+        <option>Informatique / Hébergement</option>
+        <option>Transport / Livraison</option>
+        <option>Frais de commission CB</option>
+        <option>Autre</option>
+      </select>
+    </div>
+    <div class="fg"><label>Notes</label><input id="t_notes" placeholder="Optionnel"></div>
+    <div class="modal-btns">
+      <button class="btn btn-green" onclick="saveTx()">💾 Ajouter</button>
+      <button class="btn btn-gray" onclick="closeModal('txModal')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Auth: admin / gérant uniquement ── */
+const _user = requireAuth();
+if (!_user) { /* redirecté vers login */ }
+else if (_user.role !== 'admin') {
+  alert('Accès réservé à l\'administrateur');
+  location.href = 'index.html';
+}
+
+/* ── Données ── */
+let statements = [];
+let currentStmtId = null;
+let currentTxs = [];
+
+const fmt = v => Number(v||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = d => d ? d.slice(0,10) : '';
+
+/* ── Chargement des relevés ── */
+async function loadStatements() {
+  const r = await fetch('/api/bank-statements');
+  if (!r.ok) { console.error('Erreur chargement relevés', await r.text()); return; }
+  statements = await r.json();
+  renderStatements();
+  updateKpis();
+}
+
+function updateKpis() {
+  if (!statements.length) return;
+  const last = statements[0]; /* trié par period_end DESC */
+  const totalC = statements.reduce((s,x)=>s+Number(x.total_credit||0),0);
+  const totalD = statements.reduce((s,x)=>s+Number(x.total_debit||0),0);
+  const flux = totalC - totalD;
+
+  document.getElementById('kSolde').textContent = fmt(last.balance_end) + ' €';
+  document.getElementById('kSoldeSub').textContent = 'Au ' + fmtDate(last.period_end);
+  document.getElementById('kEntrees').textContent = fmt(totalC) + ' €';
+  document.getElementById('kEntreesSub').textContent = statements.length + ' relevé(s)';
+  document.getElementById('kSorties').textContent = fmt(totalD) + ' €';
+  document.getElementById('kSortiesSub').textContent = 'Moy. ' + fmt(totalD/statements.length) + ' €/mois';
+  const fluxEl = document.getElementById('kFlux');
+  fluxEl.textContent = (flux>=0?'+':'') + fmt(flux) + ' €';
+  fluxEl.className = 'kpi-val ' + (flux>=0?'pos':'neg');
+  document.getElementById('kFluxSub').textContent = 'Sur toute la période';
+}
+
+function renderStatements() {
+  const el = document.getElementById('stmtList');
+  document.getElementById('stmtCount').textContent = statements.length;
+  if (!statements.length) {
+    el.innerHTML = '<div class="empty">Aucun relevé. Cliquez sur ➕ Nouveau relevé.</div>';
+    return;
+  }
+  el.innerHTML = statements.map(s => {
+    const flux = Number(s.total_credit||0) - Number(s.total_debit||0);
+    const fluxStr = (flux>=0?'+':'') + fmt(flux) + ' €';
+    const fluxCls = flux>=0?'pos':'neg';
+    const start = fmtDate(s.period_start), end = fmtDate(s.period_end);
+    return `<div class="stmt-card ${currentStmtId===s.id?'active':''}" onclick="selectStmt(${s.id})">
+      <div class="stmt-period">📋 ${s.bank_name||'CIC'} · ${start} → ${end}</div>
+      <div class="stmt-meta">N° ${s.account_number||'00020370701'} · Solde : ${fmt(s.balance_start)}€ → <b>${fmt(s.balance_end)}€</b></div>
+      <div class="stmt-flux">
+        <span style="color:#22c55e">↑ ${fmt(s.total_credit)} €</span>
+        &nbsp;·&nbsp;
+        <span style="color:#ef4444">↓ ${fmt(s.total_debit)} €</span>
+        &nbsp;·&nbsp;
+        <span class="${fluxCls}">${fluxStr}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Sélectionner un relevé ── */
+async function selectStmt(id) {
+  currentStmtId = id;
+  renderStatements(); /* met à jour active class */
+  await loadTransactions(id);
+}
+
+async function loadTransactions(stmtId) {
+  const r = await fetch(`/api/bank-statements/${stmtId}/transactions`);
+  currentTxs = r.ok ? await r.json() : [];
+  renderDetail();
+}
+
+function renderDetail() {
+  const stmt = statements.find(s=>s.id===currentStmtId);
+  if (!stmt) return;
+  const rc = document.getElementById('rightCol');
+
+  const totalD = currentTxs.reduce((s,t)=>s+Number(t.debit||0),0);
+  const totalC = currentTxs.reduce((s,t)=>s+Number(t.credit||0),0);
+
+  /* Catégories uniques */
+  const cats = [...new Set(currentTxs.map(t=>t.category||'').filter(Boolean))].sort();
+
+  rc.innerHTML = `
+    <div class="detail-header">
+      <h3>📋 ${stmt.bank_name||'CIC'} · ${fmtDate(stmt.period_start)} → ${fmtDate(stmt.period_end)}</h3>
+      <div class="detail-kpis">
+        <div class="dk">Solde début<span>${fmt(stmt.balance_start)} €</span></div>
+        <div class="dk">Solde fin<span>${fmt(stmt.balance_end)} €</span></div>
+        <div class="dk">Total crédits<span style="color:#4ade80">${fmt(stmt.total_credit)} €</span></div>
+        <div class="dk">Total débits<span style="color:#f87171">${fmt(stmt.total_debit)} €</span></div>
+      </div>
+    </div>
+    <div class="tx-toolbar">
+      <input id="txSearch" placeholder="🔍 Rechercher un libellé..." oninput="filterTx()" style="min-width:160px;flex:1;">
+      <select id="txCatFilter" onchange="filterTx()">
+        <option value="">Toutes catégories</option>
+        ${cats.map(c=>`<option>${c}</option>`).join('')}
+      </select>
+      <button class="btn btn-green" onclick="openAddTx()">➕ Ajouter</button>
+      <button class="btn btn-red" onclick="deleteStmt(${stmt.id})">🗑 Supprimer</button>
+    </div>
+    <div class="tx-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Libellé</th>
+            <th>Catégorie</th>
+            <th style="text-align:right">Débit</th>
+            <th style="text-align:right">Crédit</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="txBody">${renderTxRows(currentTxs)}</tbody>
+      </table>
+    </div>
+    <div class="total-bar">
+      <span class="tbl">Transactions : <span>${currentTxs.length}</span></span>
+      <span class="tbl">Débits saisis : <span style="color:#f87171">${fmt(totalD)} €</span></span>
+      <span class="tbl">Crédits saisis : <span style="color:#4ade80">${fmt(totalC)} €</span></span>
+    </div>`;
+}
+
+function renderTxRows(txs) {
+  if (!txs.length) return `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">Aucune transaction saisie</td></tr>`;
+  return txs.map(t => `
+    <tr>
+      <td style="white-space:nowrap">${fmtDate(t.transaction_date)}</td>
+      <td style="max-width:260px;word-break:break-word;">${esc(t.label)}${t.notes?`<br><span style="color:#94a3b8;font-size:10px">${esc(t.notes)}</span>`:''}
+      </td>
+      <td><span class="cat-badge">${esc(t.category||'—')}</span></td>
+      <td class="tx-debit" style="text-align:right">${Number(t.debit||0)>0?fmt(t.debit)+' €':''}</td>
+      <td class="tx-credit" style="text-align:right">${Number(t.credit||0)>0?fmt(t.credit)+' €':''}</td>
+      <td><button class="btn btn-red" style="padding:3px 8px;font-size:11px" onclick="deleteTx(${t.id})">🗑</button></td>
+    </tr>`).join('');
+}
+
+function filterTx() {
+  const q = (document.getElementById('txSearch')?.value||'').toLowerCase();
+  const cat = document.getElementById('txCatFilter')?.value||'';
+  const filtered = currentTxs.filter(t =>
+    (!q || t.label.toLowerCase().includes(q)) &&
+    (!cat || (t.category||'')=== cat)
+  );
+  const body = document.getElementById('txBody');
+  if (body) body.innerHTML = renderTxRows(filtered);
+}
+
+function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+
+/* ── CRUD Relevés ── */
+function openAddStmt() {
+  document.getElementById('editStmtId').value = '';
+  document.getElementById('modalTitle').textContent = '➕ Nouveau relevé bancaire';
+  ['s_bank','s_account','s_start','s_end','s_bstart','s_bend','s_credit','s_debit','s_notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (id==='s_bank') el.value='CIC';
+    else if (id==='s_account') el.value='00020370701';
+    else el.value='';
+  });
+  document.getElementById('stmtModal').classList.add('open');
+}
+
+async function saveStmt() {
+  const id = document.getElementById('editStmtId').value;
+  const body = {
+    bank_name:       document.getElementById('s_bank').value,
+    account_number:  document.getElementById('s_account').value,
+    period_start:    document.getElementById('s_start').value,
+    period_end:      document.getElementById('s_end').value,
+    balance_start:   parseFloat(document.getElementById('s_bstart').value)||0,
+    balance_end:     parseFloat(document.getElementById('s_bend').value)||0,
+    total_credit:    parseFloat(document.getElementById('s_credit').value)||0,
+    total_debit:     parseFloat(document.getElementById('s_debit').value)||0,
+    notes:           document.getElementById('s_notes').value
+  };
+  if (!body.period_start || !body.period_end) { alert('Les dates sont obligatoires'); return; }
+  const url  = id ? `/api/bank-statements/${id}` : '/api/bank-statements';
+  const meth = id ? 'PUT' : 'POST';
+  const r = await fetch(url, {method:meth, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if (!r.ok) { alert('Erreur: ' + await r.text()); return; }
+  closeModal('stmtModal');
+  await loadStatements();
+}
+
+async function deleteStmt(id) {
+  if (!confirm('Supprimer ce relevé et toutes ses transactions ?')) return;
+  await fetch(`/api/bank-statements/${id}`, {method:'DELETE'});
+  currentStmtId = null;
+  document.getElementById('rightCol').innerHTML = '<div class="empty" style="margin:auto;"><div style="font-size:48px">🏦</div><div style="margin-top:10px">Sélectionnez un relevé</div></div>';
+  await loadStatements();
+}
+
+/* ── CRUD Transactions ── */
+function openAddTx() {
+  if (!currentStmtId) return;
+  document.getElementById('t_date').value = new Date().toISOString().slice(0,10);
+  ['t_label','t_debit','t_credit','t_notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t_cat').value='';
+  document.getElementById('txModal').classList.add('open');
+}
+
+async function saveTx() {
+  const body = {
+    transaction_date: document.getElementById('t_date').value,
+    label:            document.getElementById('t_label').value.trim(),
+    debit:            parseFloat(document.getElementById('t_debit').value)||0,
+    credit:           parseFloat(document.getElementById('t_credit').value)||0,
+    category:         document.getElementById('t_cat').value,
+    notes:            document.getElementById('t_notes').value.trim()
+  };
+  if (!body.label) { alert('Le libellé est obligatoire'); return; }
+  const r = await fetch(`/api/bank-statements/${currentStmtId}/transactions`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  if (!r.ok) { alert('Erreur: ' + await r.text()); return; }
+  closeModal('txModal');
+  await loadTransactions(currentStmtId);
+}
+
+async function deleteTx(txId) {
+  if (!confirm('Supprimer cette transaction ?')) return;
+  await fetch(`/api/bank-statements/${currentStmtId}/transactions/${txId}`, {method:'DELETE'});
+  await loadTransactions(currentStmtId);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ── Synthèse ── */
+function openSynth() {
+  if (!statements.length) { alert('Aucun relevé chargé. Vérifiez que le serveur tourne et que les données sont importées.'); return; }
+  renderSynth();
+  document.getElementById('synthOverlay').classList.add('open');
+  setTimeout(drawSynthChart, 80);
+}
+function closeSynth() { document.getElementById('synthOverlay').classList.remove('open'); }
+
+function renderSynth() {
+  const sorted = [...statements].sort((a,b)=> a.period_start < b.period_start ? -1 : 1);
+  const totalC = sorted.reduce((s,x)=>s+Number(x.total_credit||0),0);
+  const totalD = sorted.reduce((s,x)=>s+Number(x.total_debit||0),0);
+  const flux = totalC - totalD;
+  const last = sorted[sorted.length-1];
+  const minBal = Math.min(...sorted.map(s=>Number(s.balance_end||0)));
+
+  // Alerte
+  const alertEl = document.getElementById('synthAlert');
+  const critMonths = sorted.filter(s=>Number(s.balance_end)<600).length;
+  if (minBal < 600) {
+    alertEl.style.display='block';
+    alertEl.innerHTML = `<strong>⚠️ Trésorerie structurellement insuffisante</strong>
+      ${critMonths} mois sur ${sorted.length} se terminent sous 600 €. Flux net cumulé : <b style="color:#b91c1c">${fmt(flux)} €</b>.
+      Solde actuel : <b style="color:#b45309">${fmt(last.balance_end)} €</b>.`;
+  } else {
+    alertEl.style.display='none';
+  }
+
+  // Tableau mensuel
+  const tbody = document.getElementById('synthMonthRows');
+  let html = '';
+  sorted.forEach(s => {
+    const c = Number(s.total_credit||0), d = Number(s.total_debit||0);
+    const f = c - d;
+    const bal = Number(s.balance_end||0);
+    const badge = bal < 600
+      ? '<span class="s-badge crit">CRITIQUE</span>'
+      : bal < 1500
+      ? '<span class="s-badge warn">FAIBLE</span>'
+      : '<span class="s-badge ok">OK</span>';
+    html += `<tr>
+      <td>${s.notes || fmtDate(s.period_start) + ' → ' + fmtDate(s.period_end)}</td>
+      <td>${fmt(s.balance_start)} €</td>
+      <td style="color:#16a34a">${fmt(c)} €</td>
+      <td style="color:#dc2626">${fmt(d)} €</td>
+      <td style="color:${f>=0?'#16a34a':'#dc2626'}">${f>=0?'+':''}${fmt(f)} €</td>
+      <td>${fmt(bal)} €</td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+  // Ligne total
+  html += `<tr class="s-total">
+    <td>TOTAL / MOYENNE</td>
+    <td style="color:#94a3b8">—</td>
+    <td style="color:#16a34a">${fmt(totalC)} €</td>
+    <td style="color:#dc2626">${fmt(totalD)} €</td>
+    <td style="color:${flux>=0?'#16a34a':'#dc2626'}">${flux>=0?'+':''}${fmt(flux)} €</td>
+    <td style="color:#b45309">${fmt(last.balance_end)} €</td>
+    <td></td>
+  </tr>`;
+  tbody.innerHTML = html;
+}
+
+function drawSynthChart() {
+  const canvas = document.getElementById('synthChart');
+  if (!canvas) return;
+  const sorted = [...statements].sort((a,b)=> a.period_start < b.period_start ? -1 : 1);
+  if (!sorted.length) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = {t:12,r:16,b:30,l:52};
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const n = sorted.length;
+  const slot = cW / n;
+  const half = slot * 0.22;
+
+  const credits  = sorted.map(s=>Number(s.total_credit||0));
+  const debits   = sorted.map(s=>Number(s.total_debit||0));
+  const bals     = sorted.map(s=>Number(s.balance_end||0));
+  const labels   = sorted.map(s=> (s.notes||'').replace('Décembre','Déc').replace('Janvier','Jan').replace('Février','Fév').replace('Mars','Mar').replace('Avril','Avr').replace('Juin','Jun').replace('Mai','Mai').split(' ').slice(0,2).join(' '));
+
+  const maxBar = Math.max(...credits, ...debits) * 1.1;
+  const maxBal = Math.max(...bals) * 1.3 || 5000;
+
+  function xOf(i) { return pad.l + (i + 0.5) * slot; }
+  function yBar(v) { return pad.t + cH - (v / maxBar) * cH; }
+  function yBal(v) { return pad.t + cH - (v / maxBal) * cH; }
+
+  // Grid
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  [0,.25,.5,.75,1].forEach(f => {
+    const y = pad.t + cH * (1-f);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cW,y); ctx.stroke();
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '9px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(f*maxBar/1000)+'k€', pad.l-5, y+3);
+  });
+
+  // Bars
+  for (let i=0; i<n; i++) {
+    const cx = xOf(i);
+    const baseY = yBar(0);
+    ctx.globalAlpha = .82;
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(cx - half*2 - 1, yBar(credits[i]), half, baseY - yBar(credits[i]));
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(cx + 1, yBar(debits[i]), half, baseY - yBar(debits[i]));
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '9px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(labels[i]||'', cx, H - pad.b + 14);
+  }
+
+  // Balance line
+  ctx.beginPath();
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  for (let i=0; i<n; i++) {
+    const x = xOf(i), y = yBal(bals[i]);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // Dots
+  for (let i=0; i<n; i++) {
+    const x = xOf(i), y = yBal(bals[i]);
+    const col = bals[i]<600 ? '#b91c1c' : bals[i]<1500 ? '#d97706' : '#3b82f6';
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth=2; ctx.stroke();
+  }
+}
+
+/* ── Init ── */
+loadStatements();
+</script>
+</body>
+</html>

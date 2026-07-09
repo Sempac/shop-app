@@ -1,4 +1,4 @@
-const express=require('express');
+﻿const express=require('express');
 require('dotenv').config();
 
 /* Empêcher les crashes sur erreurs non gérées (ex: puppeteer/WhatsApp) */
@@ -67,6 +67,154 @@ async function logAudit(module, action, recordId, recordDate, userName, details)
   }
 }
 
+/* ── LIEN VENTE ↔ RÉPARATION (produits payés ajoutés à une réparation) ── */
+pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS repair_id INTEGER REFERENCES repairs(id) ON DELETE SET NULL`)
+  .catch(e => console.error('[Migration] Erreur ajout orders.repair_id:', e.message));
+
+/* ── REMISE SUR LES PANNES/INTERVENTIONS (réparation) ── */
+pool.query(`ALTER TABLE repair_parts ADD COLUMN IF NOT EXISTS remise_reparation NUMERIC DEFAULT 0`)
+  .catch(e => console.error('[Migration] Erreur ajout repair_parts.remise_reparation:', e.message));
+
+/* ── VISIBILITÉ DES MODULES (Zone Admin) ──────────────────────────────── */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS module_visibility (
+    id_module  TEXT PRIMARY KEY,
+    hidden     BOOLEAN   DEFAULT false,
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
+`).then(() => pool.query(
+  `INSERT INTO module_visibility(id_module, hidden) VALUES('fbsuivi', true)
+   ON CONFLICT (id_module) DO NOTHING`
+)).catch(e => console.error('[ModuleVisibility] Erreur création table:', e.message));
+
+app.get('/api/module-visibility', async(req,res)=>{
+  try{
+    const r = await pool.query('SELECT id_module, hidden FROM module_visibility');
+    const map = {};
+    r.rows.forEach(row => { map[row.id_module] = row.hidden; });
+    res.json(map);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.put('/api/module-visibility/:id', async(req,res)=>{
+  try{
+    const { hidden } = req.body;
+    await pool.query(
+      `INSERT INTO module_visibility(id_module, hidden, updated_at) VALUES($1,$2,NOW())
+       ON CONFLICT (id_module) DO UPDATE SET hidden=$2, updated_at=NOW()`,
+      [req.params.id, !!hidden]
+    );
+    res.json({success:true});
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* ── SUIVI PARTAGE FACEBOOK GROUPES (manuel) ──────────────────────────── */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS facebook_groups (
+    id   SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS facebook_group_shares (
+    id         SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL,
+    groupe     TEXT    NOT NULL,
+    shared_at  TIMESTAMP DEFAULT NOW()
+  );
+`).then(() => pool.query(
+  `INSERT INTO facebook_groups(name) VALUES('Paris 13e Annonces'), ('Paris 5e/6e/7e Annonces')
+   ON CONFLICT (name) DO NOTHING`
+)).catch(e => console.error('[FacebookGroupes] Erreur création tables:', e.message));
+
+app.get('/api/facebook-groups', async(req,res)=>{
+  try{
+    const r = await pool.query('SELECT id, name FROM facebook_groups ORDER BY name ASC');
+    res.json(r.rows);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/facebook-groups', async(req,res)=>{
+  try{
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({error:'Nom du groupe requis'});
+    const r = await pool.query(
+      'INSERT INTO facebook_groups(name) VALUES($1) ON CONFLICT (name) DO NOTHING RETURNING *',
+      [name.trim()]
+    );
+    res.json(r.rows[0] || { name: name.trim() });
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.get('/api/facebook-shares/status', async(req,res)=>{
+  try{
+    const produits = await pool.query(`
+      SELECT MIN(p.id) AS id, p.name, p.category, p.sale_price, p.condition,
+             COUNT(*) AS qty, array_agg(p.id) AS ids
+      FROM products p
+      WHERE p.statut_produit = 'DISPONIBLE'
+        AND p.stock_quantity > 0
+        AND p.category IN ('Smartphone', 'Tablette', 'Téléphone', 'Accessoire')
+      GROUP BY p.name, p.category, p.sale_price, p.condition
+      ORDER BY p.category, p.name
+    `);
+    const groupesRes = await pool.query('SELECT name FROM facebook_groups ORDER BY name ASC');
+    const groupes = groupesRes.rows.map(g => g.name);
+
+    const sharesRes = await pool.query('SELECT product_id, groupe, shared_at FROM facebook_group_shares');
+    const sharesByProduct = {};
+    sharesRes.rows.forEach(s => {
+      if (!sharesByProduct[s.product_id]) sharesByProduct[s.product_id] = [];
+      sharesByProduct[s.product_id].push(s);
+    });
+
+    const joursDepuis = (date) => Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+
+    const status = produits.rows.map(p => {
+      const partages = p.ids.flatMap(id => sharesByProduct[id] || []);
+      const dernier = partages.length
+        ? partages.reduce((a,b) => new Date(a.shared_at) > new Date(b.shared_at) ? a : b)
+        : null;
+
+      /* Groupe suggéré = celui dont la dernière utilisation pour ce produit est la plus ancienne (ou jamais utilisé) */
+      let suggestion = groupes[0] || null;
+      let meilleurJours = -1;
+      groupes.forEach(groupe => {
+        const partagesGroupe = partages.filter(s => s.groupe === groupe);
+        const d = partagesGroupe.length
+          ? partagesGroupe.reduce((a,b) => new Date(a.shared_at) > new Date(b.shared_at) ? a : b)
+          : null;
+        const jours = d ? joursDepuis(d.shared_at) : Infinity;
+        if (jours > meilleurJours) { meilleurJours = jours; suggestion = groupe; }
+      });
+
+      return {
+        id: p.id, name: p.name, category: p.category, sale_price: p.sale_price, condition: p.condition, qty: Number(p.qty),
+        dernierGroupe: dernier ? dernier.groupe : null,
+        dernierPartage: dernier ? dernier.shared_at : null,
+        joursDepuis: dernier ? joursDepuis(dernier.shared_at) : null,
+        suggestion,
+      };
+    }).sort((a,b) => {
+      const ja = a.joursDepuis === null ? Infinity : a.joursDepuis;
+      const jb = b.joursDepuis === null ? Infinity : b.joursDepuis;
+      return jb - ja;
+    });
+
+    res.json(status);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/facebook-shares', async(req,res)=>{
+  try{
+    const { product_id, groupe } = req.body;
+    if (!product_id || !groupe) return res.status(400).json({error:'product_id et groupe requis'});
+    const r = await pool.query(
+      'INSERT INTO facebook_group_shares(product_id, groupe) VALUES($1,$2) RETURNING *',
+      [product_id, groupe]
+    );
+    res.json(r.rows[0]);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
 function isBeforeToday(dateStr) {
   if (!dateStr) return false;
   const d = new Date(dateStr);
@@ -127,7 +275,7 @@ app.delete('/api/products/:id',async(req,res)=>{
 app.post('/api/orders',async(req,res)=>{
   const client=await pool.connect();
   try{
-    const{cart,payment,customer,comment,garantie,amount_cb,amount_cash,amount_credit,sale_date}=req.body;
+    const{cart,payment,customer,comment,garantie,amount_cb,amount_cash,amount_credit,sale_date,repair_id}=req.body;
     if(!cart||!cart.length)return res.status(400).json({success:false,error:'Panier vide'});
     const total=cart.reduce((s,i)=>s+(Number(i.price)*Number(i.qty))-(Number(i.discount||0)*Number(i.qty)),0);
     const cb=Number(amount_cb||0),cash=Number(amount_cash||0),credit=Number(amount_credit||0);
@@ -137,16 +285,20 @@ app.post('/api/orders',async(req,res)=>{
     const numRes=await client.query("SELECT next_numero('VNT',$1,'orders','numero') AS num",[dateStr]);
     const numero=numRes.rows[0].num;
     const orderDate = sale_date ? new Date(sale_date) : new Date();
-    const or=await client.query(`INSERT INTO orders(numero,total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,garantie,created_at) VALUES($1,$2,$3,$4,$5,'completed',$6,$7,$8,$9,$10) RETURNING id`,
-      [numero,total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit,garantie||null,orderDate]);
+    const or=await client.query(`INSERT INTO orders(numero,total,payment_method,customer_name,comment,status,amount_cb,amount_cash,amount_credit,garantie,created_at,repair_id) VALUES($1,$2,$3,$4,$5,'completed',$6,$7,$8,$9,$10,$11) RETURNING id`,
+      [numero,total.toFixed(2),pm,customer||'',comment||'',cb,cash,credit,garantie||null,orderDate,repair_id||null]);
     const orderId=or.rows[0].id;
     for(const item of cart){
       await client.query(`INSERT INTO order_items(order_id,product_id,quantity,price,discount) VALUES($1,$2,$3,$4,$5)`,[orderId,item.id,item.qty,Number(item.price),Number(item.discount||0)]);
       await client.query(`UPDATE products SET stock_quantity=stock_quantity-$1,updated_at=NOW() WHERE id=$2`,[item.qty,item.id]);
-      /* Mettre statut VENDU uniquement pour les produits LOT (articles unitaires).
-         Les produits COMMANDE/DIRECT ont des quantités et restent DISPONIBLE. */
+      /* Produits LOT (articles unitaires) : VENDU dès la 1ère vente.
+         Produits COMMANDE/DIRECT (quantités) : VENDU seulement quand le stock atteint 0. */
       await client.query(
-        "UPDATE products SET statut_produit='VENDU' WHERE id=$1 AND type_entree='LOT' AND statut_produit!='VENDU'",
+        `UPDATE products SET statut_produit=CASE
+           WHEN type_entree='LOT' THEN 'VENDU'
+           WHEN stock_quantity<=0 THEN 'VENDU'
+           ELSE 'DISPONIBLE' END
+         WHERE id=$1`,
         [item.id]);
     }
     if(credit>0){await client.query(`INSERT INTO customer_credits(customer_name,phone,order_id,total_amount,amount_paid,amount_due,status,notes) VALUES($1,$2,$3,$4,$5,$6,'EN_COURS',$7)`,
@@ -204,8 +356,8 @@ app.delete('/api/orders/:id',async(req,res)=>{
     const orderSnap=snap.rows[0];
     /* Remettre le stock */
     await client.query(`UPDATE products p SET stock_quantity=stock_quantity+oi.quantity,updated_at=NOW() FROM order_items oi WHERE oi.order_id=$1 AND p.id=oi.product_id`,[req.params.id]);
-    /* Remettre les produits LOT à DISPONIBLE */
-    await client.query(`UPDATE products p SET statut_produit='DISPONIBLE' FROM order_items oi WHERE oi.order_id=$1 AND p.id=oi.product_id AND p.type_entree='LOT' AND p.statut_produit='VENDU'`,[req.params.id]);
+    /* Repasser à DISPONIBLE les produits redevenus en stock (LOT ou quantité) */
+    await client.query(`UPDATE products p SET statut_produit='DISPONIBLE' FROM order_items oi WHERE oi.order_id=$1 AND p.id=oi.product_id AND p.stock_quantity>0 AND p.statut_produit='VENDU'`,[req.params.id]);
     await client.query(`DELETE FROM customer_credits WHERE order_id=$1`,[req.params.id]);
     await client.query(`DELETE FROM order_items WHERE order_id=$1`,[req.params.id]);
     await client.query(`DELETE FROM orders WHERE id=$1`,[req.params.id]);
@@ -392,7 +544,7 @@ app.get('/api/rapport-comptable/generer', async(req,res)=>{
     doc.font('Helvetica-Bold').fontSize(14).text('The SMARTPHONE',40,40);
     doc.font('Helvetica').fontSize(9).fillColor('#444')
        .text("1 Avenue d'Italie, 75013 Paris",40,57)
-       .text('01 47 07 18 66  |  smartphonesatelier4@gmail.com  |  www.thesmartphone.pro',40,68);
+       .text('01 47 07 18 66  |  smartphoneatelier4@gmail.com  |  www.thesmartphone.pro',40,68);
     doc.font('Helvetica-Bold').fontSize(12).fillColor('#000')
        .text('Rapport Comptable',0,40,{align:'right'})
        .font('Helvetica').fontSize(10)
@@ -535,7 +687,22 @@ app.get('/api/repairs/search',async(req,res)=>{
     res.json(r.rows);
   }catch(e){res.status(500).json({error:e.message});}
 });
-app.get('/api/repairs/:id',async(req,res)=>{try{const r=await pool.query(`SELECT r.*,p.name AS cadeau_nom FROM repairs r LEFT JOIN products p ON p.id=r.cadeau_product_id WHERE r.id=$1`,[req.params.id]);res.json(r.rows[0]);}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/repairs/:id',async(req,res)=>{try{
+  const r=await pool.query(`SELECT r.*,p.name AS cadeau_nom FROM repairs r LEFT JOIN products p ON p.id=r.cadeau_product_id WHERE r.id=$1`,[req.params.id]);
+  const rep=r.rows[0];
+  if(rep){
+    const ord=await pool.query(`SELECT id,amount_cb,amount_cash,amount_credit FROM orders WHERE repair_id=$1`,[req.params.id]);
+    if(ord.rows[0]){
+      const items=await pool.query(`SELECT oi.product_id,oi.quantity,oi.price,oi.discount,COALESCE(p.name,'Produit supprimé') AS name FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=$1`,[ord.rows[0].id]);
+      rep.extra_order={...ord.rows[0],items:items.rows};
+    }
+  }
+  res.json(rep);
+}catch(e){res.status(500).json({error:e.message});}});
+app.get('/api/orders/by-repair/:repairId',async(req,res)=>{try{
+  const ord=await pool.query(`SELECT id FROM orders WHERE repair_id=$1`,[req.params.repairId]);
+  res.json(ord.rows[0]||null);
+}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/repairs',async(req,res)=>{
   const client=await pool.connect();
   try{
@@ -572,9 +739,9 @@ app.post('/api/repairs',async(req,res)=>{
     for(const item of items){
       if(!item.panne&&!item.nom)continue;
       await client.query(
-        `INSERT INTO repair_parts(repair_id,nom,cout,source,panne,prix_reparation)
-         VALUES($1,$2,$3,'ACHAT',$4,$5)`,
-        [repairId,item.nom||item.panne||'',0,item.panne||null,Number(item.prix_reparation||0)]);
+        `INSERT INTO repair_parts(repair_id,nom,cout,source,panne,prix_reparation,remise_reparation)
+         VALUES($1,$2,$3,'ACHAT',$4,$5,$6)`,
+        [repairId,item.nom||item.panne||'',0,item.panne||null,Number(item.prix_reparation||0),Number(item.remise_reparation||0)]);
     }
     await client.query('COMMIT');
     res.json(r.rows[0]);
@@ -639,9 +806,9 @@ app.put('/api/repairs/:id',async(req,res)=>{
       for(const item of req.body.items){
         if(!item.panne&&!item.nom)continue;
         await client.query(
-          `INSERT INTO repair_parts(repair_id,nom,cout,source,panne,prix_reparation)
-           VALUES($1,$2,$3,'ACHAT',$4,$5)`,
-          [req.params.id,item.nom||item.panne||'',0,item.panne||null,Number(item.prix_reparation||0)]);
+          `INSERT INTO repair_parts(repair_id,nom,cout,source,panne,prix_reparation,remise_reparation)
+           VALUES($1,$2,$3,'ACHAT',$4,$5,$6)`,
+          [req.params.id,item.nom||item.panne||'',0,item.panne||null,Number(item.prix_reparation||0),Number(item.remise_reparation||0)]);
       }
     }
     await client.query('COMMIT');
@@ -913,7 +1080,12 @@ app.get('/api/lots/:id',async(req,res)=>{
       (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='DISPONIBLE') AS nb_stock,
       (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='EN_TEST') AS nb_test,
       (SELECT COUNT(*) FROM products WHERE lot_id=l.id AND statut_produit='REPARATION') AS nb_reparation,
-      (SELECT COALESCE(SUM(sale_price),0) FROM products WHERE lot_id=l.id AND statut_produit='VENDU') AS total_ventes
+      (SELECT COALESCE(SUM(sale_price),0) FROM products WHERE lot_id=l.id AND statut_produit='VENDU')
+      +
+      (SELECT COALESCE(SUM(oi.quantity*(oi.price-COALESCE(oi.discount,0))),0)
+       FROM order_items oi JOIN products p2 ON p2.id=oi.product_id
+       WHERE p2.lot_id=l.id AND p2.type_entree!='LOT')
+      AS total_ventes
     FROM lots l WHERE l.id=$1`,[req.params.id]);
     const items={rows:[]}; /* lot_items supprimée - tout est dans products */
     const costs=await pool.query(`SELECT lc.*,p.name AS product_name FROM lot_costs lc LEFT JOIN products p ON p.id=lc.product_id WHERE lc.lot_id=$1 ORDER BY lc.created_at ASC`,[req.params.id]);
@@ -1288,9 +1460,9 @@ app.post('/api/rapport/envoyer', async(req,res)=>{
   }catch(e){res.status(500).json({error:e.message});}
 });
 
-app.get('/api/rapport/test', async(req,res)=>{
+app.post('/api/rapport/test', async(req,res)=>{
   try{
-    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const date = req.body.date || new Date().toISOString().split('T')[0];
     const result = await envoyerRapport(pool, date);
     res.json(result);
   }catch(e){res.status(500).json({error:e.message});}
@@ -1589,7 +1761,7 @@ app.get('/api/commandes/:id', async(req,res)=>{
 app.post('/api/commandes', async(req,res)=>{
   const client=await pool.connect();
   try{
-    const{fournisseur,fournisseur_id,origine,date_commande,date_facture,date_livraison_prevue,
+    const{fournisseur,fournisseur_id,origine,statut,date_commande,date_facture,date_livraison_prevue,
           notes,paiement,montant_ht,montant_ttc,numero_facture,fichier_pdf,
           transporteur,created_by,items}=req.body;
     const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
@@ -1598,11 +1770,11 @@ app.post('/api/commandes', async(req,res)=>{
     console.log('CMD import:', {fournisseur,numero_facture,montant_ht,montant_ttc});
     await client.query('BEGIN');
     const cmd=await client.query(
-      `INSERT INTO commandes(numero,fournisseur,fournisseur_id,origine,date_commande,
+      `INSERT INTO commandes(numero,fournisseur,fournisseur_id,statut,origine,date_commande,
         date_facture,date_livraison_prevue,notes,paiement,montant_ht,montant_ttc,
         numero_facture,fichier_pdf,transporteur,created_by)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
-      [numero,fournisseur,fournisseur_id||null,origine||'MANUEL',
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+      [numero,fournisseur,fournisseur_id||null,statut||'EN_ATTENTE',origine||'MANUEL',
        date_commande||new Date().toISOString().slice(0,10),
        date_facture||null,date_livraison_prevue||null,
        notes||null,paiement||'card',
@@ -1624,6 +1796,36 @@ app.post('/api/commandes', async(req,res)=>{
   }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
   finally{client.release();}
 });
+
+/* ── Applique la réception d'une commande au stock (partagé PUT + confirmer-reception) ── */
+async function appliquerReceptionStock(db, cmd, items){
+  for(const it of items){
+    const qty = Number(it.quantite_cmd||1);
+    const nom = it.nom||'Produit';
+    const cat = it.categorie||'Pièce détachée';
+    const prix = Number(it.prix_ht||0);
+    const fournisseur = cmd.fournisseur||'';
+    const noteStr = '['+it.reference+'] '+nom+' — Facture #'+cmd.numero_facture;
+    /* Chercher si une ligne identique existe déjà dans le stock */
+    const existing = await db.query(
+      `SELECT id, stock_quantity FROM products
+       WHERE name=$1 AND category=$2 AND type_entree='COMMANDE' AND supplier_name=$3`,
+      [nom, cat, fournisseur]);
+    if(existing.rows.length>0){
+      /* Mettre à jour la quantité existante */
+      await db.query(
+        `UPDATE products SET stock_quantity=stock_quantity+$1, notes=$2 WHERE id=$3`,
+        [qty, noteStr, existing.rows[0].id]);
+    } else {
+      /* Créer une nouvelle ligne avec la quantité totale */
+      await db.query(
+        `INSERT INTO products(name,category,condition,purchase_price,sale_price,
+         stock_quantity,stock_alert,supplier_name,statut_produit,type_entree,notes)
+         VALUES($1,$2,'NEUF',$3,0,$4,3,$5,'DISPONIBLE','COMMANDE',$6)`,
+        [nom,cat,prix,qty,fournisseur,noteStr]);
+    }
+  }
+}
 
 /* ── PUT modifier une commande ── */
 app.put('/api/commandes/:id', async(req,res)=>{
@@ -1652,34 +1854,60 @@ app.put('/api/commandes/:id', async(req,res)=>{
     if(statut==='RECU'){
       const cmd=r.rows[0];
       const items=await pool.query('SELECT * FROM commande_items WHERE commande_id=$1',[req.params.id]);
-      for(const it of items.rows){
-        const qty = Number(it.quantite_cmd||1);
-        const nom = it.nom||'Produit';
-        const cat = it.categorie||'Pièce détachée';
-        const prix = Number(it.prix_ht||0);
-        const fournisseur = cmd.fournisseur||'';
-        const noteStr = '['+it.reference+'] '+nom+' — Facture #'+cmd.numero_facture;
-        /* Chercher si une ligne identique existe déjà dans le stock */
-        const existing = await pool.query(
-          `SELECT id, stock_quantity FROM products 
-           WHERE name=$1 AND category=$2 AND type_entree='COMMANDE' AND supplier_name=$3`,
-          [nom, cat, fournisseur]);
-        if(existing.rows.length>0){
-          /* Mettre à jour la quantité existante */
-          await pool.query(
-            `UPDATE products SET stock_quantity=stock_quantity+$1, notes=$2 WHERE id=$3`,
-            [qty, noteStr, existing.rows[0].id]);
-        } else {
-          /* Créer une nouvelle ligne avec la quantité totale */
-          await pool.query(
-            `INSERT INTO products(name,category,condition,purchase_price,sale_price,
-             stock_quantity,stock_alert,supplier_name,statut_produit,type_entree,notes)
-             VALUES($1,$2,'NEUF',$3,0,$4,3,$5,'DISPONIBLE','COMMANDE',$6)`,
-            [nom,cat,prix,qty,fournisseur,noteStr]);
-        }
-      }
+      await appliquerReceptionStock(pool, cmd, items.rows);
     }
 
+    res.json(r.rows[0]);
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* ── POST confirmer la réception d'une commande importée automatiquement (statut A_VALIDER → RECU) ── */
+app.post('/api/commandes/:id/confirmer-reception', async(req,res)=>{
+  const client=await pool.connect();
+  try{
+    const userName = req.headers['x-user-name'] || 'inconnu';
+    await client.query('BEGIN');
+    const cur=await client.query('SELECT * FROM commandes WHERE id=$1',[req.params.id]);
+    if(!cur.rows.length){await client.query('ROLLBACK');return res.status(404).json({error:'Commande introuvable'});}
+    if(cur.rows[0].statut!=='A_VALIDER'){
+      await client.query('ROLLBACK');
+      return res.status(400).json({error:'Cette commande n\'est pas en attente de confirmation'});
+    }
+    const r=await client.query(
+      `UPDATE commandes SET statut='RECU', date_livraison=CURRENT_DATE,
+        notes=COALESCE(notes,'') || ' | Confirmé par ' || $1 || ' le ' || NOW()::date,
+        updated_at=NOW()
+       WHERE id=$2 RETURNING *`,
+      [userName, req.params.id]);
+    const cmd=r.rows[0];
+    const items=await client.query('SELECT * FROM commande_items WHERE commande_id=$1',[req.params.id]);
+    await appliquerReceptionStock(client, cmd, items.rows);
+
+    /* Créer une dépense par article (même convention que l'import manuel) */
+    for(const it of items.rows){
+      const qty = Number(it.quantite_cmd||1);
+      const prixHt = Number(it.prix_ht||0);
+      const ttcLigne = prixHt*qty*1.20;
+      await client.query(
+        `INSERT INTO expenses(description,amount,amount_ht,amount_ttc,taux_tva,category,date,quantity)
+         VALUES($1,$2,$3,$4,20,'Fournisseur',CURRENT_DATE,$5)`,
+        ['['+cmd.fournisseur+' #'+cmd.numero_facture+'] '+(it.reference||'')+' - '+it.nom,
+         ttcLigne, prixHt*qty, ttcLigne, qty]);
+    }
+
+    await client.query('COMMIT');
+    res.json(cmd);
+  }catch(e){await client.query('ROLLBACK');res.status(500).json({error:e.message});}
+  finally{client.release();}
+});
+
+/* ── POST rejeter définitivement une commande importée automatiquement ── */
+app.post('/api/commandes/:id/rejeter', async(req,res)=>{
+  try{
+    const r=await pool.query(
+      `UPDATE commandes SET statut='REJETEE', updated_at=NOW() WHERE id=$1 RETURNING *`,
+      [req.params.id]);
+    if(!r.rows.length) return res.status(404).json({error:'Commande introuvable'});
     res.json(r.rows[0]);
   }catch(e){res.status(500).json({error:e.message});}
 });
@@ -1904,7 +2132,7 @@ app.put('/api/products/full/:id', async(req,res)=>{
       [name,category||'Smartphone',condition||'NEUF',color||null,grade||null,
        location_zone||null,location_detail||null,supplier_name||null,
        Number(purchase_price||0),Number(sale_price||0),
-       Number(stock_quantity||1),Number(stock_alert||3),
+       stock_quantity!==undefined&&stock_quantity!==null?Number(stock_quantity):1,Number(stock_alert||3),
        imei||null,numero_serie||null,statut_produit||'DISPONIBLE',
        type_entree||'ACHAT_DIRECT',finalLotId||null,commande_id||null,
        client_rachat_nom||null,client_rachat_tel||null,notes||null,
@@ -2052,7 +2280,12 @@ app.get('/api/lots/:id/products', async(req,res)=>{
         COALESCE(json_agg(DISTINCT pb.*) FILTER (WHERE pb.id IS NOT NULL), '[]') AS barcodes,
         COALESCE((SELECT SUM(lc.amount) FROM lot_costs lc WHERE lc.product_id=p.id AND lc.lot_id=$1),0) AS frais_reparation,
         (SELECT o.created_at FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE oi.product_id=p.id ORDER BY o.created_at DESC LIMIT 1) AS date_vente,
-        (SELECT r.created_at FROM repairs r WHERE r.id=p.repair_id) AS date_reparation
+        (SELECT r.created_at FROM repairs r WHERE r.id=p.repair_id) AS date_reparation,
+        (
+          COALESCE((SELECT SUM(oi.quantity*(oi.price-COALESCE(oi.discount,0))) FROM order_items oi WHERE oi.product_id=p.id),0)
+          -
+          COALESCE((SELECT SUM(oi2.quantity*(oi2.price-COALESCE(oi2.discount,0))) FROM returns_store rs JOIN order_items oi2 ON oi2.order_id=rs.order_id WHERE oi2.product_id=p.id),0)
+        ) AS cumul_ventes
       FROM products p
       LEFT JOIN product_barcodes pb ON pb.product_id = p.id
       WHERE p.lot_id = $1
@@ -3417,6 +3650,116 @@ app.delete('/api/whatsapp/messages/mine', async(req,res)=>{
 
     res.json({ total: results.length, results });
   }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* =======================================================
+   RELEVÉS BANCAIRES
+======================================================= */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS bank_statements (
+    id             SERIAL PRIMARY KEY,
+    bank_name      VARCHAR(50)   NOT NULL DEFAULT 'CIC',
+    account_number VARCHAR(30)   NOT NULL,
+    period_start   DATE          NOT NULL,
+    period_end     DATE          NOT NULL,
+    balance_start  NUMERIC(12,2) NOT NULL DEFAULT 0,
+    balance_end    NUMERIC(12,2) NOT NULL DEFAULT 0,
+    total_credit   NUMERIC(12,2) NOT NULL DEFAULT 0,
+    total_debit    NUMERIC(12,2) NOT NULL DEFAULT 0,
+    notes          TEXT,
+    created_at     TIMESTAMP DEFAULT NOW(),
+    updated_at     TIMESTAMP DEFAULT NOW()
+  );
+  CREATE TABLE IF NOT EXISTS bank_transactions (
+    id               SERIAL PRIMARY KEY,
+    statement_id     INTEGER       NOT NULL REFERENCES bank_statements(id) ON DELETE CASCADE,
+    transaction_date DATE          NOT NULL,
+    label            TEXT          NOT NULL,
+    debit            NUMERIC(12,2) NOT NULL DEFAULT 0,
+    credit           NUMERIC(12,2) NOT NULL DEFAULT 0,
+    category         VARCHAR(80),
+    notes            TEXT,
+    created_at       TIMESTAMP DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_bank_tx_stmt   ON bank_transactions(statement_id);
+  CREATE INDEX IF NOT EXISTS idx_bank_tx_date   ON bank_transactions(transaction_date);
+  CREATE INDEX IF NOT EXISTS idx_bank_stmt_end  ON bank_statements(period_end DESC);
+`).catch(e => console.error('[BankStatements] Erreur création tables:', e.message));
+
+/* Liste des relevés */
+app.get('/api/bank-statements', async(req,res)=>{
+  try{
+    const r = await pool.query(`SELECT * FROM bank_statements ORDER BY period_end DESC`);
+    res.json(r.rows);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* Créer un relevé */
+app.post('/api/bank-statements', async(req,res)=>{
+  try{
+    const {bank_name,account_number,period_start,period_end,balance_start,balance_end,total_credit,total_debit,notes}=req.body;
+    const r = await pool.query(
+      `INSERT INTO bank_statements(bank_name,account_number,period_start,period_end,balance_start,balance_end,total_credit,total_debit,notes)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [bank_name,account_number,period_start,period_end,balance_start||0,balance_end||0,total_credit||0,total_debit||0,notes||null]
+    );
+    res.json(r.rows[0]);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* Modifier un relevé */
+app.put('/api/bank-statements/:id', async(req,res)=>{
+  try{
+    const {bank_name,account_number,period_start,period_end,balance_start,balance_end,total_credit,total_debit,notes}=req.body;
+    const r = await pool.query(
+      `UPDATE bank_statements SET bank_name=$1,account_number=$2,period_start=$3,period_end=$4,
+       balance_start=$5,balance_end=$6,total_credit=$7,total_debit=$8,notes=$9,updated_at=NOW()
+       WHERE id=$10 RETURNING *`,
+      [bank_name,account_number,period_start,period_end,balance_start||0,balance_end||0,total_credit||0,total_debit||0,notes||null,req.params.id]
+    );
+    if(!r.rows.length) return res.status(404).json({error:'Relevé non trouvé'});
+    res.json(r.rows[0]);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* Supprimer un relevé (et ses transactions via CASCADE) */
+app.delete('/api/bank-statements/:id', async(req,res)=>{
+  try{
+    await pool.query(`DELETE FROM bank_statements WHERE id=$1`,[req.params.id]);
+    res.json({ok:true});
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* Transactions d'un relevé */
+app.get('/api/bank-statements/:id/transactions', async(req,res)=>{
+  try{
+    const r = await pool.query(
+      `SELECT * FROM bank_transactions WHERE statement_id=$1 ORDER BY transaction_date, id`,
+      [req.params.id]
+    );
+    res.json(r.rows);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* Ajouter une transaction */
+app.post('/api/bank-statements/:id/transactions', async(req,res)=>{
+  try{
+    const {transaction_date,label,debit,credit,category,notes}=req.body;
+    const r = await pool.query(
+      `INSERT INTO bank_transactions(statement_id,transaction_date,label,debit,credit,category,notes)
+       VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [req.params.id,transaction_date,label,debit||0,credit||0,category||null,notes||null]
+    );
+    res.json(r.rows[0]);
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
+/* Supprimer une transaction */
+app.delete('/api/bank-statements/:stmtId/transactions/:txId', async(req,res)=>{
+  try{
+    await pool.query(`DELETE FROM bank_transactions WHERE id=$1 AND statement_id=$2`,[req.params.txId,req.params.stmtId]);
+    res.json({ok:true});
+  }catch(e){ res.status(500).json({error:e.message}); }
 });
 
 /* =======================================================
