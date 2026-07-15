@@ -295,7 +295,7 @@ app.post('/api/orders',async(req,res)=>{
          Produits COMMANDE/DIRECT (quantités) : VENDU seulement quand le stock atteint 0. */
       await client.query(
         `UPDATE products SET statut_produit=CASE
-           WHEN type_entree='LOT' THEN 'VENDU'
+           WHEN type_entree='LOT' OR lot_id IS NOT NULL THEN 'VENDU'
            WHEN stock_quantity<=0 THEN 'VENDU'
            ELSE 'DISPONIBLE' END
          WHERE id=$1`,
@@ -463,6 +463,83 @@ app.get('/api/rapport-comptable',async(req,res)=>{
       total_ret:parseFloat(totRetC.rows[0].total),
       total_ret_esp:parseFloat(totRetC.rows[0].total_esp),
       total_ret_cb:parseFloat(totRetC.rows[0].total_cb)}});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* =======================================================
+   RAPPORT COMPTABLE — DERNIERE DATE DISPONIBLE
+======================================================= */
+app.get('/api/rapport-comptable/last-date',async(req,res)=>{
+  try{
+    const r=await pool.query(`
+      SELECT GREATEST(
+        (SELECT MAX(DATE(created_at)) FROM orders WHERE status IS NULL OR status!='cancelled'),
+        (SELECT MAX(DATE(COALESCE(delivered_at,created_at))) FROM repairs WHERE status IN ('TERMINE','LIVRE'))
+      ) AS last_date`);
+    const d=r.rows[0].last_date;
+    res.json({date: d ? (typeof d==='string'?d.slice(0,10):new Date(d).toISOString().slice(0,10)) : new Date().toISOString().slice(0,10)});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
+/* =======================================================
+   RAPPORT COMPTABLE — PERIODE (plage de dates)
+======================================================= */
+app.get('/api/rapport-comptable/periode',async(req,res)=>{
+  try{
+    const debut=req.query.debut||new Date().toISOString().slice(0,10);
+    const fin=req.query.fin||debut;
+    const ventes=await pool.query(`
+      SELECT TO_CHAR(DATE(o.created_at),'YYYY-MM-DD') AS date_op,
+        STRING_AGG(DISTINCT COALESCE(p.name,'Produit supprimé'),', ') AS nom,
+        '—' AS fournisseur, 1 AS qty,
+        o.total - COALESCE(o.amount_credit,0) AS total_ligne,
+        COALESCE(o.amount_credit,0) AS amount_credit,
+        o.payment_method, o.id AS order_id, 'Vente' AS type_op
+      FROM orders o JOIN order_items oi ON oi.order_id=o.id LEFT JOIN products p ON p.id=oi.product_id
+      WHERE DATE(o.created_at) BETWEEN $1 AND $2
+        AND (o.status IS NULL OR o.status!='cancelled') AND o.payment_method!='credit'
+      GROUP BY o.id ORDER BY o.created_at DESC`,[debut,fin]);
+    const reps=await pool.query(`
+      SELECT TO_CHAR(DATE(COALESCE(delivered_at,created_at)),'YYYY-MM-DD') AS date_op,
+        TRIM(COALESCE(brand,'')||' '||COALESCE(model,'')||' '||COALESCE(device_type,'')) AS nom,
+        'SAV' AS fournisseur, 1 AS qty,
+        COALESCE(final_price,estimated_price,0) - COALESCE(amount_credit,0) AS total_ligne,
+        COALESCE(amount_credit,0) AS amount_credit,
+        payment_method, id AS order_id, 'Réparation' AS type_op
+      FROM repairs
+      WHERE DATE(COALESCE(delivered_at,created_at)) BETWEEN $1 AND $2
+        AND status IN ('TERMINE','LIVRE') ORDER BY COALESCE(delivered_at,created_at) DESC`,[debut,fin]);
+    const retC=await pool.query(`
+      SELECT id,customer_name,refund_amount,refund_method,order_id,
+        TO_CHAR(DATE(created_at),'YYYY-MM-DD') AS date_op
+      FROM returns_store WHERE DATE(created_at) BETWEEN $1 AND $2
+        AND status!='REFUSE' ORDER BY created_at DESC`,[debut,fin]);
+    const totV=await pool.query(`
+      SELECT COALESCE(SUM(total-COALESCE(amount_credit,0)),0) AS total_ventes,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cb,0) WHEN payment_method='card' THEN total ELSE 0 END),0) AS total_cb,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 OR COALESCE(amount_cash,0)>0 THEN COALESCE(amount_cash,0) WHEN payment_method='cash' THEN total ELSE 0 END),0) AS total_esp
+      FROM orders WHERE DATE(created_at) BETWEEN $1 AND $2
+        AND (status IS NULL OR status!='cancelled') AND payment_method!='credit'`,[debut,fin]);
+    const totR=await pool.query(`
+      SELECT COALESCE(SUM(COALESCE(final_price,estimated_price,0)-COALESCE(amount_credit,0)),0) AS total_reps,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cb,0)>0 THEN amount_cb WHEN payment_method='card' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_cb,
+        COALESCE(SUM(CASE WHEN COALESCE(amount_cash,0)>0 THEN amount_cash WHEN payment_method='cash' THEN COALESCE(final_price,estimated_price,0) ELSE 0 END),0) AS total_esp
+      FROM repairs WHERE DATE(COALESCE(delivered_at,created_at)) BETWEEN $1 AND $2
+        AND status IN ('TERMINE','LIVRE')`,[debut,fin]);
+    const totDep=await pool.query(`SELECT COALESCE(SUM(amount),0) AS total_depenses FROM expenses WHERE DATE(date) BETWEEN $1 AND $2`,[debut,fin]);
+    const totRet=await pool.query(`
+      SELECT COALESCE(SUM(CASE WHEN refund_method='cash' THEN refund_amount ELSE 0 END),0) AS total_esp,
+        COALESCE(SUM(CASE WHEN refund_method='card' THEN refund_amount ELSE 0 END),0) AS total_cb,
+        COALESCE(SUM(refund_amount),0) AS total
+      FROM returns_store WHERE DATE(created_at) BETWEEN $1 AND $2 AND status!='REFUSE'`,[debut,fin]);
+    res.json({debut,fin,ventes:ventes.rows,reps:reps.rows,retours:retC.rows,totaux:{
+      total_ventes:parseFloat(totV.rows[0].total_ventes),total_reps:parseFloat(totR.rows[0].total_reps),
+      total_cb:parseFloat(totV.rows[0].total_cb)+parseFloat(totR.rows[0].total_cb),
+      total_esp:parseFloat(totV.rows[0].total_esp)+parseFloat(totR.rows[0].total_esp),
+      total_dep:parseFloat(totDep.rows[0].total_depenses),
+      total_ret:parseFloat(totRet.rows[0].total),
+      total_ret_esp:parseFloat(totRet.rows[0].total_esp),
+      total_ret_cb:parseFloat(totRet.rows[0].total_cb)}});
   }catch(e){res.status(500).json({error:e.message});}
 });
 
@@ -1310,7 +1387,9 @@ app.post('/api/auth/login', async(req,res)=>{
     if(!r.rows[0]){recordFail(ip);return res.status(401).json({error:'Utilisateur introuvable'});}
     const user=r.rows[0];
     let ok=false;
-    if(type==='pin'){
+    if(user.auth_type==='none'){
+      ok=true;
+    } else if(type==='pin'){
       ok=(user.pin===value);
     } else {
       ok=(user.password_hash===value);

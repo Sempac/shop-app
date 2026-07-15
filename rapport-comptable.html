@@ -1,72 +1,80 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <script src="/theme.js"></script>
-<script src="/sort-table.js"></script>
 <link rel="stylesheet" href="/theme.css">
 <meta charset="UTF-8">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 <title>Rapport Comptable — The SMARTPHONE</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:Arial,sans-serif;background:#f3f4f6;padding:20px;}
-.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
-.toolbar input[type=date]{padding:10px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
-button{padding:10px 18px;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;margin-left:6px;background:#333;color:white;}
-#document{max-width:700px;margin:0 auto;background:white;padding:28px;box-shadow:0 2px 8px #0001;}
+body{font-family:Arial,sans-serif;background:#f3f4f6;padding:16px;}
+
+/* ── Barre de navigation ── */
+.nav-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.nav-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.action-btns{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* ── Barre de filtres ── */
+.filter-bar{background:#1e293b;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.chip{padding:6px 12px;border:none;border-radius:20px;font-size:12px;font-weight:bold;cursor:pointer;background:#334155;color:#94a3b8;transition:all .15s;}
+.chip:hover{background:#475569;color:#e2e8f0;}
+.chip.active{background:#3b82f6;color:white;}
+.filter-sep{width:1px;height:24px;background:#475569;margin:0 2px;}
+.range-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.range-group label{color:#94a3b8;font-size:12px;font-weight:bold;}
+.range-group input[type=date]{padding:5px 8px;border:1px solid #475569;border-radius:6px;font-size:12px;background:#0f172a;color:#e2e8f0;cursor:pointer;}
+
+/* ── Boutons génériques ── */
+.btn{padding:7px 12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:12px;font-family:Arial;}
+.btn-nav{background:#f1f5f9;color:#111827;}
+.btn-vente{background:#b45309;color:white;}
+.btn-rep{background:#059669;color:white;}
+.btn-stock{background:#0891b2;color:white;}
+.btn-daily{background:#7c3aed;color:white;}
+.btn-gen{background:#3b82f6;color:white;}
+.btn-print{background:#475569;color:white;}
+.btn-pdf{background:#7c3aed;color:white;}
+.btn-excel{background:#16a34a;color:white;}
+.btn-email{background:#0891b2;color:white;}
+.btn-wa{background:#16a34a;color:white;}
+
+/* ── Document ── */
+#document{max-width:760px;margin:0 auto;background:white;padding:28px;box-shadow:0 2px 8px #0001;border-radius:8px;}
 .doc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px;}
 .shop{font-size:16px;font-weight:900;}
 .shop-info{font-size:10px;color:#333;margin-top:3px;line-height:1.6;}
 .doc-right{text-align:right;}
 .doc-title{font-size:13px;font-weight:900;text-transform:uppercase;}
-.doc-date{font-size:11px;margin-top:3px;}
+.doc-date{font-size:11px;margin-top:2px;}
+
 table{width:100%;border-collapse:collapse;font-size:12px;}
-th{border:1px solid #000;padding:5px 8px;text-align:left;font-weight:bold;background:#fff;color:#000;}
+th{border:1px solid #000;padding:5px 8px;text-align:left;font-weight:bold;background:#1e293b;color:white;}
 th.right{text-align:right;}
+th.center{text-align:center;}
 td{border:1px solid #ccc;padding:5px 8px;}
 td.right{text-align:right;}
 td.center{text-align:center;}
 tfoot td{border:1px solid #000;font-weight:bold;}
 tfoot td.right{text-align:right;}
 tfoot tr.grand td{border:2px solid #000;font-size:13px;}
+tr.day-header td{background:#1e293b;color:white;font-weight:bold;font-size:12px;padding:6px 8px;border:1px solid #0f172a;}
+
 .totals-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;}
 .totals-table td{padding:5px 8px;border:1px solid #000;}
 .totals-table .lbl{font-weight:bold;}
 .totals-table .val{text-align:right;font-weight:bold;}
 .totals-table .grand td{font-size:14px;font-weight:900;border:2px solid #000;}
 .printed-info{font-size:9px;color:#aaa;text-align:right;margin-top:10px;}
+
+.badge-vente{background:#b45309;color:white;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:bold;}
+.badge-rep{background:#059669;color:white;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:bold;}
+.badge-ret{background:#dc2626;color:white;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:bold;}
+
 @media print{
   body{background:white;padding:0;}
-  .toolbar{display:none!important;}
-  #document{box-shadow:none;padding:16px;}
-}
-
-.table-wrap table thead tr th,
-table.sticky thead tr th,
-.items-table thead tr th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #1e293b;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-
-
-
-
-/* En-têtes figés — relatifs au conteneur scrollable */
-.table-wrap {
-  overflow-y: auto;
-   /* hauteur dispo sous topbar+filtres */
-}
-.table-wrap table thead th,
-.items-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #1e293b;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  .nav-bar,.filter-bar{display:none!important;}
+  #document{box-shadow:none;padding:16px;max-width:100%;}
 }
 </style>
 <link rel="stylesheet" href="tooltips.css">
@@ -74,148 +82,303 @@ table.sticky thead tr th,
 </head>
 <body>
 
-<div class="toolbar">
-  <div style="display:flex;gap:6px;align-items:center;">
-    <button onclick="location.href='index.html'" style="padding:7px 10px;background:#f1f5f9;color:#111827;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🏠 Accueil</button>
-    <button onclick="location.href='sales.html'" style="padding:7px 10px;background:#b45309;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🛒 Vente</button>
-    <button onclick="location.href='repairs.html'" style="padding:7px 10px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🔧 Réparation</button>
-    <button onclick="location.href='stock.html'" style="padding:7px 10px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📦 Stock</button>
-    <button onclick="location.href='dailyreport.html'" style="padding:7px 10px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📅 Caisse du jour</button>
+<!-- Navigation + actions -->
+<div class="nav-bar">
+  <div class="nav-btns">
+    <button class="btn btn-nav" onclick="location.href='index.html'">🏠 Accueil</button>
+    <button class="btn btn-vente" onclick="location.href='sales.html'">🛒 Vente</button>
+    <button class="btn btn-rep" onclick="location.href='repairs.html'">🔧 Réparation</button>
+    <button class="btn btn-stock" onclick="location.href='stock.html'">📦 Stock</button>
+    <button class="btn btn-daily" onclick="location.href='dailyreport.html'">📅 Caisse du jour</button>
   </div>
-  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-    <input type="date" id="datePicker">
-    <button onclick="loadRapport()">🔎 Générer</button>
-    <button onclick="window.print()" style="background:#475569;">🖨️ Imprimer</button>
-    <button onclick="savePDF(this)" style="background:#7c3aed;">💾 Enregistrer PDF</button>
-    <button onclick="exportExcelRapport()" style="background:#16a34a;">📊 Export Excel</button>
-    <button onclick="sendEmailRapport(this)" style="background:#0891b2;">✉️ Email</button>
-    <button onclick="sendWhatsAppRapport()" style="background:#25d366;">💬 WhatsApp</button>
+  <div class="action-btns">
+    <button class="btn btn-print" onclick="window.print()">🖨️ Imprimer</button>
+    <button class="btn btn-excel" onclick="exportExcel()">📊 Excel</button>
+    <button class="btn btn-pdf" id="btnPDF" onclick="savePDF(this)">💾 PDF</button>
+    <button class="btn btn-email" id="btnEmail" onclick="sendEmailRapport(this)">✉️ Email</button>
+    <button class="btn btn-wa" id="btnWA" onclick="resendRapportAuto(this)" style="font-size:11px">📲 WhatsApp</button>
+  </div>
+</div>
+
+<!-- Filtres -->
+<div class="filter-bar">
+  <button class="chip" id="chip-today" onclick="setFilter('today')">Aujourd'hui</button>
+  <button class="chip" id="chip-week" onclick="setFilter('week')">Cette semaine</button>
+  <button class="chip" id="chip-lastweek" onclick="setFilter('lastweek')">Sem. passée</button>
+  <button class="chip" id="chip-month" onclick="setFilter('month')">Ce mois</button>
+  <button class="chip" id="chip-lastmonth" onclick="setFilter('lastmonth')">Mois passé</button>
+  <button class="chip" id="chip-year" onclick="setFilter('year')">Cette année</button>
+  <button class="chip" id="chip-lastyear" onclick="setFilter('lastyear')">An. passé</button>
+  <div class="filter-sep"></div>
+  <div class="range-group">
+    <label>Du</label>
+    <input type="date" id="dateDebut">
+    <label>au</label>
+    <input type="date" id="dateFin">
+    <button class="btn btn-gen" onclick="loadPeriode()">🔎 Générer</button>
   </div>
 </div>
 
 <div id="document">
   <div style="text-align:center;color:#999;padding:40px;font-size:14px" id="placeholder">
-    Sélectionnez une date et cliquez sur 🔎 Générer
+    ⏳ Chargement…
   </div>
   <div id="content" style="display:none"></div>
 </div>
 
 <script>
 const fmt = n => Number(n||0).toFixed(2) + ' €';
-document.getElementById('datePicker').value = new Date().toISOString().slice(0,10);
 
-function dateLabel(ds){
-  return new Date(ds+'T00:00:00').toLocaleDateString('fr-FR',
-    {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+let currentDebut = null, currentFin = null;
+
+/* ── Utilitaires dates ── */
+function isoDate(d) { return d.toISOString().slice(0,10); }
+
+function formatDate(s) {
+  return s ? s.slice(0,10).split('-').reverse().join('/') : '';
 }
 
-async function loadRapport(){
-  const date=document.getElementById('datePicker').value;
-  document.getElementById('placeholder').style.display='block';
-  document.getElementById('placeholder').textContent='⏳ Chargement...';
-  document.getElementById('content').style.display='none';
-  try{
-    /* Utilise la nouvelle route /api/rapport-comptable */
-    const res=await fetch('/api/rapport-comptable?date='+date);
-    const data=await res.json();
-    if(data.error)throw new Error(data.error);
-    renderRapport(date,data);
-  }catch(e){
-    document.getElementById('placeholder').textContent='❌ Erreur : '+e.message;
+function dateLabel(ds) {
+  return new Date(ds+'T00:00:00').toLocaleDateString('fr-FR',
+    {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
+
+function periodLabel(debut, fin) {
+  if (debut === fin) return dateLabel(debut);
+  const d1 = new Date(debut+'T00:00:00');
+  const d2 = new Date(fin+'T00:00:00');
+  return 'Du ' + d1.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})
+    + ' au ' + d2.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+}
+
+/* ── Chips ── */
+function setActiveChip(id) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  const el = document.getElementById('chip-'+id);
+  if (el) el.classList.add('active');
+}
+
+function clearChips() {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+}
+
+/* ── Quick filters ── */
+function setFilter(type) {
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
+  let debut, fin;
+
+  switch(type) {
+    case 'today':
+      debut = fin = isoDate(now); break;
+    case 'week': {
+      const dow = now.getDay() || 7;
+      const mon = new Date(now); mon.setDate(d - dow + 1);
+      debut = isoDate(mon); fin = isoDate(now); break;
+    }
+    case 'lastweek': {
+      const dow = now.getDay() || 7;
+      const sun = new Date(now); sun.setDate(d - dow);
+      const mon = new Date(sun); mon.setDate(sun.getDate() - 6);
+      debut = isoDate(mon); fin = isoDate(sun); break;
+    }
+    case 'month':
+      debut = isoDate(new Date(y, mo, 1)); fin = isoDate(now); break;
+    case 'lastmonth': {
+      debut = isoDate(new Date(y, mo-1, 1));
+      fin   = isoDate(new Date(y, mo, 0)); break;
+    }
+    case 'year':
+      debut = y+'-01-01'; fin = isoDate(now); break;
+    case 'lastyear':
+      debut = (y-1)+'-01-01'; fin = (y-1)+'-12-31'; break;
+  }
+
+  document.getElementById('dateDebut').value = debut;
+  document.getElementById('dateFin').value   = fin;
+  setActiveChip(type);
+  loadPeriode(debut, fin);
+}
+
+/* ── Chargement auto (dernier jour dispo en base) ── */
+async function loadAuto() {
+  try {
+    const r = await fetch('/api/rapport-comptable/last-date');
+    const d = await r.json();
+    const date = (d.date||'').slice(0,10) || isoDate(new Date());
+    document.getElementById('dateDebut').value = date;
+    document.getElementById('dateFin').value   = date;
+    setActiveChip('today');
+    await loadPeriode(date, date);
+  } catch(e) {
+    const t = isoDate(new Date());
+    document.getElementById('dateDebut').value = t;
+    document.getElementById('dateFin').value   = t;
+    await loadPeriode(t, t);
   }
 }
 
-function renderRapport(date,data){
-  const t=data.totaux;
-  const totalCA   = (t.total_ventes||0)+(t.total_reps||0);
-  const totalRet  = t.total_ret||0;
-  const netCaisse = totalCA-(t.total_dep||0)-totalRet;
+/* ── Chargement période ── */
+async function loadPeriode(debut, fin) {
+  debut = debut || document.getElementById('dateDebut').value;
+  fin   = fin   || document.getElementById('dateFin').value;
+  if (!debut || !fin) return;
+  if (fin < debut) { fin = debut; document.getElementById('dateFin').value = fin; }
 
-  /* Lignes ventes */
-  const rowsVentes=data.ventes.length===0
-    ?`<tr><td colspan="5" style="text-align:center;color:#999;padding:12px">Aucune vente encaissée</td></tr>`
-    :data.ventes.map(l=>`<tr>
-        <td>${l.nom}${l.amount_credit>0?'<br><span style="font-size:10px;color:#f59e0b">⏳ Crédit : '+fmt(l.amount_credit)+'</span>':''}</td>
-        <td>${l.fournisseur}</td>
-        <td class="center">${l.qty}</td>
-        <td class="center">Vente</td>
-        <td class="right">${fmt(l.total_ligne)}</td>
-      </tr>`).join('');
+  currentDebut = debut; currentFin = fin;
+  const singleDay = (debut === fin);
 
-  /* Lignes réparations */
-  const rowsReps=data.reps.length===0
-    ?`<tr><td colspan="5" style="text-align:center;color:#999;padding:12px">Aucune réparation ce jour</td></tr>`
-    :data.reps.map(l=>`<tr>
-        <td>${l.nom||'Réparation'}${l.amount_credit>0?'<br><span style="font-size:10px;color:#f59e0b">⏳ Crédit : '+fmt(l.amount_credit)+'</span>':''}</td>
-        <td>${l.fournisseur||'SAV'}</td>
-        <td class="center">${l.qty}</td>
-        <td class="center">Réparation</td>
-        <td class="right">${fmt(l.total_ligne)}</td>
-      </tr>`).join('');
+  document.getElementById('placeholder').style.display = 'block';
+  document.getElementById('placeholder').textContent = '⏳ Chargement…';
+  document.getElementById('content').style.display = 'none';
 
-  /* Lignes retours */
-  const retours=data.retours||[];
-  const rowsRetours=retours.length===0?''
-    :retours.map(r=>{
-      let prodName='Retour';
-      try{const its=typeof r.items==='string'?JSON.parse(r.items):(r.items||[]);if(its.length&&its[0].product_name)prodName=its[0].product_name;}catch(e){}
+  /* Boutons mono-jour uniquement */
+  ['btnPDF','btnEmail','btnWA'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = singleDay ? '' : 'none';
+  });
+
+  try {
+    const res  = await fetch('/api/rapport-comptable/periode?debut='+debut+'&fin='+fin);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderRapport(data, singleDay);
+  } catch(e) {
+    document.getElementById('placeholder').textContent = '❌ Erreur : '+e.message;
+  }
+}
+
+/* ── Rendu ── */
+function renderRapport(data, singleDay) {
+  const {debut, fin, ventes, reps, retours, totaux: t} = data;
+
+  const totalCA  = (t.total_ventes||0) + (t.total_reps||0);
+  const totalRet = t.total_ret||0;
+  const netCaisse = totalCA - (t.total_dep||0) - totalRet;
+
+  /* Fusion toutes lignes */
+  const allLines = [
+    ...ventes.map(v => ({...v, _type:'Vente'})),
+    ...reps.map(r  => ({...r, _type:'Réparation'})),
+    ...(retours||[]).map(r => ({...r, _type:'Retour'}))
+  ];
+
+  /* Grouper par date (DESC) */
+  const groups = {};
+  allLines.forEach(l => {
+    const k = (l.date_op||'').slice(0,10);
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(l);
+  });
+  const sortedDates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+
+  const cols = singleDay ? 5 : 6;
+
+  function renderLine(l) {
+    const dateCol = singleDay ? '' : `<td class="center" style="white-space:nowrap;font-size:11px">${formatDate(l.date_op)}</td>`;
+
+    if (l._type === 'Retour') {
       return `<tr style="background:#fff5f5">
-        <td style="color:#991b1b">${prodName}${r.customer_name?' — '+r.customer_name:''}${r.order_id?' (Vente #'+r.order_id+')':''}</td>
-        <td>—</td><td class="center">1</td>
-        <td class="center" style="color:#991b1b">Retour</td>
-        <td class="right" style="color:#dc2626">− ${fmt(r.refund_amount)}</td>
+        ${dateCol}
+        <td style="color:#991b1b">${l.customer_name||'Retour'}${l.order_id?' (Vente #'+l.order_id+')':''}</td>
+        <td>—</td>
+        <td class="center">1</td>
+        <td class="center"><span class="badge-ret">Retour</span></td>
+        <td class="right" style="color:#dc2626">− ${fmt(l.refund_amount)}</td>
       </tr>`;
-    }).join('');
+    }
 
-  document.getElementById('placeholder').style.display='none';
-  document.getElementById('content').style.display='block';
-  document.getElementById('content').innerHTML=`
+    const badge = l._type==='Vente'
+      ? '<span class="badge-vente">Vente</span>'
+      : '<span class="badge-rep">Réparation</span>';
+    const credit = parseFloat(l.amount_credit||0);
 
+    return `<tr>
+      ${dateCol}
+      <td>${l.nom||'—'}${credit>0?'<br><span style="font-size:10px;color:#f59e0b">⏳ Crédit : '+fmt(credit)+'</span>':''}</td>
+      <td>${l.fournisseur||'—'}</td>
+      <td class="center">${l.qty||1}</td>
+      <td class="center">${badge}</td>
+      <td class="right">${fmt(l.total_ligne)}</td>
+    </tr>`;
+  }
+
+  let tableRows = '';
+  const nbOps = allLines.length;
+
+  if (singleDay) {
+    /* Vue quotidienne : toutes les lignes d'un coup */
+    if (allLines.length === 0) {
+      tableRows = `<tr><td colspan="5" style="text-align:center;color:#999;padding:16px">Aucune opération ce jour</td></tr>`;
+    } else {
+      tableRows = allLines.map(renderLine).join('');
+    }
+  } else {
+    /* Vue multi-jours : grouper par date avec séparateur */
+    if (sortedDates.length === 0) {
+      tableRows = `<tr><td colspan="6" style="text-align:center;color:#999;padding:16px">Aucune opération sur cette période</td></tr>`;
+    } else {
+      sortedDates.forEach(date => {
+        const lines = groups[date];
+        const dayTotal = lines.reduce((s,l) => {
+          if (l._type==='Retour') return s - parseFloat(l.refund_amount||0);
+          return s + parseFloat(l.total_ligne||0);
+        }, 0);
+        tableRows += `<tr class="day-header">
+          <td colspan="6">📅 ${dateLabel(date)} &nbsp;—&nbsp; ${lines.length} opération(s) &nbsp;—&nbsp; ${fmt(dayTotal)}</td>
+        </tr>`;
+        tableRows += lines.map(renderLine).join('');
+      });
+    }
+  }
+
+  const dateColHeader = singleDay ? '' : '<th class="center">Date</th>';
+
+  document.getElementById('placeholder').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+  document.getElementById('content').innerHTML = `
     <div class="doc-header">
       <div>
         <div class="shop">The SMARTPHONE</div>
         <div class="shop-info">
           1 Avenue d'Italie, 75013 Paris<br>
-          01 47 07 18 66 &nbsp;|&nbsp; smartphonesatelier4@gmail.com
+          01 47 07 18 66 &nbsp;|&nbsp; smartphoneatelier4@gmail.com
         </div>
       </div>
       <div class="doc-right">
         <div class="doc-title">Rapport CA</div>
-        <div class="doc-date">${date.split('-').reverse().join('/')}</div>
-        <div class="doc-date">${dateLabel(date)}</div>
+        <div class="doc-date">${singleDay ? formatDate(debut) : formatDate(debut)+' → '+formatDate(fin)}</div>
+        <div class="doc-date" style="font-size:10px;color:#666">${periodLabel(debut,fin)}</div>
       </div>
     </div>
 
     <table>
       <thead>
         <tr>
-          <th>Nom</th>
+          ${dateColHeader}
+          <th>Désignation</th>
           <th>Fournisseur</th>
-          <th class="right">Quantité</th>
-          <th>Type</th>
+          <th class="center">Qté</th>
+          <th class="center">Type</th>
           <th class="right">CA</th>
         </tr>
       </thead>
-      <tbody>
-        ${rowsVentes}
-        ${rowsReps}
-        ${rowsRetours}
-      </tbody>
+      <tbody>${tableRows}</tbody>
       <tfoot>
         <tr>
-          <td colspan="4" style="font-weight:bold">Total Ventes</td>
+          <td colspan="${cols-1}" style="font-weight:bold">Total Ventes (${ventes.length})</td>
           <td class="right">${fmt(t.total_ventes)}</td>
         </tr>
         <tr>
-          <td colspan="4" style="font-weight:bold">Total Réparations</td>
+          <td colspan="${cols-1}" style="font-weight:bold">Total Réparations (${reps.length})</td>
           <td class="right">${fmt(t.total_reps)}</td>
         </tr>
         ${totalRet>0?`<tr style="color:#dc2626">
-          <td colspan="4" style="font-weight:bold">↩️ Remboursements (${retours.length})</td>
+          <td colspan="${cols-1}" style="font-weight:bold">↩️ Remboursements (${(retours||[]).length})</td>
           <td class="right">− ${fmt(totalRet)}</td>
         </tr>`:''}
         <tr class="grand">
-          <td colspan="4" style="font-weight:900">Total CA net</td>
+          <td colspan="${cols-1}" style="font-weight:900">TOTAL CA net — ${nbOps} opération(s)</td>
           <td class="right" style="font-size:14px;font-weight:900">${fmt(totalCA-totalRet)}</td>
         </tr>
       </tfoot>
@@ -233,154 +396,102 @@ function renderRapport(date,data){
   `;
 }
 
-loadRapport();
+/* ── Export Excel ── */
+function exportExcel() {
+  const content = document.getElementById('content');
+  if (!content || content.style.display==='none') { alert('Générez d\'abord le rapport.'); return; }
+  const rows = [['Date','Désignation','Fournisseur','Qté','Type','CA (EUR)']];
 
-/* ══ ENREGISTRER PDF (serveur → fichier + email) ══ */
-async function savePDF(btn) {
-  var content = document.getElementById('content');
-  if (!content || content.style.display === 'none') { alert('Générez d\'abord le rapport.'); return; }
-  var date = document.getElementById('datePicker').value;
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération…'; }
-  try {
-    var res  = await fetch('/api/rapport-comptable/generer?date=' + date);
-    var data = await res.json();
-    if (data.error) throw new Error(data.error);
-    var msg = '✅ PDF enregistré :\n' + data.saved;
-    if (data.emailSent)  msg += '\n\n✉️ Email envoyé à ittech75013@gmail.com';
-    if (data.emailError) msg += '\n\n⚠️ Email non envoyé : ' + data.emailError;
-    alert(msg);
-  } catch(e) {
-    alert('❌ Erreur : ' + e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '💾 Enregistrer PDF'; }
-  }
-}
-
-/* ══ EXPORT EXCEL ══ */
-function exportExcelRapport() {
-  var content = document.getElementById('content');
-  if (!content || content.style.display === 'none') { alert('Generez d abord le rapport'); return; }
-  var date = document.getElementById('datePicker').value;
-  var rows = [['Nom','Fournisseur','Qte','Type','CA (EUR)']];
-
-  content.querySelectorAll('tbody tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
+  content.querySelectorAll('tbody tr:not(.day-header)').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
     if (tds.length >= 5) {
+      const offset = tds.length >= 6 ? 0 : -1;
       rows.push([
-        tds[0].textContent.trim(),
-        tds[1].textContent.trim(),
-        tds[2].textContent.trim(),
-        tds[3].textContent.trim(),
-        tds[4].textContent.trim().replace(' EUR','').replace(' €','').replace(',','.')
+        tds.length>=6 ? tds[0].textContent.trim() : (currentDebut||''),
+        tds[1+offset<0?0:1+offset].textContent.trim(),
+        tds[2+offset<0?1:2+offset].textContent.trim(),
+        tds[3+offset<0?2:3+offset].textContent.trim(),
+        tds[4+offset<0?3:4+offset].textContent.trim(),
+        tds[tds.length-1].textContent.trim().replace(' €','').replace(',','.')
       ]);
     }
   });
 
   rows.push([]);
-  content.querySelectorAll('tfoot tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
-    if (tds.length >= 2) {
-      rows.push([tds[0].textContent.trim(),'','','',
-        tds[tds.length-1].textContent.trim().replace(' EUR','').replace(' €','')]);
-    }
+  content.querySelectorAll('tfoot tr').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length>=2) rows.push([tds[0].textContent.trim(),'','','','',tds[tds.length-1].textContent.trim().replace(' €','')]);
   });
 
   rows.push([]);
-  rows.push(['RECAP PAIEMENTS','','','','']);
-  content.querySelectorAll('.totals-table tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
-    if (tds.length >= 2) {
-      rows.push([tds[0].textContent.trim(),'','','',
-        tds[1].textContent.trim().replace(' EUR','').replace(' €','')]);
-    }
+  rows.push(['RECAP PAIEMENTS','','','','','']);
+  content.querySelectorAll('.totals-table tr').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length>=2) rows.push([tds[0].textContent.trim(),'','','','',tds[1].textContent.trim().replace(' €','')]);
   });
 
-  /* Délimiteur point-virgule = standard Excel français */
-  var csv = rows.map(function(r){
-    return r.map(function(v){ return (v||'').toString().replace(/;/g,' '); }).join(';');
-  }).join('\n');
-
-  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href = url;
-  a.download = 'rapport-comptable-' + date + '.csv';
-  a.click();
+  const periode = currentDebut===currentFin ? currentDebut : currentDebut+'_'+currentFin;
+  const csv = rows.map(r => r.map(v => (v||'').toString().replace(/;/g,' ')).join(';')).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'rapport-'+periode+'.csv'; a.click();
   URL.revokeObjectURL(url);
 }
 
-/* ══ EMAIL (même route serveur que savePDF) ══ */
-async function sendEmailRapport(btn) {
-  var content = document.getElementById('content');
-  if (!content || content.style.display === 'none') { alert('Générez d\'abord le rapport.'); return; }
-  if (!confirm('Envoyer le rapport par email à ittech75013@gmail.com ?')) return;
-  var date = document.getElementById('datePicker').value;
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
+/* ── Enregistrer PDF (mono-jour seulement) ── */
+async function savePDF(btn) {
+  const content = document.getElementById('content');
+  if (!content || content.style.display==='none') { alert('Générez d\'abord le rapport.'); return; }
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Génération…'; }
   try {
-    var res  = await fetch('/api/rapport-comptable/generer?date=' + date);
-    var data = await res.json();
+    const res  = await fetch('/api/rapport-comptable/generer?date='+currentDebut);
+    const data = await res.json();
     if (data.error) throw new Error(data.error);
-    if (data.emailSent)  alert('✅ Email envoyé avec succès !\n' + data.filename);
-    else                 alert('⚠️ PDF généré mais email non envoyé :\n' + (data.emailError||''));
-  } catch(e) {
-    alert('❌ Erreur : ' + e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '✉️ Email'; }
-  }
+    let msg = '✅ PDF enregistré :\n'+data.saved;
+    if (data.emailSent)  msg += '\n\n✉️ Email envoyé';
+    if (data.emailError) msg += '\n\n⚠️ Email non envoyé : '+data.emailError;
+    alert(msg);
+  } catch(e) { alert('❌ Erreur : '+e.message); }
+  finally { if (btn) { btn.disabled=false; btn.textContent='💾 PDF'; } }
 }
 
-/* ══ WHATSAPP ══ */
-function sendWhatsAppRapport() {
-  var content = document.getElementById('content');
-  if (!content || content.style.display === 'none') { alert('Generez d abord le rapport'); return; }
-  var date = document.getElementById('datePicker').value;
-  var dl   = new Date(date+'T00:00:00').toLocaleDateString('fr-FR',
-    {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-
-  var totals = [];
-  content.querySelectorAll('tfoot tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
-    if (tds.length >= 2) totals.push(tds[0].textContent.trim() + ' : ' + tds[tds.length-1].textContent.trim());
-  });
-
-  var recap = [];
-  content.querySelectorAll('.totals-table tr').forEach(function(tr) {
-    var tds = tr.querySelectorAll('td');
-    if (tds.length >= 2) recap.push(tds[0].textContent.trim() + ' : ' + tds[1].textContent.trim());
-  });
-
-  var msg = 'Rapport Comptable - The SMARTPHONE%0A' +
-    dl + '%0A%0A' +
-    totals.map(function(t){ return t; }).join('%0A') + '%0A%0A' +
-    recap.map(function(r){ return r; }).join('%0A');
-
-  window.open('https://wa.me/?text=' + msg, '_blank');
+/* ── Email (mono-jour seulement) ── */
+async function sendEmailRapport(btn) {
+  const content = document.getElementById('content');
+  if (!content || content.style.display==='none') { alert('Générez d\'abord le rapport.'); return; }
+  if (!confirm('Envoyer le rapport par email à ittech75013@gmail.com ?')) return;
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Envoi…'; }
+  try {
+    const res  = await fetch('/api/rapport-comptable/generer?date='+currentDebut);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    alert(data.emailSent ? '✅ Email envoyé !\n'+data.filename : '⚠️ PDF généré mais email non envoyé :\n'+(data.emailError||''));
+  } catch(e) { alert('❌ Erreur : '+e.message); }
+  finally { if (btn) { btn.disabled=false; btn.textContent='✉️ Email'; } }
 }
 
+/* ── WhatsApp (mono-jour seulement) ── */
+async function resendRapportAuto(btn) {
+  const content = document.getElementById('content');
+  if (!content || content.style.display==='none') { alert('Générez d\'abord le rapport.'); return; }
+  if (!confirm('Régénérer et renvoyer le rapport du '+formatDate(currentDebut)+' ?')) return;
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Envoi…'; }
+  try {
+    const res  = await fetch('/api/rapport/envoyer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:currentDebut})});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    let msg = data.waSent ? '✅ Envoyé sur WhatsApp !' : '⚠️ WhatsApp non envoyé : '+(data.waError||'raison inconnue');
+    msg += '\n\n💾 PDF : '+data.saved;
+    msg += data.emailSent ? '\n✉️ Email envoyé' : '\n⚠️ Email non envoyé : '+(data.emailError||'');
+    alert(msg);
+  } catch(e) { alert('❌ Erreur : '+e.message); }
+  finally { if (btn) { btn.disabled=false; btn.textContent='📲 WhatsApp'; } }
+}
+
+/* ── Démarrage ── */
+loadAuto();
 </script>
 <script src="tooltips.js"></script>
-<script>
-/* Figer l'en-tête via translateY au scroll */
-(function() {
-  function initSticky() {
-    document.querySelectorAll('.table-wrap, .scroll-wrap, [class*="wrap"]').forEach(function(wrap) {
-      if (wrap.querySelector('table thead')) {
-        wrap.addEventListener('scroll', function() {
-          var ths = wrap.querySelectorAll('table thead th');
-          var scrollTop = wrap.scrollTop;
-          ths.forEach(function(th) {
-            th.style.transform = 'translateY(' + scrollTop + 'px)';
-          });
-        });
-      }
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSticky);
-  } else {
-    initSticky();
-  }
-})();
-</script>
 </body>
 </html>
