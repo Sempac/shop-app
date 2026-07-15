@@ -136,10 +136,16 @@ tr:hover td{background:#f8fafc;}
   <h2>🏦 Relevés Bancaires</h2>
   <div style="display:flex;gap:8px;">
     <button class="btn btn-blue" onclick="openSynth()">📊 Synthèse</button>
-    <button class="btn btn-gray" onclick="openAddStmt()">➕ Nouveau relevé</button>
+    <button class="btn" style="background:#7c3aed;color:white;" onclick="importFromDownloads()">📥 Importer PDFs</button>
+    <button class="btn" style="background:#0891b2;color:white;" onclick="document.getElementById('pdfFileInput').click()">📄 Upload PDF</button>
+    <input type="file" id="pdfFileInput" accept=".pdf" style="display:none" onchange="uploadPdf(this)">
+    <button class="btn btn-gray" onclick="openAddStmt()">➕ Manuel</button>
     <button class="home-btn" onclick="location.href='index.html'">🏠 Accueil</button>
   </div>
 </div>
+
+<!-- Toast import -->
+<div id="importToast" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9999;background:#1e293b;color:white;padding:14px 20px;border-radius:10px;font-size:13px;max-width:420px;box-shadow:0 4px 16px #0004;"></div>
 
 <!-- KPI row -->
 <div class="kpi-row" id="kpiRow">
@@ -741,6 +747,50 @@ function drawSynthChart() {
 
 /* ── Init ── */
 loadStatements();
+
+/* ── Import PDFs depuis le dossier Téléchargements ── */
+function showToast(msg, color) {
+  const t = document.getElementById('importToast');
+  t.innerHTML = msg;
+  t.style.display = 'block';
+  t.style.background = color || '#1e293b';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.display = 'none', 8000);
+}
+
+async function importFromDownloads() {
+  showToast('⏳ Import en cours, veuillez patienter…', '#1e40af');
+  try {
+    const r = await fetch('/api/bank-statements/import-downloads', {method:'POST'});
+    const d = await r.json();
+    if (!r.ok) { showToast('❌ ' + (d.error||'Erreur'), '#b91c1c'); return; }
+    const errTxt = d.errors && d.errors.length
+      ? '<br><small>' + d.errors.map(e=>e.file+': '+e.error).join('<br>') + '</small>'
+      : '';
+    showToast('✅ ' + d.message + errTxt, d.errors && d.errors.length ? '#92400e' : '#166534');
+    loadStatements();
+  } catch(e) {
+    showToast('❌ ' + e.message, '#b91c1c');
+  }
+}
+
+async function uploadPdf(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  showToast('⏳ Analyse de ' + file.name + '…', '#1e40af');
+  const fd = new FormData();
+  fd.append('pdf', file);
+  try {
+    const r = await fetch('/api/bank-statements/import-pdf', {method:'POST', body:fd});
+    const d = await r.json();
+    if (!r.ok) { showToast('❌ ' + (d.error||'Erreur'), '#b91c1c'); return; }
+    showToast('✅ Importé : ' + (d.statement.notes||d.statement.period_end) + ' — ' + d.transactions + ' transactions', '#166534');
+    loadStatements();
+  } catch(e) {
+    showToast('❌ ' + e.message, '#b91c1c');
+  }
+}
 </script>
 </body>
 </html>

@@ -3895,6 +3895,122 @@ app.delete('/api/bank-statements/:stmtId/transactions/:txId', async(req,res)=>{
   }catch(e){ res.status(500).json({error:e.message}); }
 });
 
+/* ── Import PDF CIC (upload depuis le navigateur) ── */
+app.post('/api/bank-statements/import-pdf', (req,res)=>{
+  const multerTmp = require('multer')({dest:require('os').tmpdir()}).single('pdf');
+  multerTmp(req,res,function(err){
+    if(err) return res.status(500).json({error:err.message});
+    if(!req.file) return res.status(400).json({error:'Aucun fichier PDF'});
+    _importBankPdf(req.file.path, true, res);
+  });
+});
+
+/* ── Import en masse depuis le dossier Téléchargements ── */
+app.post('/api/bank-statements/import-downloads', async(req,res)=>{
+  const downloadsDir = path.join(require('os').homedir(),'Downloads');
+  let files;
+  try{
+    files = fs.readdirSync(downloadsDir)
+      .filter(f=>f.startsWith('Extrait de comptes Compte') && f.endsWith('.pdf'))
+      .map(f=>path.join(downloadsDir,f))
+      .sort();
+  }catch(e){ return res.status(500).json({error:'Impossible de lire le dossier Téléchargements : '+e.message}); }
+
+  if(!files.length) return res.json({imported:0,skipped:0,errors:[],message:'Aucun fichier trouvé'});
+
+  const results={imported:0,skipped:0,errors:[]};
+  for(const fpath of files){
+    try{
+      await _importBankPdfAsync(fpath);
+      results.imported++;
+    }catch(e){
+      if(e.message==='DUPLICATE') results.skipped++;
+      else results.errors.push({file:path.basename(fpath),error:e.message});
+    }
+  }
+  res.json({...results,total:files.length,message:`${results.imported} importés, ${results.skipped} déjà présents, ${results.errors.length} erreur(s)`});
+});
+
+/* Appelle le parseur Python et insère en base. deleteTmp=true supprime le fichier tmp après. */
+function _importBankPdf(pdfPath, deleteTmp, res){
+  const pyScript = path.join(__dirname,'parse_bank_cic.py');
+  const WIN_PYTHON = 'C:\\Users\\PC\\AppData\\Local\\Python\\bin\\python.exe';
+  const pyCmd = process.platform==='win32'
+    ? (fs.existsSync(WIN_PYTHON)?'"'+WIN_PYTHON+'"':'python')
+    : 'python3';
+  const {exec}=require('child_process');
+  exec(`${pyCmd} "${pyScript}" "${pdfPath}"`,{encoding:'utf-8',timeout:120000},async(err,stdout,stderr)=>{
+    if(deleteTmp){ try{fs.unlinkSync(pdfPath);}catch(e){} }
+    if(err) return res.status(500).json({error:(stderr||err.message).slice(0,400)});
+    let data;
+    try{ data=JSON.parse(stdout); }
+    catch(e){ return res.status(500).json({error:'Réponse Python invalide : '+stdout.slice(0,200)}); }
+    try{
+      const stmt = await _insertBankStatement(data);
+      res.json({ok:true,statement:stmt,transactions:data.transactions.length});
+    }catch(e){
+      if(e.message==='DUPLICATE') return res.status(409).json({error:'Ce relevé est déjà importé'});
+      res.status(500).json({error:e.message});
+    }
+  });
+}
+
+/* Version Promise pour l'import en masse */
+function _importBankPdfAsync(pdfPath){
+  return new Promise((resolve,reject)=>{
+    const pyScript=path.join(__dirname,'parse_bank_cic.py');
+    const WIN_PYTHON='C:\\Users\\PC\\AppData\\Local\\Python\\bin\\python.exe';
+    const pyCmd=process.platform==='win32'
+      ?(fs.existsSync(WIN_PYTHON)?'"'+WIN_PYTHON+'"':'python'):'python3';
+    const {exec}=require('child_process');
+    exec(`${pyCmd} "${pyScript}" "${pdfPath}"`,{encoding:'utf-8',timeout:120000},(err,stdout,stderr)=>{
+      if(err) return reject(new Error((stderr||err.message).slice(0,200)));
+      let data;
+      try{ data=JSON.parse(stdout); }
+      catch(e){ return reject(new Error('JSON invalide : '+stdout.slice(0,100))); }
+      _insertBankStatement(data).then(resolve).catch(reject);
+    });
+  });
+}
+
+/* Insère un relevé + ses transactions. Lève DUPLICATE si déjà présent. */
+async function _insertBankStatement(data){
+  const dup=await pool.query(
+    `SELECT id FROM bank_statements WHERE account_number=$1 AND period_start=$2 AND period_end=$3`,
+    [data.account_number,data.period_start,data.period_end]
+  );
+  if(dup.rows.length){ const e=new Error('DUPLICATE'); e.message='DUPLICATE'; throw e; }
+
+  const MONTHS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const notes=data.notes||(()=>{
+    try{ const d=new Date(data.period_start); return MONTHS_FR[d.getMonth()]+' '+d.getFullYear(); }catch(e2){ return data.period_start; }
+  })();
+
+  const r=await pool.query(
+    `INSERT INTO bank_statements(bank_name,account_number,period_start,period_end,balance_start,balance_end,total_credit,total_debit,notes)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [data.bank_name,data.account_number,data.period_start,data.period_end,
+     data.balance_start||0,data.balance_end||0,data.total_credit||0,data.total_debit||0,notes]
+  );
+  const stmtId=r.rows[0].id;
+
+  if(data.transactions && data.transactions.length){
+    await pool.query(
+      `INSERT INTO bank_transactions(statement_id,transaction_date,label,debit,credit,category,notes)
+       SELECT $1, unnest($2::date[]), unnest($3::text[]), unnest($4::numeric[]), unnest($5::numeric[]), unnest($6::text[]), NULL`,
+      [
+        stmtId,
+        data.transactions.map(t=>t.transaction_date),
+        data.transactions.map(t=>t.label||''),
+        data.transactions.map(t=>t.debit||0),
+        data.transactions.map(t=>t.credit||0),
+        data.transactions.map(t=>t.category||null),
+      ]
+    );
+  }
+  return r.rows[0];
+}
+
 /* =======================================================
    AUDIT LOG — Consultation journal des modifications
 ======================================================= */
