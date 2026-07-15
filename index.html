@@ -9,6 +9,10 @@
 <style>
 *{box-sizing:border-box;}
 body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;display:flex;flex-direction:column;}
+.v-resizer{height:6px;background:#1e293b;cursor:row-resize;flex-shrink:0;transition:background .15s;position:relative;}
+.v-resizer:hover,.v-resizer.dragging{background:#3b82f6;}
+.v-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:3px;border-radius:2px;background:#475569;}
+.v-resizer:hover::after,.v-resizer.dragging::after{background:#e2e8f0;}
 .header{padding:14px 24px;background:#111827;border-bottom:2px solid #1f2937;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
 .header-left h1{margin:0;font-size:24px;}
 .header-left p{margin:3px 0 0;color:#94a3b8;font-size:12px;}
@@ -37,7 +41,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .cal-cell.holiday.sunday{color:#ef4444;}
 .cal-holiday-dot{width:4px;height:4px;background:#f59e0b;border-radius:50%;margin:1px auto 0;}
 .main{flex:1;overflow:auto;padding:12px 16px;}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;height:100%;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
 .group{margin-bottom:28px;}
 .group-title{font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:white;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #1e293b;padding-left:8px;border-left:3px solid var(--gc);}
 .group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
@@ -128,7 +132,12 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 
 /* ALERTES COMMANDES */
 .alertes-bar{background:#1a0a00;border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b;padding:10px 24px;display:none;}
-.alertes-title{font-size:12px;font-weight:bold;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.alertes-title{font-size:12px;font-weight:bold;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.gyrophare{position:relative;display:inline-block;width:30px;height:30px;flex-shrink:0;font-size:28px;line-height:1;}
+.gyro-emoji-base{position:absolute;inset:0;}
+.gyro-orbit{position:absolute;inset:-4px;animation:gyro-orbit-rotate 1s linear infinite;}
+.gyro-orbit-dot{position:absolute;top:-1px;left:50%;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#ff5c5c;box-shadow:0 0 9px 3px rgba(255,0,0,0.95);}
+@keyframes gyro-orbit-rotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 .alertes-list{display:flex;gap:8px;flex-wrap:wrap;}
 .alerte-card{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;cursor:pointer;transition:0.15s;text-decoration:none;}
 .alerte-card:hover{filter:brightness(1.15);}
@@ -142,6 +151,14 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
 .alerte-info{font-size:11px;color:#e2e8f0;line-height:1.4;}
 .alerte-num{font-weight:bold;font-size:12px;}
 .alerte-days{font-size:10px;color:#94a3b8;}
+.alerte-card.avalider{background:#051a2e;border:1px solid #3b82f6;cursor:default;align-items:flex-start;}
+.avalider .alerte-dot{background:#3b82f6;margin-top:4px;}
+.alerte-actions{display:flex;gap:6px;margin-top:6px;}
+.btn-aval{border:none;border-radius:6px;padding:4px 9px;font-size:10px;font-weight:bold;cursor:pointer;transition:0.15s;}
+.btn-aval:hover{filter:brightness(1.15);}
+.btn-oui{background:#16a34a;color:#fff;}
+.btn-attente{background:#374151;color:#e2e8f0;}
+.btn-rejet{background:#7f1d1d;color:#fca5a5;}
 
 /* TODOLIST */
 .todo-wrap{flex:1;background:#111827;border-radius:12px;padding:12px 16px;min-width:260px;max-width:380px;display:flex;flex-direction:column;gap:8px;}
@@ -189,7 +206,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
   </div>
 </div>
 
-<div class="header">
+<div class="header" id="pageHeader">
   <div class="header-left"><h1>📱 The SMARTPHONE</h1><p>Vente &amp; Réparation de smartphones</p></div>
   <div class="header-right">
     <span>📍 1 Avenue d'Italie, 75013 Paris</span><br>
@@ -199,7 +216,13 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
   </div>
 </div>
 
-<div class="datetime-bar">
+<!-- ALERTES COMMANDES -->
+<div class="alertes-bar" id="alertesBar">
+  <div class="alertes-title"><span class="gyrophare"><span class="gyro-emoji-base">🚨</span><span class="gyro-orbit"><span class="gyro-orbit-dot"></span></span></span> Alertes commandes</div>
+  <div class="alertes-list" id="alertesList"></div>
+</div>
+
+<div class="datetime-bar" id="datetimeBar">
   <!-- GAUCHE : horloge + date -->
   <div style="display:flex;flex-direction:column;gap:2px;">
     <div class="clock"><span id="hh">00</span>:<span id="mm">00</span><span class="clock-sec">:<span id="ss">00</span></span></div>
@@ -249,12 +272,6 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
   </div>
 </div>
 
-<!-- ALERTES COMMANDES -->
-<div class="alertes-bar" id="alertesBar">
-  <div class="alertes-title">⚠️ Alertes commandes</div>
-  <div class="alertes-list" id="alertesList"></div>
-</div>
-
 <div class="main" id="mainGrid">
 
   <!-- BLOC PRINCIPAL -->
@@ -284,6 +301,11 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;height:100vh;disp
         <div class="group-grid card-zone" id="zone-outils" data-zone="outils" style="min-height:40px;"></div>
       </div>
     </div>
+  </div>
+
+  <div class="group" id="groupAdmin" style="display:none;margin-top:20px;">
+    <div class="group-title" style="--gc:#9d174d;">🔒 Zone Admin <span class="drag-hint">· glisser une carte ici pour la cacher aux autres</span></div>
+    <div class="group-grid card-zone" id="zone-admin" data-zone="admin" style="min-height:80px;"></div>
   </div>
 </div>
 
@@ -335,6 +357,8 @@ var CARDS = {
   catadmin: {href:'/catalogue-admin',       icon:'🏷️', title:'ADMIN CATALOGUE',    desc:'Prix · Stock · Photos<br>Services · Réparations<br>Paramètres', cls:'cat-admin', blank:true},
   catstats: {href:'/catalogue-stats',      icon:'📊', title:'STATS CATALOGUE',    desc:'Visiteurs en ligne<br>Produits consultés<br>Durée de session',  cls:'cat-admin', blank:true},
   users:    {href:'users-admin.html',        icon:'👥', title:'UTILISATEURS',       desc:'Gérer les comptes<br>PINs · Rôles<br>Paramètres appli',   cls:'users', adminOnly:true},
+  fbsuivi:  {href:'facebook-suivi.html',      icon:'📤', title:'SUIVI FB GROUPES',  desc:'Partage manuel<br>Groupes locaux<br>Suivi des relances',  cls:'cat-admin'},
+  bank:     {href:'bank.html',               icon:'🏦', title:'RELEVÉS BANQUE',    desc:'Relevés CIC<br>Transactions saisies<br>Entrées / Sorties',  cls:'compta', adminOnly:true},
 };
 
 /* Mapping carte → module pour le filtre d'accès */
@@ -344,15 +368,16 @@ var CARD_MODULE = {
   print: 'printshop', credits: 'credits', returns: 'returns',
   compta: 'rapport-comptable', expenses: 'expenses-limited',
   caisse: 'rapport-comptable', dashboard: 'rapport-comptable',
-  devis: 'sales', commandes: 'commandes', catalogue: null, catadmin: null, catstats: null,
+  devis: 'sales', commandes: 'commandes', catalogue: null, catadmin: null, catstats: null, fbsuivi: null,
+  bank: null,
 };
 
 var DEFAULT_LAYOUT = {
   top:      ['sales','repairs','stock','compta'],
   vente:    ['devis','credits'],
-  finances: ['expenses','caisse','dashboard'],
+  finances: ['expenses','caisse','dashboard','bank'],
   appro:    ['commandes','lots','returns'],
-  outils:   ['print','contacts','catalogue','catadmin','catstats','users'],
+  outils:   ['print','contacts','catalogue','catadmin','catstats','users','fbsuivi'],
 };
 var LAYOUT_KEY = 'smartphone_layout_v2';
 
@@ -392,11 +417,16 @@ function saveLayout() {
   localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
 }
 
-function buildCard(id, isTop) {
+var HIDDEN_MODULES = {};
+
+function buildCard(id, isTop, opts) {
+  opts = opts || {};
   var c = CARDS[id];
   if (!c) return null;
   /* Masquer les cartes admin-only si pas admin */
   if (c.adminOnly && user && user.role !== 'admin') return null;
+  /* Masquer les cartes mises dans la Zone Admin (sauf si on construit justement cette zone) */
+  if (!opts.forAdminZone && HIDDEN_MODULES[id]) return null;
   /* Masquer les cartes inaccessibles pour vendeurs/stagiaires */
   var isGerant = !user || user.role === 'gerant' || user.role === 'admin';
   if (!isGerant) {
@@ -414,8 +444,25 @@ function buildCard(id, isTop) {
   return el;
 }
 
-function renderCards() {
+async function renderCards() {
+  try {
+    HIDDEN_MODULES = await fetch('/api/module-visibility').then(function(r){ return r.json(); });
+  } catch(e) { HIDDEN_MODULES = {}; }
+
   var layout = loadLayout();
+
+  /* Rescue : cartes dans la zone Admin localStorage mais pas cachées côté serveur */
+  var adminInLayout = layout.admin || [];
+  var orphans = adminInLayout.filter(function(id) { return !HIDDEN_MODULES[id]; });
+  if (orphans.length > 0) {
+    layout.admin = adminInLayout.filter(function(id) { return HIDDEN_MODULES[id]; });
+    orphans.forEach(function(id) {
+      var zone = Object.keys(DEFAULT_LAYOUT).find(function(z) { return DEFAULT_LAYOUT[z].includes(id); }) || 'outils';
+      if (!layout[zone]) layout[zone] = [];
+      if (!layout[zone].includes(id)) layout[zone].push(id);
+    });
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+  }
   Object.keys(layout).forEach(function(zoneId) {
     var zone = document.getElementById('zone-' + zoneId);
     if (!zone) return;
@@ -429,6 +476,23 @@ function renderCards() {
       zone.innerHTML = '<div class="zone-empty-hint">Zone vide — glissez une carte ici</div>';
     }
   });
+
+  /* Zone Admin : visible pour gérant/admin, contient les modules cachés aux autres */
+  if (user && (user.role === 'admin' || user.role === 'gerant')) {
+    document.getElementById('groupAdmin').style.display = '';
+    var adminZone = document.getElementById('zone-admin');
+    adminZone.innerHTML = '';
+    Object.keys(CARDS).forEach(function(id) {
+      if (HIDDEN_MODULES[id]) {
+        var card = buildCard(id, false, {forAdminZone:true});
+        if (card) adminZone.appendChild(card);
+      }
+    });
+    if (!adminZone.querySelector('.card')) {
+      adminZone.innerHTML = '<div class="zone-empty-hint">Aucun module caché — glissez une carte ici pour la cacher aux autres</div>';
+    }
+  }
+
   initDragDrop();
 }
 
@@ -494,6 +558,11 @@ function onDrop(e) {
   e.preventDefault();
   if (!draggedEl) return;
   var zone = e.currentTarget;
+  var cardId = draggedEl.dataset.cardId;
+  var sourceParent = draggedEl.parentElement;
+  var sourceZoneId = (sourceParent && sourceParent.classList.contains('card-zone')) ? sourceParent.dataset.zone : null;
+  var destZoneId = zone.dataset.zone;
+
   zone.classList.remove('zone-over');
   document.querySelectorAll('.drop-indicator').forEach(function(d){ d.remove(); });
   var hint = zone.querySelector('.zone-empty-hint');
@@ -510,7 +579,10 @@ function onDrop(e) {
   /* Vérifier les zones vides */
   document.querySelectorAll('.card-zone').forEach(function(z) {
     if (!z.querySelector('.card')) {
-      z.innerHTML = '<div class="zone-empty-hint">Zone vide — glissez une carte ici</div>';
+      var emptyMsg = (z.dataset.zone === 'admin')
+        ? 'Aucun module caché — glissez une carte ici pour la cacher aux autres'
+        : 'Zone vide — glissez une carte ici';
+      z.innerHTML = '<div class="zone-empty-hint">' + emptyMsg + '</div>';
       /* Ré-attacher les événements sur la zone vide */
       z.addEventListener('dragover',  onDragOver);
       z.addEventListener('dragleave', onDragLeave);
@@ -522,6 +594,15 @@ function onDrop(e) {
   /* Ré-attacher le dragstart/dragend à la carte déplacée */
   draggedEl.addEventListener('dragstart', onDragStart);
   draggedEl.addEventListener('dragend',   onDragEnd);
+
+  /* Zone Admin : glisser dedans cache le module pour tout le monde sauf l'admin, glisser dehors le rend visible */
+  if (destZoneId === 'admin') {
+    HIDDEN_MODULES[cardId] = true;
+    fetch('/api/module-visibility/' + cardId, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({hidden:true})}).catch(function(){});
+  } else if (sourceZoneId === 'admin') {
+    HIDDEN_MODULES[cardId] = false;
+    fetch('/api/module-visibility/' + cardId, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({hidden:false})}).catch(function(){});
+  }
 }
 
 function getDropPosition(zone, x, y) {
@@ -662,7 +743,11 @@ function calPrev() {
   calMonth--;
   if (calMonth < 0) { calMonth = 11; calYear--; }
   renderCalendar();
+}
+
 /* ══ ALERTES COMMANDES ══ */
+var alertesMasquees = {}; /* commandes A_VALIDER mises en "pas encore" jusqu'au prochain scan */
+
 async function loadAlertes() {
   try {
     var res  = await fetch('/api/commandes');
@@ -681,16 +766,38 @@ async function loadAlertes() {
       return {cmd: cmd, jours: jours};
     }).sort(function(a, b) { return b.jours - a.jours; });
 
+    var aValider = cmds.filter(function(cmd) {
+      return cmd.statut === 'A_VALIDER' && !alertesMasquees[cmd.id];
+    });
+
     var bar   = document.getElementById('alertesBar');
     var list  = document.getElementById('alertesList');
 
-    if (!alertes.length) {
+    if (!alertes.length && !aValider.length) {
       bar.style.display = 'none';
       return;
     }
 
     bar.style.display = 'block';
-    list.innerHTML = alertes.map(function(a) {
+
+    var htmlAValider = aValider.map(function(cmd) {
+      var heure = cmd.created_at ? new Date(cmd.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
+      var facture = cmd.numero_facture ? ' #' + cmd.numero_facture : '';
+      return '<div class="alerte-card avalider">' +
+        '<div class="alerte-dot"></div>' +
+        '<div class="alerte-info">' +
+          '<div class="alerte-num">📦 Facture' + facture + ' — ' + (cmd.fournisseur||'—') + ' — ' + Number(cmd.montant_ttc||0).toFixed(2) + '€</div>' +
+          '<div class="alerte-days">Reçue le ' + (cmd.date_facture ? new Date(cmd.date_facture).toLocaleDateString('fr-FR') : '—') + (heure ? ', importée à ' + heure : '') + ' — confirmez la réception</div>' +
+          '<div class="alerte-actions">' +
+            '<button onclick="confirmerCommandeAuto(' + cmd.id + ')" class="btn-aval btn-oui">✅ Oui, reçue</button>' +
+            '<button onclick="snoozeCommandeAuto(' + cmd.id + ')" class="btn-aval btn-attente">🕐 Pas encore</button>' +
+            '<button onclick="rejeterCommandeAuto(' + cmd.id + ')" class="btn-aval btn-rejet">🗑️ Ignorer</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    var htmlAlertes = alertes.map(function(a) {
       var cls   = a.jours >= 7 ? 'rouge' : a.jours >= 3 ? 'orange' : 'vert';
       var emoji = a.jours >= 7 ? '🔴' : a.jours >= 3 ? '🟡' : '🟢';
       /* Toujours afficher même si < 3 jours */
@@ -704,16 +811,59 @@ async function loadAlertes() {
         '</div>' +
       '</a>';
     }).join('');
+
+    list.innerHTML = htmlAValider + htmlAlertes;
   } catch(e) {
     console.error('Alertes:', e);
   }
 }
 
-loadAlertes();
-/* Rafraîchir toutes les 5 minutes */
-setInterval(loadAlertes, 5 * 60 * 1000);
-
+async function confirmerCommandeAuto(id) {
+  try {
+    /* Avertir si une autre commande du même fournisseur a exactement le même montant
+       (cas Utopya : 1 commande envoyée avec plusieurs numéros de facture différents) */
+    var all = await fetch('/api/commandes').then(function(r){ return r.json(); });
+    var cmd = all.find(function(c){ return c.id === id; });
+    if (cmd) {
+      var montant  = Number(cmd.montant_ttc||0);
+      var doublons = all.filter(function(c) {
+        return c.id !== id && c.statut !== 'REJETEE' &&
+          (c.fournisseur||'') === (cmd.fournisseur||'') &&
+          Math.abs(Number(c.montant_ttc||0) - montant) < 0.01;
+      });
+      if (doublons.length) {
+        var noms = doublons.map(function(c){ return c.numero_facture || c.numero || ('#'+c.id); }).join(', ');
+        var ok = confirm('⚠️ ' + doublons.length + ' autre(s) commande(s) ' + (cmd.fournisseur||'') +
+          ' ont exactement le même montant (' + montant.toFixed(2) + ' €) : ' + noms + '.\n\n' +
+          'C\'est peut-être la même commande envoyée avec plusieurs numéros de facture (déjà arrivé avec Utopya).\n\n' +
+          'Confirmer quand même la réception de celle-ci ?');
+        if (!ok) return;
+      }
+    }
+    var res = await fetch('/api/commandes/' + id + '/confirmer-reception', { method: 'POST' });
+    if (!res.ok) { var e = await res.json(); alert('Erreur: ' + (e.error||'inconnue')); return; }
+    loadAlertes();
+  } catch(e) { alert('Erreur réseau: ' + e.message); }
 }
+
+function snoozeCommandeAuto(id) {
+  alertesMasquees[id] = true;
+  loadAlertes();
+}
+
+async function rejeterCommandeAuto(id) {
+  if (!confirm('Confirmer : cette commande n\'est pas/plus à intégrer (action définitive) ?')) return;
+  try {
+    var res = await fetch('/api/commandes/' + id + '/rejeter', { method: 'POST' });
+    if (!res.ok) { var e = await res.json(); alert('Erreur: ' + (e.error||'inconnue')); return; }
+    loadAlertes();
+  } catch(e) { alert('Erreur réseau: ' + e.message); }
+}
+
+loadAlertes();
+/* Rafraîchir toutes les 5 minutes (réinitialise aussi les "pas encore" masquées) */
+setInterval(function() { alertesMasquees = {}; loadAlertes(); }, 5 * 60 * 1000);
+
 function calNext() {
   calMonth++;
   if (calMonth > 11) { calMonth = 0; calYear++; }
@@ -941,5 +1091,21 @@ document.getElementById('changePinOverlay').addEventListener('click', function(e
 </script>
 
 <script src="tooltips.js"></script>
+<script src="resizable-sections.js"></script>
+<script>
+initVerticalResizers([
+  { id: 'pageHeader', storageKey: 'home_header_h', min: 70, max: 220 },
+  { id: 'datetimeBar', storageKey: 'home_datetime_h', min: 150, max: 500 },
+  { id: 'mainGrid', storageKey: 'home_main_h', min: 200, flexGrow: true, max: function() {
+      var header = document.getElementById('pageHeader');
+      var dt = document.getElementById('datetimeBar');
+      var footer = document.querySelector('.footer');
+      var alertes = document.getElementById('alertesBar');
+      var used = (header ? header.offsetHeight : 0) + (dt ? dt.offsetHeight : 0) +
+                 (footer ? footer.offsetHeight : 0) + (alertes && alertes.style.display !== 'none' ? alertes.offsetHeight : 0);
+      return Math.max(200, window.innerHeight - used - 60);
+    } }
+]);
+</script>
 </body>
 </html>
