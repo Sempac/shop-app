@@ -1,190 +1,95 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <script src="/theme.js"></script>
 <link rel="stylesheet" href="/theme.css">
 <meta charset="UTF-8">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-<title>Caisse journalière — IT TECH</title>
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+<title>Caisse journalière — The SMARTPHONE</title>
 <style>
-body {
-  font-family: Arial;
-  margin: 0;
-  padding: 20px;
-  background: #f3f4f6;
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-input, button {
-  padding: 10px;
-  margin-right: 10px;
-}
-button {
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  border-radius: 4px;
-}
-.load-btn  { background: #3b82f6; color: white; }
-.print-btn { background: #22c55e; color: white; }
-.back-btn  { background: #111827; color: white; }
+body { font-family: Arial; margin: 0; padding: 0; background: #f3f4f6; }
 
-/* ── Entête impression ── */
-.print-header {
-  display: none;
-  margin-bottom: 16px;
-  border-bottom: 2px solid #000;
-  padding-bottom: 12px;
-}
-.print-header .shop { font-size: 20px; font-weight: 900; }
-.print-header .address { font-size: 12px; color: #555; margin-top: 2px; }
-.print-header .right { text-align: right; }
-.print-header .report-title { font-size: 15px; font-weight: 900; text-transform: uppercase; }
-.print-header .report-date  { font-size: 13px; font-weight: 700; margin-top: 4px; }
-.print-header .report-printed { font-size: 10px; color: #777; margin-top: 3px; }
+/* ── Barre de navigation ── */
+.nav-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#111827; border-bottom:1px solid #1f2937; flex-wrap:wrap; gap:8px; }
+.nav-btns { display:flex; gap:6px; flex-wrap:wrap; }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  margin-top: 10px;
-}
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-th {
-  background: #111827;
-  color: white;
-  font-size: 12px;
-}
-td { font-size: 13px; }
-td.center { text-align: center; }
-td.right  { text-align: right; font-weight: bold; }
+/* ── Barre de filtres ── */
+.filter-bar { background:#1e293b; padding:10px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; border-bottom:1px solid #0f172a; }
+.chip { padding:6px 13px; border:none; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer; background:#334155; color:#94a3b8; transition:all .15s; font-family:Arial; }
+.chip:hover { background:#475569; color:#e2e8f0; }
+.chip.active { background:#3b82f6; color:white; }
+.filter-sep { width:1px; height:24px; background:#475569; margin:0 2px; }
+.range-group { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.range-group label { color:#94a3b8; font-size:12px; font-weight:bold; }
+.range-group input[type=date] { padding:5px 8px; border:1px solid #475569; border-radius:6px; font-size:12px; background:#0f172a; color:#e2e8f0; cursor:pointer; }
+
+/* ── Boutons génériques ── */
+.btn { padding:7px 12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:12px; font-family:Arial; }
+.btn-nav   { background:#f1f5f9; color:#111827; }
+.btn-vente { background:#b45309; color:white; }
+.btn-rep   { background:#059669; color:white; }
+.btn-stock { background:#0891b2; color:white; }
+.btn-compta{ background:#7c3aed; color:white; }
+.btn-load  { background:#3b82f6; color:white; }
+.btn-print { background:#22c55e; color:white; }
+
+/* ── Contenu ── */
+.content { padding:14px; }
+
+/* ── En-tête impression ── */
+.print-header { display:none; margin-bottom:16px; border-bottom:2px solid #000; padding-bottom:12px; }
+.print-header .shop { font-size:20px; font-weight:900; }
+.print-header .address { font-size:12px; color:#555; margin-top:2px; }
+.print-header .right { text-align:right; }
+.print-header .report-title { font-size:15px; font-weight:900; text-transform:uppercase; }
+.print-header .report-date  { font-size:13px; font-weight:700; margin-top:4px; }
+.print-header .report-printed { font-size:10px; color:#777; margin-top:3px; }
+
+/* ── Tableau ── */
+table { width:100%; border-collapse:collapse; background:white; margin-top:10px; }
+th, td { border:1px solid #ddd; padding:8px; }
+th { background:#111827; color:white; font-size:12px; }
+td { font-size:13px; }
+td.center { text-align:center; }
+td.right  { text-align:right; font-weight:bold; }
+
+/* Séparateur de jour (vue multi-jours) */
+tr.day-sep td { background:#1e3a5f; color:white; font-weight:bold; font-size:12px; padding:6px 10px; border:1px solid #1e293b; }
 
 /* Badge type */
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: bold;
-}
-.badge-vente  { background: #dbeafe; color: #1e40af; }
-.badge-rep    { background: #ffedd5; color: #9a3412; }
-.badge-retour { background: #fee2e2; color: #991b1b; }
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold; }
+.badge-vente  { background:#dbeafe; color:#1e40af; }
+.badge-rep    { background:#ffedd5; color:#9a3412; }
+.badge-retour { background:#fee2e2; color:#991b1b; }
 
 /* Paiement mixte */
-.mixte { font-size: 11px; font-weight: bold; }
-.mixte span { display: block; font-size: 10px; color: #555; font-weight: normal; }
+.mixte { font-size:11px; font-weight:bold; }
+.mixte span { display:block; font-size:10px; color:#555; font-weight:normal; }
 
-/* Total ligne */
-.total-bar {
-  margin-top: 10px;
-  font-size: 20px;
-  font-weight: bold;
-  text-align: right;
-  color: #111827;
-}
+/* Tfoot */
+tfoot td { background:#111827; color:white; font-weight:bold; font-size:13px; border:1px solid #333; }
+tfoot td.right { text-align:right; font-size:15px; }
 
-/* Ligne total tableau */
-tfoot td {
-  background: #111827;
-  color: white;
-  font-weight: bold;
-  font-size: 13px;
-  border: 1px solid #333;
-}
-tfoot td.right { text-align: right; font-size: 15px; }
+/* Summary */
+.summary { margin-top:20px; background:white; padding:15px; border-radius:8px; }
+.summary h3 { margin-top:0; margin-bottom:12px; }
 
-/* ── Summary ── */
-.summary {
-  margin-top: 20px;
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-}
-.summary h3 { margin-top: 0; margin-bottom: 12px; }
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-.card {
-  background: #f9fafb;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.card b { font-size: 16px; display: block; margin-top: 4px; }
+/* Signatures impression */
+.signatures { display:none; margin-top:48px; }
+.sig-grid { display:grid; grid-template-columns:1fr 1fr; gap:80px; margin-top:8px; }
+.sig-box { text-align:center; }
+.sig-line { border-top:1.5px solid #000; padding-top:6px; font-size:11px; color:#555; margin-top:52px; }
 
-/* ── Signatures (impression) ── */
-.signatures {
-  display: none;
-  margin-top: 48px;
-  display: none;
-}
-.sig-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  margin-top: 8px;
-}
-.sig-box { text-align: center; }
-.sig-line {
-  border-top: 1.5px solid #000;
-  padding-top: 6px;
-  font-size: 11px;
-  color: #555;
-  margin-top: 52px;
-}
-
-/* ── IMPRESSION ── */
 @media print {
-  button, input { display: none !important; }
-  body { background: white; padding: 12px; }
-  .print-header { display: flex; justify-content: space-between; }
-  h2#title { display: none; }
-
-  /* masquer les badges couleur, remplacer par texte simple */
-  .badge-vente, .badge-rep {
-    background: none !important;
-    color: #000 !important;
-    padding: 0;
-    font-size: 11px;
-  }
-  .mixte span { color: #444 !important; }
-
-  tfoot td { background: none !important; color: #000 !important; border: 1.5px solid #000 !important; }
-
-  .card { border: 1px solid #999 !important; background: none !important; }
-  .summary { border: 1px solid #ccc; border-radius: 0; }
-
-  .signatures { display: block !important; }
-}
-
-
-
-
-/* En-têtes figés — relatifs au conteneur scrollable */
-.table-wrap {
-  overflow-y: auto;
-   /* hauteur dispo sous topbar+filtres */
-}
-.table-wrap table thead th,
-.items-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #1e293b;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  .nav-bar, .filter-bar { display:none !important; }
+  body { background:white; padding:12px; }
+  .print-header { display:flex; justify-content:space-between; }
+  h2#title { display:none; }
+  .badge-vente, .badge-rep { background:none !important; color:#000 !important; padding:0; font-size:11px; }
+  .mixte span { color:#444 !important; }
+  tfoot td { background:none !important; color:#000 !important; border:1.5px solid #000 !important; }
+  .summary { border:1px solid #ccc; border-radius:0; }
+  .signatures { display:block !important; }
 }
 </style>
 <link rel="stylesheet" href="tooltips.css">
@@ -195,9 +100,9 @@ tfoot td.right { text-align: right; font-size: 15px; }
 <!-- ENTÊTE IMPRESSION UNIQUEMENT -->
 <div class="print-header" id="printHeader">
   <div>
-    <div class="shop">IT TECH</div>
-    <div class="address">01 Avenue d'Italie, 75013 Paris</div>
-    <div class="address">Tél : 01 XX XX XX XX</div>
+    <div class="shop">The SMARTPHONE</div>
+    <div class="address">1 Avenue d'Italie, 75013 Paris</div>
+    <div class="address">Tél : 01 47 07 18 66</div>
   </div>
   <div class="right">
     <div class="report-title">Rapport de clôture journalière</div>
@@ -206,40 +111,59 @@ tfoot td.right { text-align: right; font-size: 15px; }
   </div>
 </div>
 
-<!-- TOOLBAR -->
-<div class="header">
-  <div style="display:flex;gap:6px;align-items:center;">
-    <button onclick="location.href='index.html'" style="padding:7px 10px;background:#f1f5f9;color:#111827;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🏠 Accueil</button>
-    <button onclick="location.href='sales.html'" style="padding:7px 10px;background:#b45309;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🛒 Vente</button>
-    <button onclick="location.href='repairs.html'" style="padding:7px 10px;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">🔧 Réparation</button>
-    <button onclick="location.href='stock.html'" style="padding:7px 10px;background:#0891b2;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📦 Stock</button>
-    <button onclick="location.href='rapport-comptable.html'" style="padding:7px 10px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;font-family:Arial;">📊 Rapport comptable</button>
+<!-- Navigation -->
+<div class="nav-bar">
+  <div class="nav-btns">
+    <button class="btn btn-nav"    onclick="location.href='index.html'">🏠 Accueil</button>
+    <button class="btn btn-vente"  onclick="location.href='sales.html'">🛒 Vente</button>
+    <button class="btn btn-rep"    onclick="location.href='repairs.html'">🔧 Réparation</button>
+    <button class="btn btn-stock"  onclick="location.href='stock.html'">📦 Stock</button>
+    <button class="btn btn-compta" onclick="location.href='rapport-comptable.html'">📊 Rapport comptable</button>
   </div>
-  <div style="display:flex;gap:6px;align-items:center;">
-    <input type="date" id="date">
-    <button class="load-btn" onclick="loadReport()">🔎 Charger</button>
-    <button class="print-btn" onclick="window.print()">🖨 Imprimer</button>
+  <div style="display:flex;gap:6px;">
+    <button class="btn btn-print" onclick="window.print()">🖨 Imprimer</button>
   </div>
 </div>
 
-<h2 id="title"></h2>
+<!-- Filtres -->
+<div class="filter-bar">
+  <button class="chip" id="chip-today"     onclick="setFilter('today')">Aujourd'hui</button>
+  <button class="chip" id="chip-week"      onclick="setFilter('week')">Cette semaine</button>
+  <button class="chip" id="chip-lastweek"  onclick="setFilter('lastweek')">Sem. passée</button>
+  <button class="chip" id="chip-month"     onclick="setFilter('month')">Ce mois</button>
+  <button class="chip" id="chip-lastmonth" onclick="setFilter('lastmonth')">Mois passé</button>
+  <button class="chip" id="chip-year"      onclick="setFilter('year')">Cette année</button>
+  <button class="chip" id="chip-lastyear"  onclick="setFilter('lastyear')">An. passé</button>
+  <div class="filter-sep"></div>
+  <div class="range-group">
+    <label>Du</label>
+    <input type="date" id="dateDebut">
+    <label>au</label>
+    <input type="date" id="dateFin">
+    <button class="btn btn-load" onclick="loadPeriode()">🔎 Charger</button>
+  </div>
+</div>
+
+<div class="content">
 
 <!-- TABLEAU PRINCIPAL -->
-<div id="tableWrapper" style="overflow:auto;flex:1;">
-<table id="mainTable" style="display:none">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Désignation / Appareil</th>
-      <th>Fournisseur</th>
-      <th>Type</th>
-      <th>Paiement</th>
-      <th>Total ligne</th>
-    </tr>
-  </thead>
-  <tbody id="body"></tbody>
-  <tfoot id="tableFooter"></tfoot>
-</table>
+<h2 id="title" style="margin:10px 0;font-size:18px;"></h2>
+<div id="tableWrapper" style="overflow:auto;">
+  <table id="mainTable" style="display:none">
+    <thead id="tableHead">
+      <tr>
+        <th>#</th>
+        <th>Désignation / Appareil</th>
+        <th>Fournisseur</th>
+        <th>Type</th>
+        <th>Paiement</th>
+        <th>Total ligne</th>
+      </tr>
+    </thead>
+    <tbody id="body"></tbody>
+    <tfoot id="tableFooter"></tfoot>
+  </table>
+</div>
 
 <!-- RÉSUMÉ CAISSE -->
 <div class="summary" id="summaryBox" style="display:none"></div>
@@ -252,152 +176,231 @@ tfoot td.right { text-align: right; font-size: 15px; }
   </div>
 </div>
 
+</div><!-- .content -->
+
 <script>
 /* ── Helpers ── */
-const fmtEur = n => Number(n || 0).toFixed(2) + ' €';
+const fmtEur = n => Number(n||0).toFixed(2) + ' €';
+
+let currentDebut = null, currentFin = null;
+
+function isoDate(d) { return d.toISOString().slice(0,10); }
+function formatDate(s) { return s ? s.slice(0,10).split('-').reverse().join('/') : ''; }
+
+function dateLabel(ds) {
+  return new Date(ds+'T00:00:00').toLocaleDateString('fr-FR',
+    {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
 
 function paiementHtml(method) {
-  const m = (method || '').toLowerCase();
-  const isCB  = m.includes('cb') || m.includes('card') || m === 'carte';
-  const isEsp = m.includes('esp') || m.includes('cash');
-  if (isCB && isEsp)
-    return `<div class="mixte">MIXTE<span>CB + Espèces</span></div>`;
+  const m = (method||'').toLowerCase();
+  const isCB  = m.includes('cb')||m.includes('card')||m==='carte';
+  const isEsp = m.includes('esp')||m.includes('cash');
+  if (isCB && isEsp) return `<div class="mixte">MIXTE<span>CB + Espèces</span></div>`;
   if (isCB)  return 'CB';
   if (isEsp) return 'Espèces';
-  return method || '—';
+  return method||'—';
 }
 
-function dateLabel(dateStr) {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', {
-    weekday:'long', year:'numeric', month:'long', day:'numeric'
-  });
+/* ── Chips ── */
+function setActiveChip(id) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  const el = document.getElementById('chip-'+id);
+  if (el) el.classList.add('active');
 }
 
-/* ── Init date ── */
-document.getElementById('date').value = new Date().toISOString().slice(0, 10);
+function setFilter(type) {
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
+  let debut, fin;
+  switch(type) {
+    case 'today':     debut = fin = isoDate(now); break;
+    case 'week': {
+      const dow = now.getDay()||7;
+      const mon = new Date(now); mon.setDate(d-dow+1);
+      debut = isoDate(mon); fin = isoDate(now); break;
+    }
+    case 'lastweek': {
+      const dow = now.getDay()||7;
+      const sun = new Date(now); sun.setDate(d-dow);
+      const mon = new Date(sun); mon.setDate(sun.getDate()-6);
+      debut = isoDate(mon); fin = isoDate(sun); break;
+    }
+    case 'month':     debut = isoDate(new Date(y,mo,1)); fin = isoDate(now); break;
+    case 'lastmonth': debut = isoDate(new Date(y,mo-1,1)); fin = isoDate(new Date(y,mo,0)); break;
+    case 'year':      debut = y+'-01-01'; fin = isoDate(now); break;
+    case 'lastyear':  debut = (y-1)+'-01-01'; fin = (y-1)+'-12-31'; break;
+  }
+  document.getElementById('dateDebut').value = debut;
+  document.getElementById('dateFin').value   = fin;
+  setActiveChip(type);
+  loadPeriode(debut, fin);
+}
 
-/* ── Chargement ── */
-async function loadReport() {
-  const date = document.getElementById('date').value;
+/* ── Chargement auto (dernier jour dispo) ── */
+async function loadAuto() {
+  try {
+    const r = await fetch('/api/rapport-comptable/last-date');
+    const d = await r.json();
+    const date = (d.date||'').slice(0,10) || isoDate(new Date());
+    document.getElementById('dateDebut').value = date;
+    document.getElementById('dateFin').value   = date;
+    setActiveChip('today');
+    await loadPeriode(date, date);
+  } catch(e) {
+    const t = isoDate(new Date());
+    document.getElementById('dateDebut').value = t;
+    document.getElementById('dateFin').value   = t;
+    await loadPeriode(t, t);
+  }
+}
 
-  document.getElementById('title').innerText = 'Chargement...';
+/* ── Chargement période ── */
+async function loadPeriode(debut, fin) {
+  debut = debut || document.getElementById('dateDebut').value;
+  fin   = fin   || document.getElementById('dateFin').value;
+  if (!debut || !fin) return;
+  if (fin < debut) { fin = debut; document.getElementById('dateFin').value = fin; }
+  currentDebut = debut; currentFin = fin;
+
+  document.getElementById('title').textContent = '⏳ Chargement…';
   document.getElementById('mainTable').style.display = 'none';
   document.getElementById('summaryBox').style.display = 'none';
 
   try {
-    const res  = await fetch('/api/daily-report?date=' + date);
+    const singleDay = debut === fin;
+    const url = singleDay
+      ? '/api/daily-report?date='+debut
+      : '/api/daily-report/periode?debut='+debut+'&fin='+fin;
+    const res  = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    renderReport(date, data);
+    renderReport(debut, fin, data);
   } catch(e) {
-    document.getElementById('title').innerText = '❌ Erreur : ' + e.message;
+    document.getElementById('title').textContent = '❌ Erreur : '+e.message;
   }
 }
 
 /* ── Rendu ── */
-function renderReport(date, data) {
-  const tv = data.totaux_ventes      || {};
-  const tr = data.totaux_reparations || {};
-  const tret = data.totaux_retours   || {};
+function renderReport(debut, fin, data) {
+  const singleDay = debut === fin;
+  const tv   = data.totaux_ventes      || {};
+  const tr   = data.totaux_reparations || {};
+  const tret = data.totaux_retours     || {};
 
-  const totalVentes = parseFloat(tv.grand_total || 0);
-  const totalRep    = parseFloat(tr.grand_total || 0);
+  const totalVentes = parseFloat(tv.grand_total||0);
+  const totalRep    = parseFloat(tr.grand_total||0);
   const grandTotal  = totalVentes + totalRep;
+  const vCB   = parseFloat(tv.total_cb||0);
+  const vEsp  = parseFloat(tv.total_esp||0);
+  const rCB   = parseFloat(tr.total_cb||0);
+  const rEsp  = parseFloat(tr.total_esp||0);
+  const totalCB   = vCB + rCB;
+  const totalEsp  = vEsp + rEsp;
+  const nbV       = parseInt(tv.nb_ventes||0);
+  const nbR       = parseInt(tr.nb_reps||0);
+  const totalDep  = parseFloat(data.total_depenses||0);
+  const totalRet  = parseFloat(tret.total||0);
+  const retEsp    = parseFloat(tret.total_esp||0);
+  const retCB     = parseFloat(tret.total_cb||0);
+  const netCaisse = grandTotal - totalDep - totalRet;
 
-  const vCB  = parseFloat(tv.total_cb  || 0);
-  const vEsp = parseFloat(tv.total_esp || 0);
-  const rCB  = parseFloat(tr.total_cb  || 0);
-  const rEsp = parseFloat(tr.total_esp || 0);
-  const totalCB  = vCB + rCB;
-  const totalEsp = vEsp + rEsp;
-
-  const nbV        = parseInt(tv.nb_ventes || 0);
-  const nbR        = parseInt(tr.nb_reps   || 0);
-  const totalDep   = parseFloat(data.total_depenses || 0);
-  const totalRet   = parseFloat(tret.total || 0);
-  const retEsp     = parseFloat(tret.total_esp || 0);
-  const retCB      = parseFloat(tret.total_cb  || 0);
-  const netCaisse  = grandTotal - totalDep - totalRet;
-
-  /* Toutes les lignes fusionnées */
-  const lignes = [
-    ...(data.ventes || []).map(v => ({
-      id:          'V-' + v.id,
-      designation: v.designation || '—',
-      fournisseur: v.fournisseur || '—',
-      type:        'Vente',
-      method:      v.payment_method,
-      total:       parseFloat(v.encaisse || 0),
-      credit:      parseFloat(v.amount_credit || 0),
-      isReturn:    false,
-    })),
-    ...(data.reparations || []).map(r => ({
-      id:          'R-' + r.id,
-      designation: (r.designation || '').trim() || '—',
-      fournisseur: 'SAV',
-      type:        'Réparation',
-      method:      r.payment_method,
-      total:       parseFloat(r.encaisse || 0),
-      credit:      parseFloat(r.amount_credit || 0),
-      isReturn:    false,
-    })),
-    ...(data.retours || []).map(ret => {
-      let prodName = 'Retour';
-      try {
-        const its = typeof ret.items === 'string' ? JSON.parse(ret.items) : (ret.items || []);
-        if (its.length && its[0].product_name) prodName = its[0].product_name;
-      } catch(e) {}
-      return {
-        id:          'RET-' + ret.id,
-        designation: prodName + (ret.customer_name ? ' — ' + ret.customer_name : '') + (ret.order_id ? ' (Vente #'+ret.order_id+')' : ''),
-        fournisseur: '—',
-        type:        'Retour',
-        method:      ret.refund_method,
-        total:       -parseFloat(ret.refund_amount || 0),
-        credit:      0,
-        isReturn:    true,
-      };
-    }),
-  ];
-
-  /* Titre page */
-  document.getElementById('title').innerText = 'Caisse du : ' + date;
+  /* Titre */
+  const titre = singleDay
+    ? 'Caisse du : '+debut
+    : 'Caisse du '+formatDate(debut)+' au '+formatDate(fin);
+  document.getElementById('title').textContent = titre;
 
   /* Entête impression */
-  document.getElementById('printDate').innerText   = dateLabel(date);
-  document.getElementById('printedAt').innerText   = 'Imprimé le ' + new Date().toLocaleString('fr-FR');
+  document.getElementById('printDate').textContent  = singleDay ? dateLabel(debut) : 'Du '+formatDate(debut)+' au '+formatDate(fin);
+  document.getElementById('printedAt').textContent  = 'Imprimé le '+new Date().toLocaleString('fr-FR');
 
-  /* Tbody */
-  const body = document.getElementById('body');
-  if (lignes.length === 0) {
-    body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">Aucune opération ce jour</td></tr>`;
-  } else {
-    body.innerHTML = lignes.map(l => {
-      const rawId = l.id.slice(l.id.indexOf('-')+1);
-      const dest  = l.id.startsWith('V-') ? `sales.html?order_id=${rawId}`
-                  : l.id.startsWith('R-') ? `repairs.html?repair_id=${rawId}`
-                  : `returns.html`;
-      const badgeCls = l.type==='Vente' ? 'badge-vente' : l.type==='Réparation' ? 'badge-rep' : 'badge-retour';
-      const rowStyle = l.isReturn ? 'background:#fff5f5;' : '';
-      const totalHtml = l.isReturn
-        ? `<span style="color:#dc2626;font-weight:bold">${fmtEur(l.total)}</span>`
-        : `${fmtEur(l.total)}${l.credit>0?'<br><span style="font-size:10px;color:#f59e0b;font-weight:normal">⏳ Crédit : '+fmtEur(l.credit)+'</span>':''}`;
-      return `
-      <tr onclick="location.href='${dest}'" style="cursor:pointer;${rowStyle}" title="Voir le détail">
-        <td style="font-size:11px;color:#888">${l.id}</td>
-        <td><b>${l.designation}</b></td>
-        <td style="color:#555">${l.fournisseur}</td>
-        <td class="center"><span class="badge ${badgeCls}">${l.type}</span></td>
-        <td class="center">${paiementHtml(l.method)}</td>
-        <td class="right">${totalHtml}</td>
-      </tr>`;
-    }).join('');
+  /* ── Construction des lignes ── */
+  function buildLignes(ventes, reparations, retours) {
+    return [
+      ...(ventes||[]).map(v => ({
+        id: 'V-'+v.id, date_op: v.date_op||debut,
+        designation: v.designation||'—', fournisseur: v.fournisseur||'—',
+        type:'Vente', method:v.payment_method,
+        total: parseFloat(v.encaisse||0), credit: parseFloat(v.amount_credit||0),
+        isReturn: false,
+      })),
+      ...(reparations||[]).map(r => ({
+        id: 'R-'+r.id, date_op: r.date_op||debut,
+        designation: (r.designation||'').trim()||'—', fournisseur:'SAV',
+        type:'Réparation', method: r.payment_method,
+        total: parseFloat(r.encaisse||0), credit: parseFloat(r.amount_credit||0),
+        isReturn: false,
+      })),
+      ...(retours||[]).map(ret => {
+        let prodName = 'Retour';
+        try { const its=typeof ret.items==='string'?JSON.parse(ret.items):(ret.items||[]); if(its.length&&its[0].product_name) prodName=its[0].product_name; } catch(e) {}
+        return {
+          id: 'RET-'+ret.id, date_op: ret.date_op||debut,
+          designation: prodName+(ret.customer_name?' — '+ret.customer_name:'')+(ret.order_id?' (Vente #'+ret.order_id+')':''),
+          fournisseur:'—', type:'Retour', method: ret.refund_method,
+          total: -parseFloat(ret.refund_amount||0), credit:0, isReturn:true,
+        };
+      }),
+    ];
   }
+
+  function lineHtml(l) {
+    const rawId = l.id.slice(l.id.indexOf('-')+1);
+    const dest  = l.id.startsWith('V-')   ? 'sales.html?order_id='+rawId
+                : l.id.startsWith('R-')   ? 'repairs.html?repair_id='+rawId
+                : 'returns.html';
+    const badgeCls = l.type==='Vente' ? 'badge-vente' : l.type==='Réparation' ? 'badge-rep' : 'badge-retour';
+    const rowStyle = l.isReturn ? 'background:#fff5f5;' : '';
+    const totalHtml = l.isReturn
+      ? `<span style="color:#dc2626;font-weight:bold">${fmtEur(l.total)}</span>`
+      : `${fmtEur(l.total)}${l.credit>0?'<br><span style="font-size:10px;color:#f59e0b;font-weight:normal">⏳ Crédit : '+fmtEur(l.credit)+'</span>':''}`;
+    return `<tr onclick="location.href='${dest}'" style="cursor:pointer;${rowStyle}" title="Voir le détail">
+      <td style="font-size:11px;color:#888">${l.id}</td>
+      <td><b>${l.designation}</b></td>
+      <td style="color:#555">${l.fournisseur}</td>
+      <td class="center"><span class="badge ${badgeCls}">${l.type}</span></td>
+      <td class="center">${paiementHtml(l.method)}</td>
+      <td class="right">${totalHtml}</td>
+    </tr>`;
+  }
+
+  const lignes = buildLignes(data.ventes, data.reparations, data.retours);
+  let bodyHtml = '';
+
+  if (singleDay) {
+    /* Vue quotidienne : toutes les lignes sans groupement */
+    bodyHtml = lignes.length === 0
+      ? `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">Aucune opération ce jour</td></tr>`
+      : lignes.map(lineHtml).join('');
+  } else {
+    /* Vue multi-jours : groupement par date avec séparateur */
+    const groups = {};
+    lignes.forEach(l => {
+      const k = (l.date_op||'').slice(0,10);
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(l);
+    });
+    const dates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+
+    if (dates.length === 0) {
+      bodyHtml = `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px">Aucune opération sur cette période</td></tr>`;
+    } else {
+      dates.forEach(date => {
+        const grpLines = groups[date];
+        const dayTotal = grpLines.reduce((s,l) => s + l.total, 0);
+        bodyHtml += `<tr class="day-sep"><td colspan="6">📅 ${dateLabel(date)} — ${grpLines.length} opération(s) — ${fmtEur(dayTotal)}</td></tr>`;
+        bodyHtml += grpLines.map(lineHtml).join('');
+      });
+    }
+  }
+
+  document.getElementById('body').innerHTML = bodyHtml;
 
   /* Tfoot */
   document.getElementById('tableFooter').innerHTML = `
     <tr>
-      <td colspan="4"><b>TOTAL GÉNÉRAL — ${lignes.length} opération(s)</b></td>
+      <td colspan="4"><b>TOTAL GÉNÉRAL — ${lignes.filter(l=>!l.isReturn).length} opération(s)</b></td>
       <td style="font-size:11px;text-align:center">CB: ${fmtEur(totalCB)}<br>Esp: ${fmtEur(totalEsp)}</td>
       <td class="right" style="font-size:16px">${fmtEur(grandTotal)}</td>
     </tr>
@@ -409,12 +412,13 @@ function renderReport(date, data) {
     <tr style="background:#14532d">
       <td colspan="4"><b>NET ENCAISSÉ</b></td>
       <td></td>
-      <td class="right" style="font-size:18px">${fmtEur(netCaisse + totalDep)}</td>
+      <td class="right" style="font-size:18px">${fmtEur(netCaisse+totalDep)}</td>
     </tr>`;
 
   /* Summary */
+  const periodTitle = singleDay ? dateLabel(debut) : 'Du '+formatDate(debut)+' au '+formatDate(fin);
   document.getElementById('summaryBox').innerHTML = `
-    <h3>📊 Résumé caisse — ${dateLabel(date)}</h3>
+    <h3>📊 Résumé caisse — ${periodTitle}</h3>
     <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
       <thead>
         <tr style="background:#f1f5f9;color:#475569">
@@ -445,15 +449,15 @@ function renderReport(date, data) {
         </tr>`:''}
         <tr style="background:#f8fafc;font-weight:bold;border-top:2px solid #e2e8f0">
           <td style="padding:8px 12px;color:#374151">TOTAL</td>
-          <td style="padding:8px 12px;text-align:right">${fmtEur(totalCB - retCB)}</td>
-          <td style="padding:8px 12px;text-align:right">${fmtEur(totalEsp - retEsp)}</td>
-          <td style="padding:8px 12px;text-align:right;font-size:15px;color:#1e40af">${fmtEur(grandTotal - totalRet)}</td>
+          <td style="padding:8px 12px;text-align:right">${fmtEur(totalCB-retCB)}</td>
+          <td style="padding:8px 12px;text-align:right">${fmtEur(totalEsp-retEsp)}</td>
+          <td style="padding:8px 12px;text-align:right;font-size:15px;color:#1e40af">${fmtEur(grandTotal-totalRet)}</td>
         </tr>
       </tbody>
     </table>
     <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:12px;align-items:center;flex-wrap:wrap">
       <div style="background:#f9fafb;border:1px solid #ddd;border-radius:6px;padding:10px 18px;font-size:13px">
-        📉 Dépenses du jour&nbsp;&nbsp;<b style="font-size:16px;color:#dc2626">− ${fmtEur(totalDep)}</b>
+        📉 Dépenses${singleDay?'':' (total période)'}  <b style="font-size:16px;color:#dc2626">− ${fmtEur(totalDep)}</b>
       </div>
       <div style="background:#111827;color:white;border-radius:6px;padding:10px 18px;font-size:22px;font-weight:bold">
         NET CAISSE : ${fmtEur(netCaisse)}
@@ -467,28 +471,8 @@ function renderReport(date, data) {
   document.getElementById('summaryBox').style.display = 'block';
 }
 
-loadReport();
+loadAuto();
 </script>
 <script src="tooltips.js"></script>
-<script>
-/* Figer l'en-tête du tableau journalier */
-(function() {
-  function initSticky() {
-    var wrap = document.getElementById('tableWrapper');
-    if (!wrap) return;
-    wrap.addEventListener('scroll', function() {
-      var ths = wrap.querySelectorAll('table thead th');
-      ths.forEach(function(th) {
-        th.style.transform = 'translateY(' + wrap.scrollTop + 'px)';
-      });
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSticky);
-  } else {
-    setTimeout(initSticky, 300);
-  }
-})();
-</script>
 </body>
 </html>
