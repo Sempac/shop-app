@@ -137,24 +137,27 @@ def parse_pdf(path):
                             'category': categorize(label),
                         })
 
-    # Solde initial = premier SOLDE, final = dernier SOLDE différent
+    # Solde initial / final
     balance_start = None
     balance_end   = None
-    period_start  = None
     period_end    = None
 
     if solde_lines:
-        period_start, balance_start = solde_lines[0]
+        _, balance_start = solde_lines[0]
         if len(solde_lines) > 1:
             period_end, balance_end = solde_lines[-1]
-        else:
-            period_end = period_start
 
     # Fallback period_end depuis le nom du fichier
     if period_end is None:
         m = re.search(r'(\d{4}-\d{2}-\d{2})\.pdf$', os.path.basename(path), re.IGNORECASE)
         if m:
             period_end = m.group(1)
+
+    # period_start = date de la 1ère transaction (pas la date du SOLDE d'ouverture qui peut
+    # correspondre au dernier jour du mois précédent, ex: "AU 31/12/2025" pour janvier 2026)
+    period_start = min(t['transaction_date'] for t in transactions) if transactions else (
+        solde_lines[0][0] if solde_lines else None
+    )
 
     calc_debit  = round(sum(t['debit']  for t in transactions), 2)
     calc_credit = round(sum(t['credit'] for t in transactions), 2)
