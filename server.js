@@ -3983,7 +3983,14 @@ async function _insertBankStatement(data){
 
   const MONTHS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const notes=data.notes||(()=>{
-    try{ const d=new Date(data.period_start); return MONTHS_FR[d.getMonth()]+' '+d.getFullYear(); }catch(e2){ return data.period_start; }
+    // Règle CIC : label depuis period_end ; si jour <= 5 → mois précédent
+    try{
+      const pe=new Date(data.period_end+'T12:00:00');
+      const day=pe.getUTCDate();
+      let m=pe.getUTCMonth(), y=pe.getUTCFullYear();
+      if(day<=5){ m--; if(m<0){m=11;y--;} }
+      return MONTHS_FR[m]+' '+y;
+    }catch(e2){ return data.period_end||data.period_start; }
   })();
 
   const r=await pool.query(

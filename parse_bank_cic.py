@@ -177,19 +177,26 @@ def parse_pdf(path):
 MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet',
              'Août','Septembre','Octobre','Novembre','Décembre']
 
-def period_notes(period_start):
-    """Génère le label mensuel lisible, ex. 'Décembre 2025'."""
+def period_notes(period_end):
+    """Génère le label mensuel lisible depuis la date de FIN du relevé.
+    Règle CIC : si le jour de fin <= 5, c'est le relevé du mois précédent
+    (ex: 'au 2024-09-02' = relevé de Août 2024)."""
     try:
         from datetime import datetime
-        dt = datetime.strptime(period_start, '%Y-%m-%d')
-        return f"{MONTHS_FR[dt.month-1]} {dt.year}"
+        dt = datetime.strptime(period_end, '%Y-%m-%d')
+        if dt.day <= 5:
+            # mois précédent
+            if dt.month == 1:
+                return f"{MONTHS_FR[11]} {dt.year - 1}"
+            return f"{MONTHS_FR[dt.month - 2]} {dt.year}"
+        return f"{MONTHS_FR[dt.month - 1]} {dt.year}"
     except Exception:
-        return period_start
+        return period_end
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(json.dumps({'error': 'Usage: parse_bank_cic.py <fichier.pdf>'}))
         sys.exit(1)
     result = parse_pdf(sys.argv[1])
-    result['notes'] = period_notes(result.get('period_start') or '')
+    result['notes'] = period_notes(result.get('period_end') or '')
     print(json.dumps(result, ensure_ascii=False))
