@@ -200,22 +200,15 @@ function setFilter(type) {
   loadPeriode(debut, fin);
 }
 
-/* ── Chargement auto (dernier jour dispo en base) ── */
+/* ── Chargement auto (aujourd'hui, ou samedi si dimanche) ── */
 async function loadAuto() {
-  try {
-    const r = await fetch('/api/rapport-comptable/last-date');
-    const d = await r.json();
-    const date = (d.date||'').slice(0,10) || isoDate(new Date());
-    document.getElementById('dateDebut').value = date;
-    document.getElementById('dateFin').value   = date;
-    setActiveChip('today');
-    await loadPeriode(date, date);
-  } catch(e) {
-    const t = isoDate(new Date());
-    document.getElementById('dateDebut').value = t;
-    document.getElementById('dateFin').value   = t;
-    await loadPeriode(t, t);
-  }
+  const now = new Date();
+  if (now.getDay() === 0) now.setDate(now.getDate() - 1); // dimanche → samedi
+  const date = isoDate(now);
+  document.getElementById('dateDebut').value = date;
+  document.getElementById('dateFin').value   = date;
+  setActiveChip('today');
+  await loadPeriode(date, date);
 }
 
 /* ── Chargement période ── */
