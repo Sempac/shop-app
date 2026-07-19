@@ -146,9 +146,12 @@ tfoot td.right { text-align:right; font-size:15px; }
 
 <div class="content">
 
-<!-- TABLEAU PRINCIPAL -->
+<!-- RÉSUMÉ CAISSE -->
 <h2 id="title" style="margin:10px 0;font-size:18px;"></h2>
-<div id="tableWrapper" style="overflow:auto;">
+<div class="summary" id="summaryBox" style="display:none"></div>
+
+<!-- TABLEAU DÉTAIL -->
+<div id="tableWrapper" style="overflow:auto;margin-top:16px;">
   <table id="mainTable" style="display:none">
     <thead id="tableHead">
       <tr>
@@ -164,9 +167,6 @@ tfoot td.right { text-align:right; font-size:15px; }
     <tfoot id="tableFooter"></tfoot>
   </table>
 </div>
-
-<!-- RÉSUMÉ CAISSE -->
-<div class="summary" id="summaryBox" style="display:none"></div>
 
 <!-- SIGNATURES (impression) -->
 <div class="signatures" id="signatures">
